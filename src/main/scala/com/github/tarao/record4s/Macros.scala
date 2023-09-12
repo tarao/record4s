@@ -6,7 +6,7 @@ object Macros {
   import scala.compiletime.{codeOf, error}
   import scala.quoted.*
 
-  def schemaOf[R: Type](using
+  private def schemaOf[R: Type](using
     Quotes,
   ): Seq[(String, quotes.reflect.TypeRepr)] = {
     import quotes.reflect.*
@@ -28,7 +28,7 @@ object Macros {
     collectFieldTypes(List(TypeRepr.of[R]), Seq.empty)
   }
 
-  def fieldTypesOf(
+  private def fieldTypesOf(
     fields: Seq[Expr[(String, Any)]],
   )(using Quotes): Seq[(String, quotes.reflect.TypeRepr)] = {
     import quotes.reflect.*
@@ -63,11 +63,11 @@ object Macros {
     }
   }
 
-  case class DedupedSchema[TypeRepr](
+  private case class DedupedSchema[TypeRepr](
     schema: Seq[(String, TypeRepr)],
     duplications: Seq[(String, TypeRepr)],
   )
-  object DedupedSchema {
+  private object DedupedSchema {
     extension (using Quotes)(schema: DedupedSchema[quotes.reflect.TypeRepr]) {
       def asType: Type[_] = {
         import quotes.reflect.*
