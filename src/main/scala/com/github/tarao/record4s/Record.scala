@@ -7,6 +7,9 @@ object Record {
 
   extension [R <: %](record: R) {
     def + : Extensible[R] = new Extensible(record)
+
+    transparent inline def ++[R2](other: R2) =
+      ${ Macros.concatImpl('record, 'other) }
   }
 
   given recordLike[R <: %]: RecordLike[R] with {
