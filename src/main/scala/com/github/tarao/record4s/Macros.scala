@@ -15,7 +15,7 @@ object Macros {
       reversed: List[TypeRepr],
       acc: Seq[(String, TypeRepr)],
     ): Seq[(String, TypeRepr)] = reversed match {
-      case Refinement(base, label, valueType @ TypeRef(_, _)) :: rest =>
+      case Refinement(base, label, valueType) :: rest =>
         collectRefinements(base :: rest, (label, valueType) +: acc)
       case AndType(tpr1, tpr2) :: rest =>
         collectRefinements(tpr2 :: tpr1 :: rest, acc)
