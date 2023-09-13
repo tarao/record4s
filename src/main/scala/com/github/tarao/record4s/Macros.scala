@@ -6,29 +6,29 @@ object Macros {
   import scala.compiletime.{codeOf, error}
   import scala.quoted.*
 
-  def schemaOf[R: Type](using
+  private def schemaOf[R: Type](using
     Quotes,
   ): Seq[(String, quotes.reflect.TypeRepr)] = {
     import quotes.reflect.*
 
-    @tailrec def collectRefinements(
+    @tailrec def collectFieldTypes(
       reversed: List[TypeRepr],
       acc: Seq[(String, TypeRepr)],
     ): Seq[(String, TypeRepr)] = reversed match {
-      case Refinement(base, label, valueType @ TypeRef(_, _)) :: rest =>
-        collectRefinements(base :: rest, (label, valueType) +: acc)
+      case Refinement(base, label, valueType) :: rest =>
+        collectFieldTypes(base :: rest, (label, valueType) +: acc)
       case AndType(tpr1, tpr2) :: rest =>
-        collectRefinements(tpr2 :: tpr1 :: rest, acc)
+        collectFieldTypes(tpr2 :: tpr1 :: rest, acc)
       case _ :: rest =>
-        collectRefinements(rest, acc)
+        collectFieldTypes(rest, acc)
       case Nil =>
         acc
     }
 
-    collectRefinements(List(TypeRepr.of[R]), Seq.empty)
+    collectFieldTypes(List(TypeRepr.of[R]), Seq.empty)
   }
 
-  def fieldTypesOf(
+  private def fieldTypesOf(
     fields: Seq[Expr[(String, Any)]],
   )(using Quotes): Seq[(String, quotes.reflect.TypeRepr)] = {
     import quotes.reflect.*
@@ -63,11 +63,11 @@ object Macros {
     }
   }
 
-  case class DedupedSchema[TypeRepr](
+  private case class DedupedSchema[TypeRepr](
     schema: Seq[(String, TypeRepr)],
     duplications: Seq[(String, TypeRepr)],
   )
-  object DedupedSchema {
+  private object DedupedSchema {
     extension (using Quotes)(schema: DedupedSchema[quotes.reflect.TypeRepr]) {
       def asType: Type[_] = {
         import quotes.reflect.*
@@ -85,13 +85,18 @@ object Macros {
       schema: Seq[(String, quotes.reflect.TypeRepr)],
     ): DedupedSchema[quotes.reflect.TypeRepr] = {
       val seen = collection.mutable.HashSet[String]()
-      val (deduped, duplications) = schema.reverseIterator.partition {
-        case (label, _) => seen.add(label)
+      val deduped =
+        collection.mutable.ListBuffer.empty[(String, quotes.reflect.TypeRepr)]
+      val duplications =
+        collection.mutable.ListBuffer.empty[(String, quotes.reflect.TypeRepr)]
+      schema.reverseIterator.foreach { case (label, tpr) =>
+        if (seen.add(label)) deduped.prepend((label, tpr))
+        else duplications.prepend((label, tpr))
       }
 
       DedupedSchema(
-        schema       = deduped.toSeq.reverse,
-        duplications = duplications.toSeq.reverse,
+        schema       = deduped.toSeq,
+        duplications = duplications.toSeq,
       )
     }
   }
@@ -108,6 +113,41 @@ object Macros {
     }
   }
 
+  private def iterableOf[R: Type](record: Expr[R])(using
+    Quotes,
+  ): (Expr[Iterable[(String, Any)]], Seq[(String, quotes.reflect.TypeRepr)]) = {
+    import quotes.reflect.*
+
+    val ev: Expr[RecordLike[R]] = Expr.summon[RecordLike[R]].getOrElse {
+      report.errorAndAbort(
+        s"No given instance of ${TypeRepr.of[RecordLike[R]]}",
+      )
+    }
+
+    val schema = ev match {
+      case '{ ${ _ }: RecordLike[R] { type FieldTypes = fieldTypes } } =>
+        schemaOf[fieldTypes]
+    }
+
+    ('{ ${ ev }.toIterable($record) }, schema)
+  }
+
+  private def tidiedIterableOf[R: Type](record: Expr[R])(using
+    Quotes,
+  ): (Expr[Iterable[(String, Any)]], Seq[(String, quotes.reflect.TypeRepr)]) = {
+    import quotes.reflect.*
+
+    val (rec, schema) = iterableOf(record)
+
+    val keysExpr = schema.map(field => Expr(field._1))
+    val setExpr = '{ Set(${ Expr.ofSeq(keysExpr) }: _*) }
+    val iterableExpr = '{
+      val keys = $setExpr
+      ${ rec }.filter { case (key, _) => keys.contains(key) }
+    }
+    (iterableExpr, schema)
+  }
+
   def applyImpl[R: Type](
     record: Expr[R],
     method: Expr[String],
@@ -117,16 +157,7 @@ object Macros {
 
     method.asTerm match {
       case Inlined(_, _, Literal(StringConstant(name))) if name == "apply" =>
-        val ev: Expr[RecordLike[R]] = Expr.summon[RecordLike[R]].getOrElse {
-          report.errorAndAbort(
-            s"No given instance of ${TypeRepr.of[RecordLike[R]]}",
-          )
-        }
-
-        val base = ev match {
-          case '{ ${ _ }: RecordLike[R] { type FieldTypes = fieldTypes } } =>
-            schemaOf[fieldTypes]
-        }
+        val (rec, base) = iterableOf(record)
 
         val fields = args match {
           case Varargs(args) => args
@@ -136,8 +167,7 @@ object Macros {
         val fieldTypes = fieldTypesOf(fields)
 
         val newSchema = DedupedSchema(base ++ fieldTypes).asType
-
-        extend('{ ${ ev }.toIterable($record) }, Expr.ofSeq(fields))(newSchema)
+        extend(rec, Expr.ofSeq(fields))(newSchema)
 
       case Inlined(_, _, Literal(StringConstant(name))) =>
         report.errorAndAbort(
@@ -148,5 +178,42 @@ object Macros {
           s"Invalid method invocation on ${record.asTerm.tpe.widen.show} constructor",
         )
     }
+  }
+
+  def concatImpl[R1: Type, R2: Type](
+    record: Expr[R1],
+    other: Expr[R2],
+  )(using Quotes): Expr[Any] = {
+    import quotes.reflect.*
+
+    val (rec1, schema1) = iterableOf(record)
+    val (rec2, schema2) = tidiedIterableOf(other)
+
+    val newSchema = DedupedSchema(schema1 ++ schema2).asType
+    extend(rec1, rec2)(newSchema)
+  }
+
+  def concatDirectlyImpl[R1 <: `%`: Type, R2 <: `%`: Type](
+    record: Expr[R1],
+    other: Expr[R2],
+  )(using Quotes): Expr[R1 & R2] = {
+    import quotes.reflect.*
+
+    val (rec1, schema1) = iterableOf(record)
+    val (rec2, schema2) = tidiedIterableOf(other)
+
+    val duplications = DedupedSchema(schema1 ++ schema2).duplications
+    if (duplications.nonEmpty) {
+      val dup = duplications
+        .map(_._1)
+        .distinct
+        .reverse
+        .map(label => s"'${label}'")
+        .mkString(", ")
+      report.errorAndAbort(
+        s"Two records must be disjoint (${dup} are duplicated)",
+      )
+    }
+    '{ new MapRecord((${ rec1 } ++ ${ rec2 }).toMap).asInstanceOf[R1 & R2] }
   }
 }
