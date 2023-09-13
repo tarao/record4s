@@ -10,6 +10,9 @@ object Record {
 
     transparent inline def ++[R2](other: R2) =
       ${ Macros.concatImpl('record, 'other) }
+
+    inline def |+|[R2 <: %](other: R2): R & R2 =
+      ${ Macros.concatDirectlyImpl('record, 'other) }
   }
 
   given recordLike[R <: %]: RecordLike[R] with {

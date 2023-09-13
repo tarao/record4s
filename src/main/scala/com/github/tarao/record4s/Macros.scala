@@ -85,13 +85,18 @@ object Macros {
       schema: Seq[(String, quotes.reflect.TypeRepr)],
     ): DedupedSchema[quotes.reflect.TypeRepr] = {
       val seen = collection.mutable.HashSet[String]()
-      val (deduped, duplications) = schema.reverseIterator.partition {
-        case (label, _) => seen.add(label)
+      val deduped =
+        collection.mutable.ListBuffer.empty[(String, quotes.reflect.TypeRepr)]
+      val duplications =
+        collection.mutable.ListBuffer.empty[(String, quotes.reflect.TypeRepr)]
+      schema.reverseIterator.foreach { case (label, tpr) =>
+        if (seen.add(label)) deduped.prepend((label, tpr))
+        else duplications.prepend((label, tpr))
       }
 
       DedupedSchema(
-        schema       = deduped.toSeq.reverse,
-        duplications = duplications.toSeq.reverse,
+        schema       = deduped.toSeq,
+        duplications = duplications.toSeq,
       )
     }
   }
@@ -186,5 +191,29 @@ object Macros {
 
     val newSchema = DedupedSchema(schema1 ++ schema2).asType
     extend(rec1, rec2)(newSchema)
+  }
+
+  def concatDirectlyImpl[R1 <: `%`: Type, R2 <: `%`: Type](
+    record: Expr[R1],
+    other: Expr[R2],
+  )(using Quotes): Expr[R1 & R2] = {
+    import quotes.reflect.*
+
+    val (rec1, schema1) = iterableOf(record)
+    val (rec2, schema2) = tidiedIterableOf(other)
+
+    val duplications = DedupedSchema(schema1 ++ schema2).duplications
+    if (duplications.nonEmpty) {
+      val dup = duplications
+        .map(_._1)
+        .distinct
+        .reverse
+        .map(label => s"'${label}'")
+        .mkString(", ")
+      report.errorAndAbort(
+        s"Two records must be disjoint (${dup} are duplicated)",
+      )
+    }
+    '{ new MapRecord((${ rec1 } ++ ${ rec2 }).toMap).asInstanceOf[R1 & R2] }
   }
 }
