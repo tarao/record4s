@@ -166,6 +166,40 @@ class RecordSpec extends helper.UnitSpec {
       """%("tarao", age = 3)""" shouldNot compile
     }
 
+    describe("==") {
+      it("should test equality of two records") {
+        val r1 = %(name = "tarao", age = 3)
+        val r2 = %(name = "tarao", age = 3)
+        val r3 = %(name = "ikura", age = 1)
+        val r4 = %(name = "tarao", age = 3, email = "tarao@example.com")
+        val r5: % { val name: String; val age: Int } = r4
+        val r6 = %(age = 3) |+| %(name = "tarao")
+        val r7 = r1 ++ r6
+
+        (r1 == r1) shouldBe true
+        (r1 == r2) shouldBe true
+        (r2 == r1) shouldBe true
+        (r1 == r3) shouldBe false
+        (r3 == r1) shouldBe false
+        (r1 == r4) shouldBe false
+        (r4 == r1) shouldBe false
+        (r1 == r5) shouldBe false
+        (r5 == r1) shouldBe false
+        (r1 == r6) shouldBe true
+        (r6 == r1) shouldBe true
+        (r1 == r7) shouldBe true
+        (r7 == r1) shouldBe true
+      }
+
+      it("should statically reject equality test of different types") {
+        val r1 = %(name = "tarao", age = 3)
+        case class Person(name: String, age: Int)
+        val r2 = Person("tarao", 3)
+
+        "r1 == r2" shouldNot compile
+      }
+    }
+
     describe("typeOf[Record]") {
       it("should have simple type for an empty record") {
         val r = Record.empty
