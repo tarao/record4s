@@ -2,54 +2,192 @@ package com.github.tarao.record4s
 
 class RecordSpec extends helper.UnitSpec {
   describe("Record") {
-    it("can be created as an empty record") {
-      val r = %()
+    describe("Construction") {
+      it("can create an empty record") {
+        val r = %()
+      }
+
+      it("can create records with multiple fields") {
+        val r1 = %(name = "tarao", age = 3)
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+
+        val r2 = %(("name", "tarao"), ("age", 3))
+        r2.name shouldBe "tarao"
+        r2.age shouldBe 3
+
+        val r3 = %("name" -> "tarao", "age" -> 3)
+        r3.name shouldBe "tarao"
+        r3.age shouldBe 3
+      }
+
+      it("can create records by adding fields") {
+        val r1 = %(name = "tarao")
+        r1.name shouldBe "tarao"
+
+        val r2 = r1 + (age = 3)
+        r2.name shouldBe "tarao"
+        r2.age shouldBe 3
+
+        val r3 = r1 + (age = 3) + (email = "tarao@example.com")
+        r3.name shouldBe "tarao"
+        r3.age shouldBe 3
+        r3.email shouldBe "tarao@example.com"
+      }
+
+      it("should allow replacing existing fields") {
+        val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+        r1.email shouldBe "tarao@example.com"
+
+        val r2 = r1 + (age = r1.age + 1, email = "tarao2@example.com")
+        r2.name shouldBe "tarao"
+        r2.age shouldBe 4
+        r2.email shouldBe "tarao2@example.com"
+
+        val r3 = r2 + (email = %(user = "tarao", domain = "example.com"))
+        r3.name shouldBe "tarao"
+        r3.age shouldBe 4
+        r3.email.user shouldBe "tarao"
+        r3.email.domain shouldBe "example.com"
+      }
+
+      it("should not allow non-literal labels") {
+        val label = "name"
+        """%((label, "tarao"))""" shouldNot compile
+
+        """%(("age", 3), (label, "tarao"))""" shouldNot compile
+
+        """%("age" -> 3, label -> "tarao")""" shouldNot compile
+      }
+
+      it("should not allow non-vararg construction") {
+        val args = Seq("name" -> "tarao")
+        "%(args: _*)" shouldNot compile
+      }
+
+      it("should not allow accessing non-existing fields") {
+        val r1 = %(name = "tarao", age = 3)
+        "r1.email" shouldNot compile
+
+        val r2: Record { val name: String } = r1
+        "r2.age" shouldNot compile
+      }
+
+      it("should not allow nothing except named construction by `apply`") {
+        """%.foo(name = "tarao")""" shouldNot compile
+
+        """%("tarao")""" shouldNot compile
+
+        """%("tarao", age = 3)""" shouldNot compile
+      }
     }
 
-    it("can be created with multiple fields") {
-      val r1 = %(name = "tarao", age = 3)
-      r1.name shouldBe "tarao"
-      r1.age shouldBe 3
+    describe("Type of %") {
+      it("should be a simple type for an empty record") {
+        val r = Record.empty
+        helper.showTypeOf(r) shouldBe "%"
+      }
 
-      val r2 = %(("name", "tarao"), ("age", 3))
-      r2.name shouldBe "tarao"
-      r2.age shouldBe 3
+      it("should be refinement type") {
+        val r = %(name = "tarao")
+        helper.showTypeOf(r) shouldBe """% {
+                                        |  val name: String
+                                        |}""".stripMargin
+      }
 
-      val r3 = %("name" -> "tarao", "age" -> 3)
-      r3.name shouldBe "tarao"
-      r3.age shouldBe 3
-    }
+      it("should be combined refinement type of added fields") {
+        val r1 = %(name = "tarao")
+        val r2 = r1 + (age = 3) + (email = "tarao@example.com")
+        helper.showTypeOf(r2) shouldBe """% {
+                                         |  val name: String
+                                         |  val age: Int
+                                         |  val email: String
+                                         |}""".stripMargin
+      }
 
-    it("can be created by adding fields") {
-      val r1 = %(name = "tarao")
-      r1.name shouldBe "tarao"
+      it("should be combined refinement type of concatenated records") {
+        val r1 = %(name = "tarao")
+        val r2 = %(age = 3, email = "tarao@example.com")
+        helper.showTypeOf(r1 ++ r2) shouldBe """% {
+                                               |  val name: String
+                                               |  val age: Int
+                                               |  val email: String
+                                               |}""".stripMargin
+        val r3 = r1 ++ r2
+        helper.showTypeOf(r3) shouldBe """% {
+                                         |  val name: String
+                                         |  val age: Int
+                                         |  val email: String
+                                         |}""".stripMargin
+      }
 
-      val r2 = r1 + (age = 3)
-      r2.name shouldBe "tarao"
-      r2.age shouldBe 3
+      it("should take the last field type of the same name") {
+        val r1 = %(name = "tarao")
+        val r2 = r1 + (age  = 3) + (email = "tarao@example.com")
+        val r3 = r2 + (name = "ikura") + (email =
+          %(user = "ikura", domain = "example.com"),
+        )
+        helper.showTypeOf(r3) shouldBe """% {
+                                         |  val age: Int
+                                         |  val name: String
+                                         |  val email: % {
+                                         |    val user: String
+                                         |    val domain: String
+                                         |  }
+                                         |}""".stripMargin
 
-      val r3 = r1 + (age = 3) + (email = "tarao@example.com")
-      r3.name shouldBe "tarao"
-      r3.age shouldBe 3
-      r3.email shouldBe "tarao@example.com"
-    }
+        val r4 = %(name = "tarao", age = 3, email = "tarao@example.com")
+        val r5 = %(name = "ikura") + (email =
+          %(user = "ikura", domain = "example.com"),
+        )
+        helper.showTypeOf(r4 ++ r5) shouldBe """% {
+                                               |  val age: Int
+                                               |  val name: String
+                                               |  val email: % {
+                                               |    val user: String
+                                               |    val domain: String
+                                               |  }
+                                               |}""".stripMargin
+      }
 
-    it("should allow replacing existing fields") {
-      val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
-      r1.name shouldBe "tarao"
-      r1.age shouldBe 3
-      r1.email shouldBe "tarao@example.com"
+      it(
+        "should be combined refinement type of directly concatenated records",
+      ) {
+        val r1 = %(name = "tarao")
+        val r2 = %(age = 3, email = "tarao@example.com")
+        helper.showTypeOf(r1 |+| r2) shouldBe """% {
+                                                |  val name: String
+                                                |} & % {
+                                                |  val age: Int
+                                                |  val email: String
+                                                |}""".stripMargin
+        val r3 = r1 |+| r2
+        helper.showTypeOf(r3) shouldBe """% {
+                                         |  val name: String
+                                         |} & % {
+                                         |  val age: Int
+                                         |  val email: String
+                                         |}""".stripMargin
+      }
 
-      val r2 = r1 + (age = r1.age + 1, email = "tarao2@example.com")
-      r2.name shouldBe "tarao"
-      r2.age shouldBe 4
-      r2.email shouldBe "tarao2@example.com"
-
-      val r3 = r2 + (email = %(user = "tarao", domain = "example.com"))
-      r3.name shouldBe "tarao"
-      r3.age shouldBe 4
-      r3.email.user shouldBe "tarao"
-      r3.email.domain shouldBe "example.com"
+      it("should have flattened field types after ++ or +") {
+        val r1 = %(name = "tarao")
+        val r2 = %(age = 3)
+        val r3 = %(email = "tarao@example.com")
+        helper.showTypeOf((r1 |+| r2) ++ r3) shouldBe """% {
+                                                        |  val name: String
+                                                        |  val age: Int
+                                                        |  val email: String
+                                                        |}""".stripMargin
+        val r4 = (r1 |+| r2) + (email = "tarao@example.com")
+        helper.showTypeOf(r4) shouldBe """% {
+                                         |  val name: String
+                                         |  val age: Int
+                                         |  val email: String
+                                         |}""".stripMargin
+      }
     }
 
     describe("++") {
@@ -136,7 +274,7 @@ class RecordSpec extends helper.UnitSpec {
       }
     }
 
-    describe("as[]") {
+    describe(".as[]") {
       it("should allow returning the same type") {
         val r = %(name = "tarao", age = 3)
         helper.showTypeOf(r.as) shouldBe """% {
@@ -173,36 +311,6 @@ class RecordSpec extends helper.UnitSpec {
       }
     }
 
-    it("should not allow non-literal labels") {
-      val label = "name"
-      """%((label, "tarao"))""" shouldNot compile
-
-      """%(("age", 3), (label, "tarao"))""" shouldNot compile
-
-      """%("age" -> 3, label -> "tarao")""" shouldNot compile
-    }
-
-    it("should not allow non-vararg construction") {
-      val args = Seq("name" -> "tarao")
-      "%(args: _*)" shouldNot compile
-    }
-
-    it("should not allow accessing non-existing fields") {
-      val r1 = %(name = "tarao", age = 3)
-      "r1.email" shouldNot compile
-
-      val r2: Record { val name: String } = r1
-      "r2.age" shouldNot compile
-    }
-
-    it("should not allow nothing except named construction by `apply`") {
-      """%.foo(name = "tarao")""" shouldNot compile
-
-      """%("tarao")""" shouldNot compile
-
-      """%("tarao", age = 3)""" shouldNot compile
-    }
-
     describe("==") {
       it("should test equality of two records") {
         val r1 = %(name = "tarao", age = 3)
@@ -236,110 +344,6 @@ class RecordSpec extends helper.UnitSpec {
         val r2 = Person("tarao", 3)
 
         "r1 == r2" shouldNot compile
-      }
-    }
-
-    describe("typeOf[Record]") {
-      it("should have simple type for an empty record") {
-        val r = Record.empty
-        helper.showTypeOf(r) shouldBe "%"
-      }
-
-      it("should have refinement type") {
-        val r = %(name = "tarao")
-        helper.showTypeOf(r) shouldBe """% {
-                                        |  val name: String
-                                        |}""".stripMargin
-      }
-
-      it("should combine refinement type for added fields") {
-        val r1 = %(name = "tarao")
-        val r2 = r1 + (age = 3) + (email = "tarao@example.com")
-        helper.showTypeOf(r2) shouldBe """% {
-                                         |  val name: String
-                                         |  val age: Int
-                                         |  val email: String
-                                         |}""".stripMargin
-      }
-
-      it("should combine refinement type of concatenated records") {
-        val r1 = %(name = "tarao")
-        val r2 = %(age = 3, email = "tarao@example.com")
-        helper.showTypeOf(r1 ++ r2) shouldBe """% {
-                                               |  val name: String
-                                               |  val age: Int
-                                               |  val email: String
-                                               |}""".stripMargin
-        val r3 = r1 ++ r2
-        helper.showTypeOf(r3) shouldBe """% {
-                                         |  val name: String
-                                         |  val age: Int
-                                         |  val email: String
-                                         |}""".stripMargin
-      }
-
-      it("should take the last field type of the same name") {
-        val r1 = %(name = "tarao")
-        val r2 = r1 + (age  = 3) + (email = "tarao@example.com")
-        val r3 = r2 + (name = "ikura") + (email =
-          %(user = "ikura", domain = "example.com"),
-        )
-        helper.showTypeOf(r3) shouldBe """% {
-                                         |  val age: Int
-                                         |  val name: String
-                                         |  val email: % {
-                                         |    val user: String
-                                         |    val domain: String
-                                         |  }
-                                         |}""".stripMargin
-
-        val r4 = %(name = "tarao", age = 3, email = "tarao@example.com")
-        val r5 = %(name = "ikura") + (email =
-          %(user = "ikura", domain = "example.com"),
-        )
-        helper.showTypeOf(r4 ++ r5) shouldBe """% {
-                                               |  val age: Int
-                                               |  val name: String
-                                               |  val email: % {
-                                               |    val user: String
-                                               |    val domain: String
-                                               |  }
-                                               |}""".stripMargin
-      }
-
-      it("should combine refinement type of directly concatenated records") {
-        val r1 = %(name = "tarao")
-        val r2 = %(age = 3, email = "tarao@example.com")
-        helper.showTypeOf(r1 |+| r2) shouldBe """% {
-                                                |  val name: String
-                                                |} & % {
-                                                |  val age: Int
-                                                |  val email: String
-                                                |}""".stripMargin
-        val r3 = r1 |+| r2
-        helper.showTypeOf(r3) shouldBe """% {
-                                         |  val name: String
-                                         |} & % {
-                                         |  val age: Int
-                                         |  val email: String
-                                         |}""".stripMargin
-      }
-
-      it("should flatten field types after ++ or +") {
-        val r1 = %(name = "tarao")
-        val r2 = %(age = 3)
-        val r3 = %(email = "tarao@example.com")
-        helper.showTypeOf((r1 |+| r2) ++ r3) shouldBe """% {
-                                                        |  val name: String
-                                                        |  val age: Int
-                                                        |  val email: String
-                                                        |}""".stripMargin
-        val r4 = (r1 |+| r2) + (email = "tarao@example.com")
-        helper.showTypeOf(r4) shouldBe """% {
-                                         |  val name: String
-                                         |  val age: Int
-                                         |  val email: String
-                                         |}""".stripMargin
       }
     }
 
