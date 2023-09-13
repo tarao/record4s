@@ -136,6 +136,43 @@ class RecordSpec extends helper.UnitSpec {
       }
     }
 
+    describe("as[]") {
+      it("should allow returning the same type") {
+        val r = %(name = "tarao", age = 3)
+        helper.showTypeOf(r.as) shouldBe """% {
+                                           |  val name: String
+                                           |  val age: Int
+                                           |}""".stripMargin
+      }
+
+      it("should allow upcast") {
+        val r1 = %(name = "tarao", age = 3)
+        val r2 = r1.as[% { val name: String }]
+        helper.showTypeOf(r2) shouldBe """% {
+                                         |  val name: String
+                                         |}""".stripMargin
+      }
+
+      it("should reject downcast") {
+        val r1 = %(name = "tarao")
+        "val r2 = r1.as[% { val name: String; val age: Int }]" shouldNot compile
+      }
+
+      it("should reject unrelated types") {
+        val r1 = %(name = "tarao", age = 3)
+        "val r2 = r1.as[% { val name: String; val email: String }]" shouldNot compile
+      }
+
+      it("should strip away statically invisible fields") {
+        val r1 = %(name = "tarao", age = 3)
+        val r2: % { val name: String } = r1
+        val r3 = r1.as[% { val name: String }]
+
+        r2.as.toString() shouldBe "%(name = tarao)"
+        r3.toString() shouldBe "%(name = tarao)"
+      }
+    }
+
     it("should not allow non-literal labels") {
       val label = "name"
       """%((label, "tarao"))""" shouldNot compile
@@ -185,6 +222,8 @@ class RecordSpec extends helper.UnitSpec {
         (r4 == r1) shouldBe false
         (r1 == r5) shouldBe false
         (r5 == r1) shouldBe false
+        (r1 == r5.as) shouldBe true
+        (r5.as == r1) shouldBe true
         (r1 == r6) shouldBe true
         (r6 == r1) shouldBe true
         (r1 == r7) shouldBe true
