@@ -15,6 +15,9 @@ object Record {
 
     inline def |+|[R2 <: %](other: R2): R & R2 =
       ${ Macros.concatDirectlyImpl('record, 'other) }
+
+    inline def as[R2 >: R]: R2 =
+      ${ Macros.upcastImpl[R, R2]('record) }
   }
 
   given recordLike[R <: %]: RecordLike[R] with {

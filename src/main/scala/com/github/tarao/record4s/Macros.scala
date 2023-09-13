@@ -216,4 +216,13 @@ object Macros {
     }
     '{ new MapRecord((${ rec1 } ++ ${ rec2 }).toMap).asInstanceOf[R1 & R2] }
   }
+
+  def upcastImpl[R1 <: `%`: Type, R2 >: R1: Type](
+    record: Expr[R1],
+  )(using Quotes): Expr[R2] = {
+    import quotes.reflect.*
+
+    val (tidied, _) = tidiedIterableOf('{ ${ record }: R2 })
+    '{ new MapRecord(${ tidied }.toMap).asInstanceOf[R2] }
+  }
 }
