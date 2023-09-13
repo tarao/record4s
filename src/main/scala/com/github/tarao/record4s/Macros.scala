@@ -38,10 +38,10 @@ object Macros {
       valueExpr: Expr[Any],
     ): (String, TypeRepr) = {
       val label = labelExpr.asTerm match {
-        case Literal(StringConstant(label)) => label
+        case Literal(StringConstant(label)) if label.nonEmpty => label
         case _ =>
           report.errorAndAbort(
-            "Field label must be a literal string",
+            "Field label must be a literal non-empty string",
             labelExpr,
           )
       }

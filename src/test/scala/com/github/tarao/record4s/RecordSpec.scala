@@ -162,6 +162,8 @@ class RecordSpec extends helper.UnitSpec {
       """%.foo(name = "tarao")""" shouldNot compile
 
       """%("tarao")""" shouldNot compile
+
+      """%("tarao", age = 3)""" shouldNot compile
     }
 
     describe("typeOf[Record]") {
