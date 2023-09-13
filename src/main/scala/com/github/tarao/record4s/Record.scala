@@ -5,6 +5,8 @@ trait Record
 object Record {
   val empty: % = new MapRecord(Map.empty)
 
+  given canEqualReflexive[R <: %]: CanEqual[R, R] = CanEqual.derived
+
   extension [R <: %](record: R) {
     def + : Extensible[R] = new Extensible(record)
 
@@ -29,6 +31,14 @@ abstract class % extends Record with Selectable {
 
   override def toString(): String =
     __data.iterator.map { case (k, v) => s"$k = $v" }.mkString("%(", ", ", ")")
+
+  override def equals(other: Any): Boolean =
+    other match {
+      case other: % =>
+        __data == other.__data
+      case _ =>
+        false
+    }
 }
 
 val % = new Extensible(Record.empty)
