@@ -15,15 +15,32 @@ object Macros {
       reversed: List[TypeRepr],
       acc: Seq[(String, TypeRepr)],
     ): Seq[(String, TypeRepr)] = reversed match {
+      // base { label: valueType }
       case Refinement(base, label, valueType) :: rest =>
         collectFieldTypes(base :: rest, (label, valueType) +: acc)
+
+      // tpr1 & tpr2
       case AndType(tpr1, tpr2) :: rest =>
         collectFieldTypes(tpr2 :: tpr1 :: rest, acc)
+
+      // typically `%` in `% { ... }`
       case _ :: rest =>
         collectFieldTypes(rest, acc)
+
+      // all done
       case Nil =>
         acc
     }
+    // Non-tailrec equivalent:
+    //   def collectFieldTypesNonTailRec(tpr: TypeRepr): Seq[(String, TypeRepr)] =
+    //     tpr match {
+    //       case Refinement(base, label, valueType) =>
+    //         (label, valueType) +: collectFieldTypesNonTailRec(base)
+    //       case AndType(tpr1, tpr2) =>
+    //         collectFieldTypesNonTailRec(tpr1) ++ collectFieldTypesNonTailRec(tpr2)
+    //       case _ =>
+    //         Seq.empty
+    //     }
 
     collectFieldTypes(List(TypeRepr.of[R]), Seq.empty)
   }
@@ -52,12 +69,16 @@ object Macros {
     }
 
     fields.map {
+      // ("label", value)
       case '{ ($labelExpr, $valueExpr) } =>
         fieldTypeOf(labelExpr, valueExpr)
+
+      // "label" -> value
       case '{
           scala.Predef.ArrowAssoc(${ labelExpr }: String).->(${ valueExpr })
         } =>
         fieldTypeOf(labelExpr, valueExpr)
+
       case expr =>
         report.errorAndAbort(s"Invalid field", expr)
     }
@@ -72,6 +93,17 @@ object Macros {
       def asType: Type[_] = {
         import quotes.reflect.*
 
+        // Generates:
+        //   % {
+        //     val ${schema(0)._1}: ${schema(0)._2}
+        //     val ${schema(1)._1}: ${schema(1)._2}
+        //     ...
+        //   }
+        // where it is actually
+        //   (...((%
+        //     & { val ${schema(0)._1}: ${schema(0)._2} })
+        //     & { val ${schema(1)._1}: ${schema(1)._2} })
+        //     ...)
         schema
           .schema
           .foldLeft(TypeRepr.of[%]) { case (base, (label, tpr)) =>
@@ -139,6 +171,11 @@ object Macros {
 
     val (rec, schema) = iterableOf(record)
 
+    // Generates:
+    //   {
+    //     val keys = Set(${schema(0)._1}, ${schema(1)._1}, ...)
+    //     ${rec}.filter { case (key, _) => keys.contains(key) }
+    //   }
     val keysExpr = schema.map(field => Expr(field._1))
     val setExpr = '{ Set(${ Expr.ofSeq(keysExpr) }: _*) }
     val iterableExpr = '{
@@ -186,6 +223,15 @@ object Macros {
   )(using Quotes): Expr[Any] = {
     import quotes.reflect.*
 
+    // `tidiedIterableOf` needed here otherwise hidden fields in an upcasted `other` may
+    // break the field in `record`.
+    //
+    // Example:
+    //   val record = %(name = "tarao", email = "tarao@example.com")
+    //   val other: %{val age: Int} = %(age = 3, email = %(user = "ikura", domain = "example.com"))
+    //   record ++ other
+    //   // should be  %(name = tarao, age = 3, email = tarao@example.com)
+    //   // instead of %(name = tarao, age = 3, email = %(user = ikura, domain = example.com))
     val (rec1, schema1) = iterableOf(record)
     val (rec2, schema2) = tidiedIterableOf(other)
 
@@ -202,6 +248,15 @@ object Macros {
     val (rec1, schema1) = iterableOf(record)
     val (rec2, schema2) = tidiedIterableOf(other)
 
+    // The difference from `concatImpl`:
+    //
+    // 1. It doesn't allow duplicated fields.
+    // 2. The result type is an intersection type.
+    //    e.g. %{val name: String } & %{val age: Int}
+    //         insted of %{val name: String; val age: Int}
+    //
+    // The second one make it possible to write this method as a blackbox macro.
+    // (`inline` instead of `transparent inline`)
     val duplications = DedupedSchema(schema1 ++ schema2).duplications
     if (duplications.nonEmpty) {
       val dup = duplications
