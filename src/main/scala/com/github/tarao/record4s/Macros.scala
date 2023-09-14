@@ -16,6 +16,18 @@ object Macros {
       acc: Seq[(String, TypeRepr)],
     ): Seq[(String, TypeRepr)] = reversed match {
       // base { label: valueType }
+      // For example
+      //   TypeRepr.of[%{val name: String; val age: Int}]
+      // is
+      //   Refinement(
+      //     Refinement(
+      //       TypeRepr.of[%],
+      //       "name",
+      //       TypeRepr.of[String]
+      //     ),
+      //     "age",
+      //     TypeRepr.of[Int]
+      //   )
       case Refinement(base, label, valueType) :: rest =>
         collectFieldTypes(base :: rest, (label, valueType) +: acc)
 
