@@ -84,7 +84,7 @@ object Record {
   given recordLike[R <: %]: RecordLike[R] with {
     type FieldTypes = R
 
-    extension (r: R) def toIterable: Iterable[(String, Any)] = r.__data
+    def iterableOf(r: R): Iterable[(String, Any)] = r.__data
   }
 }
 

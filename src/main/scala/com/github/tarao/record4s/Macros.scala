@@ -173,7 +173,7 @@ object Macros {
         schemaOf[fieldTypes]
     }
 
-    ('{ ${ ev }.toIterable($record) }, schema)
+    ('{ ${ ev }.iterableOf($record) }, schema)
   }
 
   private def tidiedIterableOf[R: Type](record: Expr[R])(using
