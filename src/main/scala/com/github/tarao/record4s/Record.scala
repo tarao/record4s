@@ -12,6 +12,26 @@ object Record {
   /** An empty record. */
   val empty: % = new MapRecord(Map.empty)
 
+  /** Construct a record from something else.
+    *
+    * @example
+    *   {{{
+    * case class Person(name: String, age: Int)
+    * val p = Person("tarao", 3)
+    * val r = Record.from(p)
+    * // val r: com.github.tarao.record4s.%{val name: String; val age: Int} = %(name = tarao, age = 3)
+    *   }}}
+    *
+    * @param T
+    *   some type given `RecordLike[T]`
+    * @param x
+    *   something that is record like
+    * @return
+    *   a record
+    */
+  transparent inline def from[T](x: T)(using RecordLike[T]) =
+    empty ++ x
+
   given canEqualReflexive[R <: %]: CanEqual[R, R] = CanEqual.derived
 
   extension [R <: %](record: R) {

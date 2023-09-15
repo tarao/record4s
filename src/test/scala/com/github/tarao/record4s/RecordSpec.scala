@@ -311,6 +311,51 @@ class RecordSpec extends helper.UnitSpec {
       }
     }
 
+    describe("Product support") {
+      it("should convert a Product to a record") {
+        case class Person(name: String, age: Int)
+        val p = Person("tarao", 3)
+        val r1 = Record.from(p)
+
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+        r1.toString() shouldBe "%(name = tarao, age = 3)"
+        helper.showTypeOf(r1) shouldBe """% {
+                                         |  val name: String
+                                         |  val age: Int
+                                         |}""".stripMargin
+
+        val t = ("foo", 1)
+        val r2 = Record.from(t)
+        r2._1 shouldBe "foo"
+        r2._2 shouldBe 1
+        r2.toString() shouldBe "%(_1 = foo, _2 = 1)"
+        helper.showTypeOf(r2) shouldBe """% {
+                                         |  val _1: String
+                                         |  val _2: Int
+                                         |}""".stripMargin
+      }
+
+      it("should allow Products to be concatenated to a record") {
+        val r1 = %(email = "tarao@example.com")
+
+        case class Person(name: String, age: Int)
+        val p = Person("tarao", 3)
+
+        val r2 = r1 ++ p
+        r2.name shouldBe "tarao"
+        r2.age shouldBe 3
+        r2.email shouldBe "tarao@example.com"
+
+        val r3 = r1 ++ p ++ ("foo", 1)
+        r3.name shouldBe "tarao"
+        r3.age shouldBe 3
+        r3.email shouldBe "tarao@example.com"
+        r3._1 shouldBe "foo"
+        r3._2 shouldBe 1
+      }
+    }
+
     describe("==") {
       it("should test equality of two records") {
         val r1 = %(name = "tarao", age = 3)

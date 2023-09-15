@@ -11,6 +11,24 @@ object Macros {
   ): Seq[(String, quotes.reflect.TypeRepr)] = {
     import quotes.reflect.*
 
+    @tailrec def collectTupledFieldTypes(
+      tpe: Type[_],
+      acc: Seq[(String, TypeRepr)],
+    ): Seq[(String, TypeRepr)] = tpe match {
+      case '[(labelType, valueType) *: rest] =>
+        TypeRepr.of[labelType] match {
+          case ConstantType(StringConstant(label)) =>
+            collectTupledFieldTypes(
+              Type.of[rest],
+              acc :+ (label, TypeRepr.of[valueType]),
+            )
+          case _ =>
+            collectTupledFieldTypes(Type.of[rest], acc)
+        }
+      case _ =>
+        acc
+    }
+
     @tailrec def collectFieldTypes(
       reversed: List[TypeRepr],
       acc: Seq[(String, TypeRepr)],
@@ -35,9 +53,14 @@ object Macros {
       case AndType(tpr1, tpr2) :: rest =>
         collectFieldTypes(tpr2 :: tpr1 :: rest, acc)
 
-      // typically `%` in `% { ... }`
-      case _ :: rest =>
-        collectFieldTypes(rest, acc)
+      // typically `%` in `% { ... }` or
+      // (tp1, ...)
+      // tp1 *: ...
+      case head :: rest =>
+        collectFieldTypes(
+          rest,
+          collectTupledFieldTypes(head.asType, Seq.empty) ++ acc,
+        )
 
       // all done
       case Nil =>
