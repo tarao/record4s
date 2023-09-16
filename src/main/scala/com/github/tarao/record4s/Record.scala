@@ -22,7 +22,7 @@ object Record {
     * // val r: com.github.tarao.record4s.%{val name: String; val age: Int} = %(name = tarao, age = 3)
     *   }}}
     *
-    * @param T
+    * @tparam T
     *   some type given `RecordLike[T]`
     * @param x
     *   something that is record like
@@ -65,7 +65,7 @@ object Record {
       * // val r3: com.github.tarao.record4s.%{val name: String; val age: Int; val email: String} = %(name = tarao, age = 4, email = tarao@example.com)
       *   }}}
       *
-      * @param R2
+      * @tparam R2
       *   a record type (given `RecordLike[R2]`)
       * @param other
       *   a record to concatenate
@@ -87,7 +87,7 @@ object Record {
       * // val r3: com.github.tarao.record4s.%{val name: String; val age: Int} & com.github.tarao.record4s.%{val email: String} = %(name = tarao, age = 3, email = tarao@example.com)
       *   }}}
       *
-      * @param R2
+      * @tparam R2
       *   a record type (given `RecordLike[R2]`)
       * @param other
       *   a record to concatenate
@@ -107,7 +107,7 @@ object Record {
       * // val r2: com.github.tarao.record4s.%{val name: String; val age: Int} = %(name = tarao, age = 3)
       *   }}}
       *
-      * @param R2
+      * @tparam R2
       *   target type
       * @return
       *   a record containing only fields in the target type
