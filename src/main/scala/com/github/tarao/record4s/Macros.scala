@@ -1,286 +1,21 @@
 package com.github.tarao.record4s
 
-import scala.annotation.tailrec
-
 object Macros {
   import scala.quoted.*
 
-  private def validatedLabel(label: String, context: Option[Expr[Any]] = None)(
-    using Quotes,
-  ): String = {
-    import quotes.reflect.*
-
-    def errorAndAbort(msg: String, context: Option[Expr[Any]]): Nothing =
-      context match {
-        case Some(expr) =>
-          report.errorAndAbort(msg, expr)
-        case None =>
-          report.errorAndAbort(msg)
-      }
-
-    if (label.isEmpty)
-      errorAndAbort(
-        "Field label must be a non-empty string",
-        context,
-      )
-    else if (label.contains("$"))
-      // We can't allow "$" because
-      // - (1) Scala compiler passes encoded name to `selectDynamic`, and
-      // - (2) "$" itself never gets encoded i.e. we can't distinguish for example between
-      //       "$minus-" and "--" (both are encoded to "$minus$minus").
-      errorAndAbort(
-        "'$' cannot be used as field label",
-        context,
-      )
-    else
-      label
-  }
-
-  private def evidenceOf[T: Type](using Quotes): Expr[T] = {
-    import quotes.reflect.*
-
-    Expr.summon[T].getOrElse {
-      report.errorAndAbort(
-        s"No given instance of ${Type.show[T]}",
-      )
-    }
-  }
-
-  private def schemaOf[R: Type](using
-    Quotes,
-  ): Seq[(String, quotes.reflect.TypeRepr)] = {
-    import quotes.reflect.*
-
-    @tailrec def collectTupledFieldTypes(
-      tpe: Type[_],
-      acc: Seq[(String, TypeRepr)],
-    ): Seq[(String, TypeRepr)] = tpe match {
-      case '[(labelType, valueType) *: rest] =>
-        TypeRepr.of[labelType] match {
-          case ConstantType(StringConstant(label)) =>
-            collectTupledFieldTypes(
-              Type.of[rest],
-              acc :+ (validatedLabel(label), TypeRepr.of[valueType]),
-            )
-          case _ =>
-            collectTupledFieldTypes(Type.of[rest], acc)
-        }
-      case _ =>
-        acc
-    }
-
-    @tailrec def collectFieldTypes(
-      reversed: List[TypeRepr],
-      acc: Seq[(String, TypeRepr)],
-    ): Seq[(String, TypeRepr)] = reversed match {
-      // base { label: valueType }
-      // For example
-      //   TypeRepr.of[%{val name: String; val age: Int}]
-      // is
-      //   Refinement(
-      //     Refinement(
-      //       TypeRepr.of[%],
-      //       "name",
-      //       TypeRepr.of[String]
-      //     ),
-      //     "age",
-      //     TypeRepr.of[Int]
-      //   )
-      case Refinement(base, label, valueType) :: rest =>
-        collectFieldTypes(
-          base :: rest,
-          (validatedLabel(label), valueType) +: acc,
-        )
-
-      // tpr1 & tpr2
-      case AndType(tpr1, tpr2) :: rest =>
-        collectFieldTypes(tpr2 :: tpr1 :: rest, acc)
-
-      // typically `%` in `% { ... }` or
-      // (tp1, ...)
-      // tp1 *: ...
-      case head :: rest =>
-        collectFieldTypes(
-          rest,
-          collectTupledFieldTypes(head.asType, Seq.empty) ++ acc,
-        )
-
-      // all done
-      case Nil =>
-        acc
-    }
-    // Non-tailrec equivalent:
-    //   def collectFieldTypesNonTailRec(tpr: TypeRepr): Seq[(String, TypeRepr)] =
-    //     tpr match {
-    //       case Refinement(base, label, valueType) =>
-    //         (label, valueType) +: collectFieldTypesNonTailRec(base)
-    //       case AndType(tpr1, tpr2) =>
-    //         collectFieldTypesNonTailRec(tpr1) ++ collectFieldTypesNonTailRec(tpr2)
-    //       case _ =>
-    //         Seq.empty
-    //     }
-
-    collectFieldTypes(List(TypeRepr.of[R]), Seq.empty)
-  }
-
-  private def fieldTypesOf(
-    fields: Seq[Expr[(String, Any)]],
-  )(using Quotes): Seq[(String, quotes.reflect.TypeRepr)] = {
-    import quotes.reflect.*
-
-    def fieldTypeOf(
-      labelExpr: Expr[Any],
-      valueExpr: Expr[Any],
-    ): (String, TypeRepr) = {
-      val label = labelExpr.asTerm match {
-        case Literal(StringConstant(label)) =>
-          validatedLabel(label, Some(labelExpr))
-        case _ =>
-          report.errorAndAbort(
-            "Field label must be a literal string",
-            labelExpr,
-          )
-      }
-      val tpr = valueExpr match {
-        case '{ ${ _ }: tp } => TypeRepr.of[tp].widen
-      }
-      (label, tpr)
-    }
-
-    fields.map {
-      // ("label", value)
-      case '{ ($labelExpr, $valueExpr) } =>
-        fieldTypeOf(labelExpr, valueExpr)
-
-      // "label" -> value
-      case '{
-          scala.Predef.ArrowAssoc(${ labelExpr }: String).->(${ valueExpr })
-        } =>
-        fieldTypeOf(labelExpr, valueExpr)
-
-      case expr =>
-        report.errorAndAbort(s"Invalid field", expr)
-    }
-  }
-
-  private def fieldTypesOf[R: Type](
-    recordLike: Expr[RecordLike[R]],
-  )(using Quotes): Seq[(String, quotes.reflect.TypeRepr)] = {
-    import quotes.reflect.*
-
-    recordLike match {
-      case '{ ${ _ }: RecordLike[R] { type FieldTypes = fieldTypes } } =>
-        schemaOf[fieldTypes]
-    }
-  }
-
-  private case class DedupedSchema[TypeRepr](
-    schema: Seq[(String, TypeRepr)],
-    duplications: Seq[(String, TypeRepr)],
-  )
-  private object DedupedSchema {
-    extension (using Quotes)(schema: DedupedSchema[quotes.reflect.TypeRepr]) {
-      def asType: Type[_] = {
-        import quotes.reflect.*
-
-        // Generates:
-        //   % {
-        //     val ${schema(0)._1}: ${schema(0)._2}
-        //     val ${schema(1)._1}: ${schema(1)._2}
-        //     ...
-        //   }
-        // where it is actually
-        //   (...((%
-        //     & { val ${schema(0)._1}: ${schema(0)._2} })
-        //     & { val ${schema(1)._1}: ${schema(1)._2} })
-        //     ...)
-        schema
-          .schema
-          .foldLeft(TypeRepr.of[%]) { case (base, (label, tpr)) =>
-            Refinement(base, label, tpr)
-          }
-          .asType
-      }
-    }
-
-    def apply(using Quotes)(
-      schema: Seq[(String, quotes.reflect.TypeRepr)],
-    ): DedupedSchema[quotes.reflect.TypeRepr] = {
-      val seen = collection.mutable.HashSet[String]()
-      val deduped =
-        collection.mutable.ListBuffer.empty[(String, quotes.reflect.TypeRepr)]
-      val duplications =
-        collection.mutable.ListBuffer.empty[(String, quotes.reflect.TypeRepr)]
-      schema.reverseIterator.foreach { case (label, tpr) =>
-        if (seen.add(label)) deduped.prepend((label, tpr))
-        else duplications.prepend((label, tpr))
-      }
-
-      DedupedSchema(
-        schema       = deduped.toSeq,
-        duplications = duplications.toSeq,
-      )
-    }
-  }
-
-  private def iterableOf[R: Type](record: Expr[R])(using
-    Quotes,
-  ): (Expr[Iterable[(String, Any)]], Seq[(String, quotes.reflect.TypeRepr)]) = {
-    import quotes.reflect.*
-
-    val ev = evidenceOf[RecordLike[R]]
-    val schema = fieldTypesOf(ev)
-    ('{ ${ ev }.iterableOf($record) }, schema)
-  }
-
-  private def tidiedIterableOf[R: Type](record: Expr[R])(using
-    Quotes,
-  ): (Expr[Iterable[(String, Any)]], Seq[(String, quotes.reflect.TypeRepr)]) = {
-    import quotes.reflect.*
-
-    val (rec, schema) = iterableOf(record)
-
-    // Generates:
-    //   {
-    //     val keys = Set(${schema(0)._1}, ${schema(1)._1}, ...)
-    //     ${rec}.filter { case (key, _) => keys.contains(key) }
-    //   }
-    val keysExpr = schema.map(field => Expr(field._1))
-    val setExpr = '{ Set(${ Expr.ofSeq(keysExpr) }: _*) }
-    val iterableExpr = '{
-      val keys = $setExpr
-      ${ rec }.filter { case (key, _) => keys.contains(key) }
-    }
-    (iterableExpr, schema)
-  }
-
-  private def newMapRecord[R: Type](
-    record: Expr[Iterable[(String, Any)]],
-  )(using Quotes): Expr[R] =
-    '{ new MapRecord(${ record }.toMap).asInstanceOf[R] }
-
-  private def extend(
-    record: Expr[Iterable[(String, Any)]],
-    fields: Expr[IterableOnce[(String, Any)]],
-  )(newSchema: Type[_])(using Quotes): Expr[Any] = {
-    import quotes.reflect.*
-
-    newSchema match {
-      case '[tpe] =>
-        newMapRecord[tpe]('{ ${ record } ++ ${ fields } })
-    }
-  }
-
+  /** Macro implementation of `Record.lookup` */
   def lookupImpl[R <: `%`: Type](
     record: Expr[R],
     label: Expr[String],
   )(using Quotes): Expr[Any] = {
     import quotes.reflect.*
+    val internal = summon[InternalMacros]
+    import internal.*
 
     label.asTerm match {
       case Inlined(_, _, Literal(StringConstant(label))) =>
         val schema = schemaOf[R]
-        val valueType = schema.find(_._1 == label).map(_._2.asType).getOrElse {
+        val valueType = schema.find(_._1 == label).map(_._2).getOrElse {
           report
             .errorAndAbort(s"value ${label} is not a member of ${Type.show[R]}")
         }
@@ -294,12 +29,15 @@ object Macros {
     }
   }
 
+  /** Macro implementation of `%.apply` */
   def applyImpl[R: Type](
     record: Expr[R],
     method: Expr[String],
     args: Expr[Seq[(String, Any)]],
   )(using Quotes): Expr[Any] = {
     import quotes.reflect.*
+    val internal = summon[InternalMacros]
+    import internal.*
 
     method.asTerm match {
       case Inlined(_, _, Literal(StringConstant(name))) if name == "apply" =>
@@ -326,11 +64,14 @@ object Macros {
     }
   }
 
+  /** Macro implementation of `%.++` */
   def concatImpl[R1: Type, R2: Type](
     record: Expr[R1],
     other: Expr[R2],
   )(using Quotes): Expr[Any] = {
     import quotes.reflect.*
+    val internal = summon[InternalMacros]
+    import internal.*
 
     // `tidiedIterableOf` needed here otherwise hidden fields in an upcasted `other` may
     // break the field in `record`.
@@ -348,11 +89,14 @@ object Macros {
     extend(rec1, rec2)(newSchema)
   }
 
+  /** Macro implementation of `%.|+|` */
   def concatDirectlyImpl[R1 <: `%`: Type, R2 <: `%`: Type](
     record: Expr[R1],
     other: Expr[R2],
   )(using Quotes): Expr[R1 & R2] = {
     import quotes.reflect.*
+    val internal = summon[InternalMacros]
+    import internal.*
 
     val (rec1, schema1) = iterableOf(record)
     val (rec2, schema2) = tidiedIterableOf(other)
@@ -381,33 +125,39 @@ object Macros {
     newMapRecord[R1 & R2]('{ ${ rec1 } ++ ${ rec2 } })
   }
 
+  /** Macro implementation of `%.as` */
   def upcastImpl[R1 <: `%`: Type, R2 >: R1: Type](
     record: Expr[R1],
   )(using Quotes): Expr[R2] = {
     import quotes.reflect.*
+    val internal = summon[InternalMacros]
+    import internal.*
 
     val (tidied, _) = tidiedIterableOf('{ ${ record }: R2 })
     newMapRecord[R2](tidied)
   }
 
+  /** Macro implementation of `%.to` */
   def toProductImpl[R <: `%`: Type, P <: Product: Type](
     record: Expr[R],
   )(using Quotes): Expr[P] = {
     import quotes.reflect.*
+    val internal = summon[InternalMacros]
+    import internal.*
 
     val schema = schemaOf[R].toMap
     val fieldTypes = fieldTypesOf(evidenceOf[RecordLike[P]])
 
     // type check
-    for ((label, tpr) <- fieldTypes) {
-      val valueTpr = schema.getOrElse(
+    for ((label, tpe) <- fieldTypes) {
+      val valueTpe = schema.getOrElse(
         label,
         report.errorAndAbort(s"Missing key '${label}'", record),
       )
-      if (!(valueTpr <:< tpr)) {
+      if (!(typeReprOf(valueTpe) <:< typeReprOf(tpe))) {
         report.errorAndAbort(
-          s"""Found:    (${record.show}.${label}: ${valueTpr.show})
-             |Required: ${tpr.show}
+          s"""Found:    (${record.show}.${label}: ${typeReprOf(valueTpe).show})
+             |Required: ${typeReprOf(tpe).show}
              |""".stripMargin,
           record,
         )
@@ -429,5 +179,63 @@ object Macros {
       .select(method)
       .appliedToArgs(args.toList)
       .asExprOf[P]
+  }
+
+  private def typeReprOf(
+    tpe: Type[_],
+  )(using Quotes): quotes.reflect.TypeRepr = {
+    import quotes.reflect.*
+
+    tpe match {
+      case '[tpe] => TypeRepr.of[tpe]
+    }
+  }
+
+  private case class DedupedSchema[TypeRepr](
+    schema: Seq[(String, TypeRepr)],
+    duplications: Seq[(String, TypeRepr)],
+  )
+
+  private object DedupedSchema {
+    extension (using Quotes)(schema: DedupedSchema[Type[_]]) {
+      def asType: Type[_] = {
+        import quotes.reflect.*
+
+        // Generates:
+        //   % {
+        //     val ${schema(0)._1}: ${schema(0)._2}
+        //     val ${schema(1)._1}: ${schema(1)._2}
+        //     ...
+        //   }
+        // where it is actually
+        //   (...((%
+        //     & { val ${schema(0)._1}: ${schema(0)._2} })
+        //     & { val ${schema(1)._1}: ${schema(1)._2} })
+        //     ...)
+        schema
+          .schema
+          .foldLeft(TypeRepr.of[%]) { case (base, (label, tpe)) =>
+            Refinement(base, label, typeReprOf(tpe))
+          }
+          .asType
+      }
+    }
+
+    def apply(using Quotes)(
+      schema: Seq[(String, Type[_])],
+    ): DedupedSchema[Type[_]] = {
+      val seen = collection.mutable.HashSet[String]()
+      val deduped = collection.mutable.ListBuffer.empty[(String, Type[_])]
+      val duplications = collection.mutable.ListBuffer.empty[(String, Type[_])]
+      schema.reverseIterator.foreach { case (label, tpe) =>
+        if (seen.add(label)) deduped.prepend((label, tpe))
+        else duplications.prepend((label, tpe))
+      }
+
+      DedupedSchema(
+        schema       = deduped.toSeq,
+        duplications = duplications.toSeq,
+      )
+    }
   }
 }
