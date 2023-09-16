@@ -254,6 +254,11 @@ object Macros {
     (iterableExpr, schema)
   }
 
+  private def newMapRecord[R: Type](
+    record: Expr[Iterable[(String, Any)]],
+  )(using Quotes): Expr[R] =
+    '{ new MapRecord(${ record }.toMap).asInstanceOf[R] }
+
   private def extend(
     record: Expr[Iterable[(String, Any)]],
     fields: Expr[IterableOnce[(String, Any)]],
@@ -262,7 +267,7 @@ object Macros {
 
     newSchema match {
       case '[tpe] =>
-        '{ new MapRecord((${ record } ++ ${ fields }).toMap).asInstanceOf[tpe] }
+        newMapRecord[tpe]('{ ${ record } ++ ${ fields } })
     }
   }
 
@@ -373,7 +378,7 @@ object Macros {
         s"Two records must be disjoint (${dup} are duplicated)",
       )
     }
-    '{ new MapRecord((${ rec1 } ++ ${ rec2 }).toMap).asInstanceOf[R1 & R2] }
+    newMapRecord[R1 & R2]('{ ${ rec1 } ++ ${ rec2 } })
   }
 
   def upcastImpl[R1 <: `%`: Type, R2 >: R1: Type](
@@ -382,7 +387,7 @@ object Macros {
     import quotes.reflect.*
 
     val (tidied, _) = tidiedIterableOf('{ ${ record }: R2 })
-    '{ new MapRecord(${ tidied }.toMap).asInstanceOf[R2] }
+    newMapRecord[R2](tidied)
   }
 
   def toProductImpl[R <: `%`: Type, P <: Product: Type](
