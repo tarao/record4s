@@ -142,6 +142,34 @@ object Record {
       */
     inline def as[R2 >: R]: R2 =
       ${ Macros.upcastImpl[R, R2]('record) }
+
+    /** Convert this record to a `Product`.
+      *
+      * Target product type `P` must provide:
+      *
+      *   - a `Mirror.Of[P]`
+      *     - used via `RecordLike[P]`
+      *   - an `apply` method in the companion object of `P`
+      *     - the argument order must be the same as
+      *       `Mirror.Of[P]#MirroredElemLabels`
+      *
+      * `Tuple`s and `case class`es conform to the above conditions.
+      *
+      * @example
+      *   {{{
+      * case class Person(name: String, age: Int)
+      * val r = %(name = "tarao", age = 3)
+      * r.to[Person]
+      * // val res0: Person = Person(tarao,3)
+      *   }}}
+      *
+      * @tparam P
+      *   a target product type (given `RecordLike[P]`)
+      * @return
+      *   a new product instance
+      */
+    inline def to[P <: Product](using RecordLike[P]): P =
+      ${ Macros.toProductImpl[R, P]('record) }
   }
 
   given canEqualReflexive[R <: %]: CanEqual[R, R] = CanEqual.derived

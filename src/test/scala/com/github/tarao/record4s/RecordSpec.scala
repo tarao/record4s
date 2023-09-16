@@ -335,6 +335,42 @@ class RecordSpec extends helper.UnitSpec {
       }
     }
 
+    describe(".to[]") {
+      it("should convert a record to a Product") {
+        case class Empty()
+        val r0 = %()
+        val e = r0.to[Empty]
+        e shouldBe an[Empty]
+
+        case class Cell(value: Int)
+        val r1 = %(value = 10)
+        val c = r1.to[Cell]
+        c shouldBe a[Cell]
+        c.value shouldBe 10
+
+        case class Person(name: String, age: Int)
+        val r2 = %(name = "tarao", age = 3)
+        val p = r2.to[Person]
+        p shouldBe a[Person]
+        p.name shouldBe "tarao"
+        p.age shouldBe 3
+      }
+
+      it("should not convert a record to a different shape of Product") {
+        case class Person(name: String, age: Int)
+        val r = %(value = 10)
+        "r.to[Person]" shouldNot compile
+      }
+
+      it(
+        "should not convert a record to a Product with incompatible field type",
+      ) {
+        case class Cell(value: Int)
+        val r = %(value = "foo")
+        "r.to[Cell]" shouldNot compile
+      }
+    }
+
     describe("Product support") {
       it("should convert a Product to a record") {
         case class Person(name: String, age: Int)

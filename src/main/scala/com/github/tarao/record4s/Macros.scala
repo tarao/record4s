@@ -6,6 +6,16 @@ object Macros {
   import scala.compiletime.{codeOf, error}
   import scala.quoted.*
 
+  private def evidenceOf[T: Type](using Quotes): Expr[T] = {
+    import quotes.reflect.*
+
+    Expr.summon[T].getOrElse {
+      report.errorAndAbort(
+        s"No given instance of ${Type.show[T]}",
+      )
+    }
+  }
+
   private def schemaOf[R: Type](using
     Quotes,
   ): Seq[(String, quotes.reflect.TypeRepr)] = {
@@ -119,6 +129,17 @@ object Macros {
     }
   }
 
+  private def fieldTypesOf[R: Type](
+    recordLike: Expr[RecordLike[R]],
+  )(using Quotes): Seq[(String, quotes.reflect.TypeRepr)] = {
+    import quotes.reflect.*
+
+    recordLike match {
+      case '{ ${ _ }: RecordLike[R] { type FieldTypes = fieldTypes } } =>
+        schemaOf[fieldTypes]
+    }
+  }
+
   private case class DedupedSchema[TypeRepr](
     schema: Seq[(String, TypeRepr)],
     duplications: Seq[(String, TypeRepr)],
@@ -173,17 +194,8 @@ object Macros {
   ): (Expr[Iterable[(String, Any)]], Seq[(String, quotes.reflect.TypeRepr)]) = {
     import quotes.reflect.*
 
-    val ev: Expr[RecordLike[R]] = Expr.summon[RecordLike[R]].getOrElse {
-      report.errorAndAbort(
-        s"No given instance of ${TypeRepr.of[RecordLike[R]]}",
-      )
-    }
-
-    val schema = ev match {
-      case '{ ${ _ }: RecordLike[R] { type FieldTypes = fieldTypes } } =>
-        schemaOf[fieldTypes]
-    }
-
+    val ev = evidenceOf[RecordLike[R]]
+    val schema = fieldTypesOf(ev)
     ('{ ${ ev }.iterableOf($record) }, schema)
   }
 
@@ -337,5 +349,46 @@ object Macros {
 
     val (tidied, _) = tidiedIterableOf('{ ${ record }: R2 })
     '{ new MapRecord(${ tidied }.toMap).asInstanceOf[R2] }
+  }
+
+  def toProductImpl[R <: `%`: Type, P <: Product: Type](
+    record: Expr[R],
+  )(using Quotes): Expr[P] = {
+    import quotes.reflect.*
+
+    val schema = schemaOf[R].toMap
+    val fieldTypes = fieldTypesOf(evidenceOf[RecordLike[P]])
+
+    // type check
+    for ((label, tpr) <- fieldTypes) {
+      val valueTpr = schema.getOrElse(
+        label,
+        report.errorAndAbort(s"Missing key '${label}'", record),
+      )
+      if (!(valueTpr <:< tpr)) {
+        report.errorAndAbort(
+          s"""Found:    (${record.show}.${label}: ${valueTpr.show})
+             |Required: ${tpr.show}
+             |""".stripMargin,
+          record,
+        )
+      }
+    }
+
+    val term = record.asTerm
+    val args = fieldTypes.map { case (label, _) =>
+      '{ Record.lookup(${ record }, ${ Expr(label) }) }.asTerm
+    }
+
+    val sym = TypeRepr.of[P].typeSymbol
+    val companion = sym.companionClass
+    val method = companion.declarations.find(_.name == "apply").getOrElse {
+      report.errorAndAbort(s"${Type.show[P]} has no `apply` method")
+    }
+
+    Ref(sym.companionModule)
+      .select(method)
+      .appliedToArgs(args.toList)
+      .asExprOf[P]
   }
 }
