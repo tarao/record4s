@@ -62,6 +62,22 @@ class RecordSpec extends helper.UnitSpec {
         """%("age" -> 3, label -> "tarao")""" shouldNot compile
       }
 
+      it("should not allow '$' in labels") {
+        "%($value = 3)" shouldNot compile
+        "%(value$ = 3)" shouldNot compile
+        "%($minusfoobar = 3)" shouldNot compile
+        "%(foo$minusbar = 3)" shouldNot compile
+        "%(foobar$minus = 3)" shouldNot compile
+
+        case class Cell($value: Int)
+        "Record.from(Cell(3))" shouldNot compile
+      }
+
+      it("should allow other signs in labels") {
+        val r = %(`foo-bar` = 3)
+        r.`foo-bar` shouldBe 3
+      }
+
       it("should reject non-vararg construction") {
         val args = Seq("name" -> "tarao")
         "%(args: _*)" shouldNot compile

@@ -196,7 +196,8 @@ object Record {
 abstract class % extends Record with Selectable {
   private[record4s] def __data: Map[String, Any]
 
-  def selectDynamic(name: String): Any = __data(name)
+  def selectDynamic(name: String): Any =
+    __data(scala.reflect.NameTransformer.decode(name))
 
   override def toString(): String =
     __data.iterator.map { case (k, v) => s"$k = $v" }.mkString("%(", ", ", ")")
