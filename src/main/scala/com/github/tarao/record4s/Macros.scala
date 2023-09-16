@@ -6,6 +6,37 @@ object Macros {
   import scala.compiletime.{codeOf, error}
   import scala.quoted.*
 
+  private def validatedLabel(label: String, context: Option[Expr[Any]] = None)(
+    using Quotes,
+  ): String = {
+    import quotes.reflect.*
+
+    def errorAndAbort(msg: String, context: Option[Expr[Any]]): Nothing =
+      context match {
+        case Some(expr) =>
+          report.errorAndAbort(msg, expr)
+        case None =>
+          report.errorAndAbort(msg)
+      }
+
+    if (label.isEmpty)
+      errorAndAbort(
+        "Field label must be a non-empty string",
+        context,
+      )
+    else if (label.contains("$"))
+      // We can't allow "$" because
+      // - (1) Scala compiler passes encoded name to `selectDynamic`, and
+      // - (2) "$" itself never gets encoded i.e. we can't distinguish for example between
+      //       "$minus-" and "--" (both are encoded to "$minus$minus").
+      errorAndAbort(
+        "'$' cannot be used as field label",
+        context,
+      )
+    else
+      label
+  }
+
   private def evidenceOf[T: Type](using Quotes): Expr[T] = {
     import quotes.reflect.*
 
@@ -30,7 +61,7 @@ object Macros {
           case ConstantType(StringConstant(label)) =>
             collectTupledFieldTypes(
               Type.of[rest],
-              acc :+ (label, TypeRepr.of[valueType]),
+              acc :+ (validatedLabel(label), TypeRepr.of[valueType]),
             )
           case _ =>
             collectTupledFieldTypes(Type.of[rest], acc)
@@ -57,7 +88,10 @@ object Macros {
       //     TypeRepr.of[Int]
       //   )
       case Refinement(base, label, valueType) :: rest =>
-        collectFieldTypes(base :: rest, (label, valueType) +: acc)
+        collectFieldTypes(
+          base :: rest,
+          (validatedLabel(label), valueType) +: acc,
+        )
 
       // tpr1 & tpr2
       case AndType(tpr1, tpr2) :: rest =>
@@ -100,10 +134,11 @@ object Macros {
       valueExpr: Expr[Any],
     ): (String, TypeRepr) = {
       val label = labelExpr.asTerm match {
-        case Literal(StringConstant(label)) if label.nonEmpty => label
+        case Literal(StringConstant(label)) =>
+          validatedLabel(label, Some(labelExpr))
         case _ =>
           report.errorAndAbort(
-            "Field label must be a literal non-empty string",
+            "Field label must be a literal string",
             labelExpr,
           )
       }
