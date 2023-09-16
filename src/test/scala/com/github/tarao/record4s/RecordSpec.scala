@@ -35,7 +35,7 @@ class RecordSpec extends helper.UnitSpec {
         r3.email shouldBe "tarao@example.com"
       }
 
-      it("should allow replacing existing fields") {
+      it("should replace existing fields") {
         val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
         r1.name shouldBe "tarao"
         r1.age shouldBe 3
@@ -53,7 +53,7 @@ class RecordSpec extends helper.UnitSpec {
         r3.email.domain shouldBe "example.com"
       }
 
-      it("should not allow non-literal labels") {
+      it("should reject non-literal labels") {
         val label = "name"
         """%((label, "tarao"))""" shouldNot compile
 
@@ -62,12 +62,12 @@ class RecordSpec extends helper.UnitSpec {
         """%("age" -> 3, label -> "tarao")""" shouldNot compile
       }
 
-      it("should not allow non-vararg construction") {
+      it("should reject non-vararg construction") {
         val args = Seq("name" -> "tarao")
         "%(args: _*)" shouldNot compile
       }
 
-      it("should not allow accessing non-existing fields") {
+      it("should reject accessing non-existing fields") {
         val r1 = %(name = "tarao", age = 3)
         "r1.email" shouldNot compile
 
@@ -215,7 +215,7 @@ class RecordSpec extends helper.UnitSpec {
     }
 
     describe("++") {
-      it("should allow concatenating two records") {
+      it("should allow concatenation of two records") {
         val r1 = %(name = "tarao", age = 3)
         val r2 = %(email = "tarao@example.com")
         val r3 = r1 ++ r2
@@ -252,7 +252,7 @@ class RecordSpec extends helper.UnitSpec {
     }
 
     describe("|+|") {
-      it("should allow concatenating two disjoint records") {
+      it("should allow concatenation two disjoint records") {
         val r1 = %(name = "tarao", age = 3)
         val r2 = %(email = "tarao@example.com")
         val r3 = r1 |+| r2
@@ -299,7 +299,7 @@ class RecordSpec extends helper.UnitSpec {
     }
 
     describe(".as[]") {
-      it("should allow returning the same type") {
+      it("should return the same type if no type is specified") {
         val r = %(name = "tarao", age = 3)
         helper.showTypeOf(r.as) shouldBe """% {
                                            |  val name: String
