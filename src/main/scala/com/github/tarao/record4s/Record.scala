@@ -12,6 +12,36 @@ object Record {
   /** An empty record. */
   val empty: % = new MapRecord(Map.empty)
 
+  /** Get the field value of specified label.
+    *
+    * It is essentially the same as `record.{label}` but it can access to fields
+    * hidden by own methods of `class %`.
+    *
+    * @example
+    *   {{{
+    * val r = %(value = 3, toString = 10)
+    *
+    * r.value
+    * // val res0: Int = 3
+    * r.toString
+    * // val res1: String = %(value = 3, toString = 10)
+    *
+    * Record.lookup(r, "value")
+    * // val res2: Int = 3
+    * Record.lookup(r, "toString")
+    * // val res3: Int = 10
+    *   }}}
+    *
+    * @param record
+    *   a record
+    * @param label
+    *   a string literal field name
+    * @return
+    *   the value of the field named by `label`
+    */
+  transparent inline def lookup[R <: %](record: R, label: String) =
+    ${ Macros.lookupImpl('record, 'label) }
+
   /** Construct a record from something else.
     *
     * @example

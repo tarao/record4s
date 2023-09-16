@@ -190,6 +190,30 @@ class RecordSpec extends helper.UnitSpec {
       }
     }
 
+    describe("Lookup") {
+      it("should return a value by a string key name") {
+        val r = %(name = "tarao", age = 3)
+        Record.lookup(r, "name") shouldBe a[String]
+        Record.lookup(r, "name") shouldBe "tarao"
+        Record.lookup(r, "age") shouldBe an[Int]
+        Record.lookup(r, "age") shouldBe 3
+      }
+
+      it("should reject non-literal key names") {
+        val r = %(name = "tarao", age = 3)
+        val key = "name"
+        "Record.lookup(r, key)" shouldNot compile
+      }
+
+      it("should allow shadowed field to be extracted") {
+        val r = %(toString = 10)
+        r.toString shouldBe a[String]
+        r.toString shouldBe "%(toString = 10)"
+        Record.lookup(r, "toString") shouldBe an[Int]
+        Record.lookup(r, "toString") shouldBe 10
+      }
+    }
+
     describe("++") {
       it("should allow concatenating two records") {
         val r1 = %(name = "tarao", age = 3)

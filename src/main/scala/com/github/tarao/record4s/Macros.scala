@@ -220,6 +220,29 @@ object Macros {
     }
   }
 
+  def lookupImpl[R <: `%`: Type](
+    record: Expr[R],
+    label: Expr[String],
+  )(using Quotes): Expr[Any] = {
+    import quotes.reflect.*
+
+    label.asTerm match {
+      case Inlined(_, _, Literal(StringConstant(label))) =>
+        val schema = schemaOf[R]
+        val valueType = schema.find(_._1 == label).map(_._2.asType).getOrElse {
+          report
+            .errorAndAbort(s"value ${label} is not a member of ${Type.show[R]}")
+        }
+
+        valueType match {
+          case '[tpe] =>
+            '{ ${ record }.__data(${ Expr(label) }).asInstanceOf[tpe] }
+        }
+      case _ =>
+        report.errorAndAbort("label must be a literal string", label)
+    }
+  }
+
   def applyImpl[R: Type](
     record: Expr[R],
     method: Expr[String],
