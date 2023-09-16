@@ -3,7 +3,6 @@ package com.github.tarao.record4s
 import scala.annotation.tailrec
 
 object Macros {
-  import scala.compiletime.{codeOf, error}
   import scala.quoted.*
 
   private def validatedLabel(label: String, context: Option[Expr[Any]] = None)(
