@@ -168,18 +168,6 @@ object Macros {
     }
   }
 
-  private def extend(
-    record: Expr[Iterable[(String, Any)]],
-    fields: Expr[IterableOnce[(String, Any)]],
-  )(newSchema: Type[_])(using Quotes): Expr[Any] = {
-    import quotes.reflect.*
-
-    newSchema match {
-      case '[tpe] =>
-        '{ new MapRecord((${ record } ++ ${ fields }).toMap).asInstanceOf[tpe] }
-    }
-  }
-
   private def iterableOf[R: Type](record: Expr[R])(using
     Quotes,
   ): (Expr[Iterable[(String, Any)]], Seq[(String, quotes.reflect.TypeRepr)]) = {
@@ -218,6 +206,18 @@ object Macros {
       ${ rec }.filter { case (key, _) => keys.contains(key) }
     }
     (iterableExpr, schema)
+  }
+
+  private def extend(
+    record: Expr[Iterable[(String, Any)]],
+    fields: Expr[IterableOnce[(String, Any)]],
+  )(newSchema: Type[_])(using Quotes): Expr[Any] = {
+    import quotes.reflect.*
+
+    newSchema match {
+      case '[tpe] =>
+        '{ new MapRecord((${ record } ++ ${ fields }).toMap).asInstanceOf[tpe] }
+    }
   }
 
   def applyImpl[R: Type](

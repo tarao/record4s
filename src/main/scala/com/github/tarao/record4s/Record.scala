@@ -32,8 +32,6 @@ object Record {
   transparent inline def from[T](x: T)(using RecordLike[T]) =
     empty ++ x
 
-  given canEqualReflexive[R <: %]: CanEqual[R, R] = CanEqual.derived
-
   extension [R <: %](record: R) {
 
     /** Extends fields of the record.
@@ -115,6 +113,8 @@ object Record {
     inline def as[R2 >: R]: R2 =
       ${ Macros.upcastImpl[R, R2]('record) }
   }
+
+  given canEqualReflexive[R <: %]: CanEqual[R, R] = CanEqual.derived
 
   given recordLike[R <: %]: RecordLike[R] with {
     type FieldTypes = R
