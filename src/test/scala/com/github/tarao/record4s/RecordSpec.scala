@@ -73,6 +73,11 @@ class RecordSpec extends helper.UnitSpec {
         "Record.from(Cell(3))" shouldNot compile
       }
 
+      it("should allow other signs in labels") {
+        val r = %(`foo-bar` = 3)
+        r.`foo-bar` shouldBe 3
+      }
+
       it("should reject non-vararg construction") {
         val args = Seq("name" -> "tarao")
         "%(args: _*)" shouldNot compile
