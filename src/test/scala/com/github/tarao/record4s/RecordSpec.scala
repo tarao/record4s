@@ -35,7 +35,7 @@ class RecordSpec extends helper.UnitSpec {
         r3.email shouldBe "tarao@example.com"
       }
 
-      it("should allow replacing existing fields") {
+      it("should replace existing fields") {
         val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
         r1.name shouldBe "tarao"
         r1.age shouldBe 3
@@ -53,7 +53,7 @@ class RecordSpec extends helper.UnitSpec {
         r3.email.domain shouldBe "example.com"
       }
 
-      it("should not allow non-literal labels") {
+      it("should reject non-literal labels") {
         val label = "name"
         """%((label, "tarao"))""" shouldNot compile
 
@@ -62,12 +62,12 @@ class RecordSpec extends helper.UnitSpec {
         """%("age" -> 3, label -> "tarao")""" shouldNot compile
       }
 
-      it("should not allow non-vararg construction") {
+      it("should reject non-vararg construction") {
         val args = Seq("name" -> "tarao")
         "%(args: _*)" shouldNot compile
       }
 
-      it("should not allow accessing non-existing fields") {
+      it("should reject accessing non-existing fields") {
         val r1 = %(name = "tarao", age = 3)
         "r1.email" shouldNot compile
 
@@ -190,8 +190,32 @@ class RecordSpec extends helper.UnitSpec {
       }
     }
 
+    describe("Lookup") {
+      it("should return a value by a string key name") {
+        val r = %(name = "tarao", age = 3)
+        Record.lookup(r, "name") shouldBe a[String]
+        Record.lookup(r, "name") shouldBe "tarao"
+        Record.lookup(r, "age") shouldBe an[Int]
+        Record.lookup(r, "age") shouldBe 3
+      }
+
+      it("should reject non-literal key names") {
+        val r = %(name = "tarao", age = 3)
+        val key = "name"
+        "Record.lookup(r, key)" shouldNot compile
+      }
+
+      it("should allow shadowed field to be extracted") {
+        val r = %(toString = 10)
+        r.toString shouldBe a[String]
+        r.toString shouldBe "%(toString = 10)"
+        Record.lookup(r, "toString") shouldBe an[Int]
+        Record.lookup(r, "toString") shouldBe 10
+      }
+    }
+
     describe("++") {
-      it("should allow concatenating two records") {
+      it("should allow concatenation of two records") {
         val r1 = %(name = "tarao", age = 3)
         val r2 = %(email = "tarao@example.com")
         val r3 = r1 ++ r2
@@ -228,7 +252,7 @@ class RecordSpec extends helper.UnitSpec {
     }
 
     describe("|+|") {
-      it("should allow concatenating two disjoint records") {
+      it("should allow concatenation two disjoint records") {
         val r1 = %(name = "tarao", age = 3)
         val r2 = %(email = "tarao@example.com")
         val r3 = r1 |+| r2
@@ -275,7 +299,7 @@ class RecordSpec extends helper.UnitSpec {
     }
 
     describe(".as[]") {
-      it("should allow returning the same type") {
+      it("should return the same type if no type is specified") {
         val r = %(name = "tarao", age = 3)
         helper.showTypeOf(r.as) shouldBe """% {
                                            |  val name: String
@@ -308,6 +332,87 @@ class RecordSpec extends helper.UnitSpec {
 
         r2.as.toString() shouldBe "%(name = tarao)"
         r3.toString() shouldBe "%(name = tarao)"
+      }
+    }
+
+    describe(".to[]") {
+      it("should convert a record to a Product") {
+        case class Empty()
+        val r0 = %()
+        val e = r0.to[Empty]
+        e shouldBe an[Empty]
+
+        case class Cell(value: Int)
+        val r1 = %(value = 10)
+        val c = r1.to[Cell]
+        c shouldBe a[Cell]
+        c.value shouldBe 10
+
+        case class Person(name: String, age: Int)
+        val r2 = %(name = "tarao", age = 3)
+        val p = r2.to[Person]
+        p shouldBe a[Person]
+        p.name shouldBe "tarao"
+        p.age shouldBe 3
+      }
+
+      it("should not convert a record to a different shape of Product") {
+        case class Person(name: String, age: Int)
+        val r = %(value = 10)
+        "r.to[Person]" shouldNot compile
+      }
+
+      it(
+        "should not convert a record to a Product with incompatible field type",
+      ) {
+        case class Cell(value: Int)
+        val r = %(value = "foo")
+        "r.to[Cell]" shouldNot compile
+      }
+    }
+
+    describe("Product support") {
+      it("should convert a Product to a record") {
+        case class Person(name: String, age: Int)
+        val p = Person("tarao", 3)
+        val r1 = Record.from(p)
+
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+        r1.toString() shouldBe "%(name = tarao, age = 3)"
+        helper.showTypeOf(r1) shouldBe """% {
+                                         |  val name: String
+                                         |  val age: Int
+                                         |}""".stripMargin
+
+        val t = ("foo", 1)
+        val r2 = Record.from(t)
+        r2._1 shouldBe "foo"
+        r2._2 shouldBe 1
+        r2.toString() shouldBe "%(_1 = foo, _2 = 1)"
+        helper.showTypeOf(r2) shouldBe """% {
+                                         |  val _1: String
+                                         |  val _2: Int
+                                         |}""".stripMargin
+      }
+
+      it("should allow Products to be concatenated to a record") {
+        val r1 = %(email = "tarao@example.com")
+
+        case class Person(name: String, age: Int)
+        val p = Person("tarao", 3)
+
+        val r2 = r1 ++ p
+        r2.name shouldBe "tarao"
+        r2.age shouldBe 3
+        r2.email shouldBe "tarao@example.com"
+
+        val r3 = r1 ++ p ++ ("foo", 1)
+        r3.name shouldBe "tarao"
+        r3.age shouldBe 3
+        r3.email shouldBe "tarao@example.com"
+        r3._1 shouldBe "foo"
+        r3._2 shouldBe 1
       }
     }
 

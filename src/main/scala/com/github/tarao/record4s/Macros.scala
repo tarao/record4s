@@ -6,10 +6,38 @@ object Macros {
   import scala.compiletime.{codeOf, error}
   import scala.quoted.*
 
+  private def evidenceOf[T: Type](using Quotes): Expr[T] = {
+    import quotes.reflect.*
+
+    Expr.summon[T].getOrElse {
+      report.errorAndAbort(
+        s"No given instance of ${Type.show[T]}",
+      )
+    }
+  }
+
   private def schemaOf[R: Type](using
     Quotes,
   ): Seq[(String, quotes.reflect.TypeRepr)] = {
     import quotes.reflect.*
+
+    @tailrec def collectTupledFieldTypes(
+      tpe: Type[_],
+      acc: Seq[(String, TypeRepr)],
+    ): Seq[(String, TypeRepr)] = tpe match {
+      case '[(labelType, valueType) *: rest] =>
+        TypeRepr.of[labelType] match {
+          case ConstantType(StringConstant(label)) =>
+            collectTupledFieldTypes(
+              Type.of[rest],
+              acc :+ (label, TypeRepr.of[valueType]),
+            )
+          case _ =>
+            collectTupledFieldTypes(Type.of[rest], acc)
+        }
+      case _ =>
+        acc
+    }
 
     @tailrec def collectFieldTypes(
       reversed: List[TypeRepr],
@@ -35,9 +63,14 @@ object Macros {
       case AndType(tpr1, tpr2) :: rest =>
         collectFieldTypes(tpr2 :: tpr1 :: rest, acc)
 
-      // typically `%` in `% { ... }`
-      case _ :: rest =>
-        collectFieldTypes(rest, acc)
+      // typically `%` in `% { ... }` or
+      // (tp1, ...)
+      // tp1 *: ...
+      case head :: rest =>
+        collectFieldTypes(
+          rest,
+          collectTupledFieldTypes(head.asType, Seq.empty) ++ acc,
+        )
 
       // all done
       case Nil =>
@@ -96,6 +129,17 @@ object Macros {
     }
   }
 
+  private def fieldTypesOf[R: Type](
+    recordLike: Expr[RecordLike[R]],
+  )(using Quotes): Seq[(String, quotes.reflect.TypeRepr)] = {
+    import quotes.reflect.*
+
+    recordLike match {
+      case '{ ${ _ }: RecordLike[R] { type FieldTypes = fieldTypes } } =>
+        schemaOf[fieldTypes]
+    }
+  }
+
   private case class DedupedSchema[TypeRepr](
     schema: Seq[(String, TypeRepr)],
     duplications: Seq[(String, TypeRepr)],
@@ -145,35 +189,14 @@ object Macros {
     }
   }
 
-  private def extend(
-    record: Expr[Iterable[(String, Any)]],
-    fields: Expr[IterableOnce[(String, Any)]],
-  )(newSchema: Type[_])(using Quotes): Expr[Any] = {
-    import quotes.reflect.*
-
-    newSchema match {
-      case '[tpe] =>
-        '{ new MapRecord((${ record } ++ ${ fields }).toMap).asInstanceOf[tpe] }
-    }
-  }
-
   private def iterableOf[R: Type](record: Expr[R])(using
     Quotes,
   ): (Expr[Iterable[(String, Any)]], Seq[(String, quotes.reflect.TypeRepr)]) = {
     import quotes.reflect.*
 
-    val ev: Expr[RecordLike[R]] = Expr.summon[RecordLike[R]].getOrElse {
-      report.errorAndAbort(
-        s"No given instance of ${TypeRepr.of[RecordLike[R]]}",
-      )
-    }
-
-    val schema = ev match {
-      case '{ ${ _ }: RecordLike[R] { type FieldTypes = fieldTypes } } =>
-        schemaOf[fieldTypes]
-    }
-
-    ('{ ${ ev }.toIterable($record) }, schema)
+    val ev = evidenceOf[RecordLike[R]]
+    val schema = fieldTypesOf(ev)
+    ('{ ${ ev }.iterableOf($record) }, schema)
   }
 
   private def tidiedIterableOf[R: Type](record: Expr[R])(using
@@ -195,6 +218,41 @@ object Macros {
       ${ rec }.filter { case (key, _) => keys.contains(key) }
     }
     (iterableExpr, schema)
+  }
+
+  private def extend(
+    record: Expr[Iterable[(String, Any)]],
+    fields: Expr[IterableOnce[(String, Any)]],
+  )(newSchema: Type[_])(using Quotes): Expr[Any] = {
+    import quotes.reflect.*
+
+    newSchema match {
+      case '[tpe] =>
+        '{ new MapRecord((${ record } ++ ${ fields }).toMap).asInstanceOf[tpe] }
+    }
+  }
+
+  def lookupImpl[R <: `%`: Type](
+    record: Expr[R],
+    label: Expr[String],
+  )(using Quotes): Expr[Any] = {
+    import quotes.reflect.*
+
+    label.asTerm match {
+      case Inlined(_, _, Literal(StringConstant(label))) =>
+        val schema = schemaOf[R]
+        val valueType = schema.find(_._1 == label).map(_._2.asType).getOrElse {
+          report
+            .errorAndAbort(s"value ${label} is not a member of ${Type.show[R]}")
+        }
+
+        valueType match {
+          case '[tpe] =>
+            '{ ${ record }.__data(${ Expr(label) }).asInstanceOf[tpe] }
+        }
+      case _ =>
+        report.errorAndAbort("label must be a literal string", label)
+    }
   }
 
   def applyImpl[R: Type](
@@ -291,5 +349,46 @@ object Macros {
 
     val (tidied, _) = tidiedIterableOf('{ ${ record }: R2 })
     '{ new MapRecord(${ tidied }.toMap).asInstanceOf[R2] }
+  }
+
+  def toProductImpl[R <: `%`: Type, P <: Product: Type](
+    record: Expr[R],
+  )(using Quotes): Expr[P] = {
+    import quotes.reflect.*
+
+    val schema = schemaOf[R].toMap
+    val fieldTypes = fieldTypesOf(evidenceOf[RecordLike[P]])
+
+    // type check
+    for ((label, tpr) <- fieldTypes) {
+      val valueTpr = schema.getOrElse(
+        label,
+        report.errorAndAbort(s"Missing key '${label}'", record),
+      )
+      if (!(valueTpr <:< tpr)) {
+        report.errorAndAbort(
+          s"""Found:    (${record.show}.${label}: ${valueTpr.show})
+             |Required: ${tpr.show}
+             |""".stripMargin,
+          record,
+        )
+      }
+    }
+
+    val term = record.asTerm
+    val args = fieldTypes.map { case (label, _) =>
+      '{ Record.lookup(${ record }, ${ Expr(label) }) }.asTerm
+    }
+
+    val sym = TypeRepr.of[P].typeSymbol
+    val companion = sym.companionClass
+    val method = companion.declarations.find(_.name == "apply").getOrElse {
+      report.errorAndAbort(s"${Type.show[P]} has no `apply` method")
+    }
+
+    Ref(sym.companionModule)
+      .select(method)
+      .appliedToArgs(args.toList)
+      .asExprOf[P]
   }
 }
