@@ -314,6 +314,44 @@ class RecordSpec extends helper.UnitSpec {
       }
     }
 
+    describe(".tag[]") {
+      it("should give a tag") {
+        trait MyType
+        trait AnotherType
+
+        val r0 = %(name = "tarao", age = 3)
+        "val t0: Tag[MyType]] = r0" shouldNot compile
+
+        val r1 = r0.tag[MyType]
+        r1 shouldBe a[Tag[MyType]]
+        val t1: Tag[MyType] = r1
+
+        val r2 = r1.tag[AnotherType]
+        r2 shouldBe a[Tag[MyType]]
+        r2 shouldBe a[Tag[AnotherType]]
+        val t2: Tag[MyType] = r2
+        val t3: Tag[AnotherType] = r2
+      }
+
+      it("should be a target of extension method defined in a tagged type") {
+        trait Person
+        object Person {
+          extension (p: % { val name: String } & Tag[Person]) {
+            def firstName: String = p.name.split(" ").head
+          }
+        }
+
+        val r0 = %(name = "tarao fuguta", age = 3)
+        "r0.firstName" shouldNot compile
+
+        val r1 = r0.tag[Person]
+        r1.firstName shouldBe "tarao"
+
+        val r2 = %(age = 3).tag[Person]
+        "r2.firstName" shouldNot compile
+      }
+    }
+
     describe(".as[]") {
       it("should return the same type if no type is specified") {
         val r = %(name = "tarao", age = 3)

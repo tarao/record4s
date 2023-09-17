@@ -125,6 +125,29 @@ object Record {
     inline def |+|[R2 <: %](other: R2)(using RecordLike[R2]): R & R2 =
       ${ Macros.concatDirectlyImpl('record, 'other) }
 
+    /** Give a type tag to this record.
+      *
+      * @example
+      *   {{{
+      * trait Person; object Person {
+      *   extension (p: %{val name: String} & Tag[Person]) {
+      *     def firstName: String = p.name.split(" ").head
+      *   }
+      * }
+      *
+      * val r = %(name = "tarao fuguta", age = 3).tag[Person]
+      * r.firstName
+      * // val res0: String = tarao
+      *   }}}
+      *
+      * @tparam T
+      *   an arbitrary type used as a tag
+      * @return
+      *   the same record with a tag type
+      */
+    def tag[T]: R & Tag[T] =
+      record.asInstanceOf[R & Tag[T]]
+
     /** Upcast the record to specified type.
       *
       * @example
