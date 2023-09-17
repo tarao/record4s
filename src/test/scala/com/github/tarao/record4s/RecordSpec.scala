@@ -314,6 +314,138 @@ class RecordSpec extends helper.UnitSpec {
       }
     }
 
+    describe(".tag[]") {
+      it("should give a tag") {
+        trait MyType
+        trait AnotherType
+
+        val r0 = %(name = "tarao", age = 3)
+        "val t0: Tag[MyType]] = r0" shouldNot compile
+
+        val r1 = r0.tag[MyType]
+        r1 shouldBe a[Tag[MyType]]
+        val t1: Tag[MyType] = r1
+
+        val r2 = r1.tag[AnotherType]
+        r2 shouldBe a[Tag[MyType]]
+        r2 shouldBe a[Tag[AnotherType]]
+        val t2: Tag[MyType] = r2
+        val t3: Tag[AnotherType] = r2
+      }
+
+      it("should be a target of extension method defined in a tagged type") {
+        trait Person
+        object Person {
+          extension (p: % { val name: String } & Tag[Person]) {
+            def firstName: String = p.name.split(" ").head
+          }
+        }
+
+        val r0 = %(name = "tarao fuguta", age = 3)
+        "r0.firstName" shouldNot compile
+
+        val r1 = r0.tag[Person]
+        r1.firstName shouldBe "tarao"
+
+        val r2 = %(age = 3).tag[Person]
+        "r2.firstName" shouldNot compile
+      }
+
+      it("should preserve tags after concatenation") {
+        trait MyType
+        trait AnotherType
+
+        val r1 = %(name = "tarao", age = 3).tag[MyType]
+
+        val r2 = r1 ++ %(email = "tarao@example.com")
+        r2 shouldBe a[Tag[MyType]]
+        val t2: Tag[MyType] = r2
+
+        val r3 = r1 + (email = "tarao@example.com")
+        r3 shouldBe a[Tag[MyType]]
+        val t3: Tag[MyType] = r3
+
+        val r4 = r1.tag[AnotherType]
+
+        val r5 = r4 ++ %(email = "tarao@example.com")
+        r5 shouldBe a[Tag[MyType]]
+        r5 shouldBe a[Tag[AnotherType]]
+        val t4: Tag[MyType] = r5
+        val t5: Tag[AnotherType] = r5
+
+        val r6 = r4 + (email1 = "tarao@example.com") + (occupation = "engineer")
+        r6 shouldBe a[Tag[MyType]]
+        r6 shouldBe a[Tag[AnotherType]]
+        val t6: Tag[MyType] = r6
+        val t7: Tag[AnotherType] = r6
+      }
+
+      it("should join tags from multiple records") {
+        trait MyType
+        trait YourType
+        trait AnotherType
+        trait YetAnotherType
+
+        val r1 = %(name = "tarao").tag[MyType]
+        val r2 = %(age = 3).tag[YourType]
+
+        val r3 = r1 ++ r2
+        r3 shouldBe a[Tag[MyType]]
+        r3 shouldBe a[Tag[YourType]]
+        val t3: Tag[MyType] = r3
+        val t4: Tag[YourType] = r3
+
+        val r4 = r1.tag[AnotherType]
+        val r5 = r2.tag[YetAnotherType]
+
+        val r6 = r4 ++ r5
+        r6 shouldBe a[Tag[MyType]]
+        r6 shouldBe a[Tag[AnotherType]]
+        r6 shouldBe a[Tag[YourType]]
+        r6 shouldBe a[Tag[YetAnotherType]]
+        val t6: Tag[MyType] = r6
+        val t7: Tag[AnotherType] = r6
+        val t8: Tag[YourType] = r6
+        val t9: Tag[YetAnotherType] = r6
+      }
+
+      it("should preserve tags after upcast") {
+        trait MyType
+        trait AnotherType
+
+        val r1 = %(name = "tarao", age = 3).tag[MyType]
+
+        val r2 = r1.as
+        r2 shouldBe a[Tag[MyType]]
+        val t2: Tag[MyType] = r2
+
+        val r3 = r1.as[% { val name: String } & Tag[MyType]]
+        r3 shouldBe a[Tag[MyType]]
+        val t3: Tag[MyType] = r3
+
+        val r4 = r1.tag[AnotherType]
+
+        val r5 = r4.as
+        r5 shouldBe a[Tag[MyType]]
+        r5 shouldBe a[Tag[AnotherType]]
+        val t4: Tag[MyType] = r5
+        val t5: Tag[AnotherType] = r5
+
+        val r6 = r4.as[% { val name: String } & Tag[MyType] & Tag[AnotherType]]
+        r6 shouldBe a[Tag[MyType]]
+        r6 shouldBe a[Tag[AnotherType]]
+        val t6: Tag[MyType] = r6
+        val t7: Tag[AnotherType] = r6
+      }
+
+      it("should not allow to give a tag by .as[]") {
+        trait MyType
+
+        val r1 = %(name = "tarao", age = 3)
+        "r1.as[%{val name: String; val age: Int} & Tag[MyType]]" shouldNot compile
+      }
+    }
+
     describe(".as[]") {
       it("should return the same type if no type is specified") {
         val r = %(name = "tarao", age = 3)

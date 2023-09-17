@@ -15,10 +15,13 @@ object Macros {
     label.asTerm match {
       case Inlined(_, _, Literal(StringConstant(label))) =>
         val schema = schemaOf[R]
-        val valueType = schema.find(_._1 == label).map(_._2).getOrElse {
-          report
-            .errorAndAbort(s"value ${label} is not a member of ${Type.show[R]}")
-        }
+        val valueType =
+          schema.fieldTypes.find(_._1 == label).map(_._2).getOrElse {
+            report
+              .errorAndAbort(
+                s"value ${label} is not a member of ${Type.show[R]}",
+              )
+          }
 
         valueType match {
           case '[tpe] =>
@@ -50,7 +53,7 @@ object Macros {
         }
         val fieldTypes = fieldTypesOf(fields)
 
-        val newSchema = DedupedSchema(base ++ fieldTypes).asType
+        val newSchema = (base ++ fieldTypes).deduped._1.asType
         extend(rec, Expr.ofSeq(fields))(newSchema)
 
       case Inlined(_, _, Literal(StringConstant(name))) =>
@@ -85,7 +88,7 @@ object Macros {
     val (rec1, schema1) = iterableOf(record)
     val (rec2, schema2) = tidiedIterableOf(other)
 
-    val newSchema = DedupedSchema(schema1 ++ schema2).asType
+    val newSchema = (schema1 ++ schema2).deduped._1.asType
     extend(rec1, rec2)(newSchema)
   }
 
@@ -110,7 +113,7 @@ object Macros {
     //
     // The second one make it possible to write this method as a blackbox macro.
     // (`inline` instead of `transparent inline`)
-    val duplications = DedupedSchema(schema1 ++ schema2).duplications
+    val duplications = (schema1 ++ schema2).deduped._2
     if (duplications.nonEmpty) {
       val dup = duplications
         .map(_._1)
@@ -145,8 +148,8 @@ object Macros {
     val internal = summon[InternalMacros]
     import internal.*
 
-    val schema = schemaOf[R].toMap
-    val fieldTypes = fieldTypesOf(evidenceOf[RecordLike[P]])
+    val schema = schemaOf[R].fieldTypes.toMap
+    val fieldTypes = schemaOf(evidenceOf[RecordLike[P]]).fieldTypes
 
     // type check
     for ((label, tpe) <- fieldTypes) {
@@ -188,54 +191,6 @@ object Macros {
 
     tpe match {
       case '[tpe] => TypeRepr.of[tpe]
-    }
-  }
-
-  private case class DedupedSchema[TypeRepr](
-    schema: Seq[(String, TypeRepr)],
-    duplications: Seq[(String, TypeRepr)],
-  )
-
-  private object DedupedSchema {
-    extension (using Quotes)(schema: DedupedSchema[Type[_]]) {
-      def asType: Type[_] = {
-        import quotes.reflect.*
-
-        // Generates:
-        //   % {
-        //     val ${schema(0)._1}: ${schema(0)._2}
-        //     val ${schema(1)._1}: ${schema(1)._2}
-        //     ...
-        //   }
-        // where it is actually
-        //   (...((%
-        //     & { val ${schema(0)._1}: ${schema(0)._2} })
-        //     & { val ${schema(1)._1}: ${schema(1)._2} })
-        //     ...)
-        schema
-          .schema
-          .foldLeft(TypeRepr.of[%]) { case (base, (label, tpe)) =>
-            Refinement(base, label, typeReprOf(tpe))
-          }
-          .asType
-      }
-    }
-
-    def apply(using Quotes)(
-      schema: Seq[(String, Type[_])],
-    ): DedupedSchema[Type[_]] = {
-      val seen = collection.mutable.HashSet[String]()
-      val deduped = collection.mutable.ListBuffer.empty[(String, Type[_])]
-      val duplications = collection.mutable.ListBuffer.empty[(String, Type[_])]
-      schema.reverseIterator.foreach { case (label, tpe) =>
-        if (seen.add(label)) deduped.prepend((label, tpe))
-        else duplications.prepend((label, tpe))
-      }
-
-      DedupedSchema(
-        schema       = deduped.toSeq,
-        duplications = duplications.toSeq,
-      )
     }
   }
 }

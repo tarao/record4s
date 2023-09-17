@@ -6,6 +6,59 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
   import scala.quoted.*
   import quotes.reflect.*
 
+  case class Schema(
+    fieldTypes: Seq[(String, Type[_])],
+    tags: Seq[Type[_]],
+  ) {
+    def ++(other: Schema): Schema = copy(
+      fieldTypes = fieldTypes ++ other.fieldTypes,
+      tags       = tags ++ other.tags,
+    )
+
+    def ++(other: Seq[(String, Type[_])]): Schema = copy(
+      fieldTypes = fieldTypes ++ other,
+    )
+
+    def deduped: (Schema, Seq[(String, Type[_])]) = {
+      val seen = collection.mutable.HashSet[String]()
+      val deduped = collection.mutable.ListBuffer.empty[(String, Type[_])]
+      val duplications = collection.mutable.ListBuffer.empty[(String, Type[_])]
+      fieldTypes.reverseIterator.foreach { case (label, tpe) =>
+        if (seen.add(label)) deduped.prepend((label, tpe))
+        else duplications.prepend((label, tpe))
+      }
+
+      (copy(fieldTypes = deduped.toSeq), duplications.toSeq)
+    }
+
+    def asType: Type[_] = {
+      // Generates:
+      //   % {
+      //     val ${schema(0)._1}: ${schema(0)._2}
+      //     val ${schema(1)._1}: ${schema(1)._2}
+      //     ...
+      //   }
+      // where it is actually
+      //   (...((%
+      //     & { val ${schema(0)._1}: ${schema(0)._2} })
+      //     & { val ${schema(1)._1}: ${schema(1)._2} })
+      //     ...)
+      val base = fieldTypes
+        .foldLeft(TypeRepr.of[%]) { case (base, (label, '[tpe])) =>
+          Refinement(base, label, TypeRepr.of[tpe])
+        }
+
+      tags
+        .foldLeft(base) { case (base, '[tag]) =>
+          AndType(base, TypeRepr.of[Tag[tag]])
+        }
+        .asType
+    }
+  }
+  object Schema {
+    val empty = apply(Seq.empty, Seq.empty)
+  }
+
   def validatedLabel(
     label: String,
     context: Option[Expr[Any]] = None,
@@ -43,7 +96,16 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
       )
     }
 
-  def schemaOf[R: Type]: Seq[(String, Type[_])] = {
+  def schemaOf[R: Type]: Schema = {
+    // Check if tpr represents Tag[T]: we need to check IsTag[Tag[T]] given instance
+    // because representation of opaque type varies among different package names such as
+    // Tag$package.Tag[T] or $proxyN.Tag[T].
+    def isTag(tpr: TypeRepr): Boolean =
+      tpr.asType match {
+        case '[tpe] => Expr.summon[Tag.IsTag[tpe]].nonEmpty
+        case _      => false
+      }
+
     @tailrec def collectTupledFieldTypes(
       tpe: Type[_],
       acc: Seq[(String, Type[_])],
@@ -62,10 +124,10 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
         acc
     }
 
-    @tailrec def collectFieldTypes(
+    @tailrec def collectFieldTypesAndTags(
       reversed: List[TypeRepr],
-      acc: Seq[(String, Type[_])],
-    ): Seq[(String, Type[_])] = reversed match {
+      acc: Schema,
+    ): Schema = reversed match {
       // base { label: valueType }
       // For example
       //   TypeRepr.of[%{val name: String; val age: Int}]
@@ -80,41 +142,55 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
       //     TypeRepr.of[Int]
       //   )
       case Refinement(base, label, valueType) :: rest =>
-        collectFieldTypes(
+        collectFieldTypesAndTags(
           base :: rest,
-          (validatedLabel(label), valueType.asType) +: acc,
+          acc.copy(fieldTypes =
+            (validatedLabel(label), valueType.asType) +: acc.fieldTypes,
+          ),
         )
 
       // tpr1 & tpr2
       case AndType(tpr1, tpr2) :: rest =>
-        collectFieldTypes(tpr2 :: tpr1 :: rest, acc)
+        collectFieldTypesAndTags(tpr2 :: tpr1 :: rest, acc)
+
+      // Tag[T]
+      case (head @ AppliedType(_, List(tpr))) :: rest if isTag(head) =>
+        collectFieldTypesAndTags(
+          rest,
+          acc.copy(tags = tpr.asType +: acc.tags),
+        )
 
       // typically `%` in `% { ... }` or
       // (tp1, ...)
       // tp1 *: ...
       case head :: rest =>
-        collectFieldTypes(
+        collectFieldTypesAndTags(
           rest,
-          collectTupledFieldTypes(head.asType, Seq.empty) ++ acc,
+          acc.copy(fieldTypes =
+            collectTupledFieldTypes(head.asType, Seq.empty) ++ acc.fieldTypes,
+          ),
         )
 
       // all done
       case Nil =>
         acc
     }
-    // Non-tailrec equivalent:
-    //   def collectFieldTypesNonTailRec(tpr: TypeRepr): Seq[(String, TypeRepr)] =
-    //     tpr match {
-    //       case Refinement(base, label, valueType) =>
-    //         (label, valueType) +: collectFieldTypesNonTailRec(base)
-    //       case AndType(tpr1, tpr2) =>
-    //         collectFieldTypesNonTailRec(tpr1) ++ collectFieldTypesNonTailRec(tpr2)
-    //       case _ =>
-    //         Seq.empty
-    //     }
 
-    collectFieldTypes(List(TypeRepr.of[R]), Seq.empty)
+    collectFieldTypesAndTags(List(TypeRepr.of[R]), Schema.empty)
   }
+
+  def schemaOf[R: Type](
+    recordLike: Expr[RecordLike[R]],
+  ): Schema =
+    if (TypeRepr.of[R] <:< TypeRepr.of[%])
+      // Use R directly for % types: it in theroy should work fine with
+      // RecordLike[R]#FieldTypes for R <: %, but it sometimes drops Tag[T] in R.
+      schemaOf[R]
+    else
+      recordLike match {
+        case '{ ${ _ }: RecordLike[R] { type FieldTypes = fieldTypes } } =>
+          schemaOf[fieldTypes]
+      }
 
   def fieldTypesOf(
     fields: Seq[Expr[(String, Any)]],
@@ -152,25 +228,17 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
     }
   }
 
-  def fieldTypesOf[R: Type](
-    recordLike: Expr[RecordLike[R]],
-  ): Seq[(String, Type[_])] =
-    recordLike match {
-      case '{ ${ _ }: RecordLike[R] { type FieldTypes = fieldTypes } } =>
-        schemaOf[fieldTypes]
-    }
-
   def iterableOf[R: Type](
     record: Expr[R],
-  ): (Expr[Iterable[(String, Any)]], Seq[(String, Type[_])]) = {
+  ): (Expr[Iterable[(String, Any)]], Schema) = {
     val ev = evidenceOf[RecordLike[R]]
-    val schema = fieldTypesOf(ev)
+    val schema = schemaOf(ev)
     ('{ ${ ev }.iterableOf($record) }, schema)
   }
 
   def tidiedIterableOf[R: Type](
     record: Expr[R],
-  ): (Expr[Iterable[(String, Any)]], Seq[(String, Type[_])]) = {
+  ): (Expr[Iterable[(String, Any)]], Schema) = {
     val (rec, schema) = iterableOf(record)
 
     // Generates:
@@ -178,7 +246,7 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
     //     val keys = Set(${schema(0)._1}, ${schema(1)._1}, ...)
     //     ${rec}.filter { case (key, _) => keys.contains(key) }
     //   }
-    val keysExpr = schema.map(field => Expr(field._1))
+    val keysExpr = schema.fieldTypes.map(field => Expr(field._1))
     val setExpr = '{ Set(${ Expr.ofSeq(keysExpr) }: _*) }
     val iterableExpr = '{
       val keys = $setExpr
