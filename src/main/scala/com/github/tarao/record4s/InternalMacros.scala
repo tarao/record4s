@@ -106,11 +106,17 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
         case _      => false
       }
 
+    val nothing = TypeRepr.of[Nothing]
+
     @tailrec def collectTupledFieldTypes(
       tpe: Type[_],
       acc: Seq[(String, Type[_])],
     ): Seq[(String, Type[_])] = tpe match {
-      case '[(labelType, valueType) *: rest] =>
+      case '[(labelType, valueType) *: rest]
+        // Type variable or Nothing always matches with `Nothing *: Nothing`
+        if TypeRepr.of[labelType] != nothing
+          && TypeRepr.of[valueType] != nothing
+          && TypeRepr.of[rest] != nothing =>
         TypeRepr.of[labelType] match {
           case ConstantType(StringConstant(label)) =>
             collectTupledFieldTypes(
