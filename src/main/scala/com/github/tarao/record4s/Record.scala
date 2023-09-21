@@ -10,7 +10,7 @@ trait Record
 object Record {
 
   /** An empty record. */
-  val empty: % = new MapRecord(Map.empty)
+  val empty = newMapRecord[%](Map.empty)
 
   /** Get the field value of specified label.
     *
@@ -59,8 +59,10 @@ object Record {
     * @return
     *   a record
     */
-  transparent inline def from[T](x: T)(using RecordLike[T]) =
-    empty ++ x
+  inline def from[T, RR <: %](x: T)(using
+    RecordLike[T],
+    Typing.Aux[T, RR],
+  ): RR = empty ++ x
 
   extension [R <: %](record: R) {
 
@@ -100,30 +102,12 @@ object Record {
       * @return
       *   a new record which has the both fields from this record and `other`
       */
-    transparent inline def ++[R2](other: R2)(using RecordLike[R2]) =
-      ${ Macros.concatImpl('record, 'other) }
-
-    /** Concatenate this record and another record.
-      *
-      * A field of the same name in the both record is statically rejected.
-      *
-      * @example
-      *   {{{
-      * val r1 = %(name = "tarao", age = 3)
-      * val r2 = %(email = "tarao@example.com")
-      * val r3 = r1 |+| r2
-      * // val r3: com.github.tarao.record4s.%{val name: String; val age: Int} & com.github.tarao.record4s.%{val email: String} = %(name = tarao, age = 3, email = tarao@example.com)
-      *   }}}
-      *
-      * @tparam R2
-      *   a record type (given `RecordLike[R2]`)
-      * @param other
-      *   a record to concatenate
-      * @return
-      *   a new record which has the both fields from this record and `other`
-      */
-    inline def |+|[R2 <: %](other: R2)(using RecordLike[R2]): R & R2 =
-      ${ Macros.concatDirectlyImpl('record, 'other) }
+    inline def ++[R2: RecordLike, RR <: %](
+      other: R2,
+    )(using Typing.Concat.Aux[R, R2, RR]): RR =
+      newMapRecord[RR](
+        record.__data ++ summon[RecordLike[R2]].tidiedIterableOf(other),
+      )
 
     /** Give a type tag to this record.
       *
@@ -163,8 +147,8 @@ object Record {
       * @return
       *   a record containing only fields in the target type
       */
-    inline def as[R2 >: R]: R2 =
-      ${ Macros.upcastImpl[R, R2]('record) }
+    inline def as[R2 >: R <: `%`: RecordLike]: R2 =
+      newMapRecord[R2](summon[RecordLike[R2]].tidiedIterableOf(record))
 
     /** Convert this record to a `Product`.
       *
@@ -197,11 +181,15 @@ object Record {
 
   given canEqualReflexive[R <: %]: CanEqual[R, R] = CanEqual.derived
 
-  given recordLike[R <: %]: RecordLike[R] with {
-    type FieldTypes = R
-
+  class RecordLikeRecord[R <: %] extends RecordLike[R] {
     def iterableOf(r: R): Iterable[(String, Any)] = r.__data
   }
+
+  transparent inline given recordLike[R <: %]: RecordLike[R] =
+    ${ Macros.derivedRecordLikeImpl }
+
+  private def newMapRecord[R <: %](record: Iterable[(String, Any)]): R =
+    new MapRecord(record.toMap).asInstanceOf[R]
 }
 
 /** Base class for records.

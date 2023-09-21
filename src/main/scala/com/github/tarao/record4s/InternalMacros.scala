@@ -96,7 +96,7 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
       )
     }
 
-  def schemaOf[R: Type]: Schema = {
+  def schemaOfRecord[R: Type]: Schema = {
     // Check if tpr represents Tag[T]: we need to check IsTag[Tag[T]] given instance
     // because representation of opaque type varies among different package names such as
     // Tag$package.Tag[T] or $proxyN.Tag[T].
@@ -191,16 +191,19 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
     if (TypeRepr.of[R] <:< TypeRepr.of[%])
       // Use R directly for % types: it in theroy should work fine with
       // RecordLike[R]#FieldTypes for R <: %, but it sometimes drops Tag[T] in R.
-      schemaOf[R]
+      schemaOfRecord[R]
     else
       recordLike match {
         case '{ ${ _ }: RecordLike[R] { type FieldTypes = fieldTypes } } =>
-          schemaOf[fieldTypes]
+          schemaOfRecord[fieldTypes]
       }
 
-  def fieldTypesOf(
-    fields: Seq[Expr[(String, Any)]],
-  ): Seq[(String, Type[_])] = {
+  def schemaOf[R: Type]: Schema =
+    schemaOf(evidenceOf[RecordLike[R]])
+
+  def fieldTypeOf(
+    field: Expr[(String, Any)],
+  ): (String, Type[_]) = {
     def fieldTypeOf(
       labelExpr: Expr[Any],
       valueExpr: Expr[Any],
@@ -220,7 +223,7 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
       (label, tpe)
     }
 
-    fields.map {
+    field match {
       // ("label", value)
       case '{ ($labelExpr, $valueExpr) } =>
         fieldTypeOf(labelExpr, valueExpr)
@@ -234,31 +237,16 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
     }
   }
 
+  def fieldTypesOf(
+    fields: Seq[Expr[(String, Any)]],
+  ): Seq[(String, Type[_])] = fields.map(fieldTypeOf(_))
+
   def iterableOf[R: Type](
     record: Expr[R],
   ): (Expr[Iterable[(String, Any)]], Schema) = {
     val ev = evidenceOf[RecordLike[R]]
     val schema = schemaOf(ev)
     ('{ ${ ev }.iterableOf($record) }, schema)
-  }
-
-  def tidiedIterableOf[R: Type](
-    record: Expr[R],
-  ): (Expr[Iterable[(String, Any)]], Schema) = {
-    val (rec, schema) = iterableOf(record)
-
-    // Generates:
-    //   {
-    //     val keys = Set(${schema(0)._1}, ${schema(1)._1}, ...)
-    //     ${rec}.filter { case (key, _) => keys.contains(key) }
-    //   }
-    val keysExpr = schema.fieldTypes.map(field => Expr(field._1))
-    val setExpr = '{ Set(${ Expr.ofSeq(keysExpr) }: _*) }
-    val iterableExpr = '{
-      val keys = $setExpr
-      ${ rec }.filter { case (key, _) => keys.contains(key) }
-    }
-    (iterableExpr, schema)
   }
 
   def newMapRecord[R: Type](record: Expr[Iterable[(String, Any)]]): Expr[R] =
