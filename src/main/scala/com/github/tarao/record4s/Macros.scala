@@ -92,42 +92,6 @@ object Macros {
     extend(rec1, rec2)(newSchema)
   }
 
-  /** Macro implementation of `%.|+|` */
-  def concatDirectlyImpl[R1 <: `%`: Type, R2 <: `%`: Type](
-    record: Expr[R1],
-    other: Expr[R2],
-  )(using Quotes): Expr[R1 & R2] = {
-    import quotes.reflect.*
-    val internal = summon[InternalMacros]
-    import internal.*
-
-    val (rec1, schema1) = iterableOf(record)
-    val (rec2, schema2) = tidiedIterableOf(other)
-
-    // The difference from `concatImpl`:
-    //
-    // 1. It doesn't allow duplicated fields.
-    // 2. The result type is an intersection type.
-    //    e.g. %{val name: String } & %{val age: Int}
-    //         insted of %{val name: String; val age: Int}
-    //
-    // The second one make it possible to write this method as a blackbox macro.
-    // (`inline` instead of `transparent inline`)
-    val duplications = (schema1 ++ schema2).deduped._2
-    if (duplications.nonEmpty) {
-      val dup = duplications
-        .map(_._1)
-        .distinct
-        .reverse
-        .map(label => s"'${label}'")
-        .mkString(", ")
-      report.errorAndAbort(
-        s"Two records must be disjoint (${dup} are duplicated)",
-      )
-    }
-    newMapRecord[R1 & R2]('{ ${ rec1 } ++ ${ rec2 } })
-  }
-
   /** Macro implementation of `%.as` */
   def upcastImpl[R1 <: `%`: Type, R2 >: R1: Type](
     record: Expr[R1],

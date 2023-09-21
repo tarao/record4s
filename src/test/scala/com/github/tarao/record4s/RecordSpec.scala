@@ -168,36 +168,16 @@ class RecordSpec extends helper.UnitSpec {
                                                |}""".stripMargin
       }
 
-      it(
-        "should be combined refinement type of directly concatenated records",
-      ) {
-        val r1 = %(name = "tarao")
-        val r2 = %(age = 3, email = "tarao@example.com")
-        helper.showTypeOf(r1 |+| r2) shouldBe """% {
-                                                |  val name: String
-                                                |} & % {
-                                                |  val age: Int
-                                                |  val email: String
-                                                |}""".stripMargin
-        val r3 = r1 |+| r2
-        helper.showTypeOf(r3) shouldBe """% {
-                                         |  val name: String
-                                         |} & % {
-                                         |  val age: Int
-                                         |  val email: String
-                                         |}""".stripMargin
-      }
-
       it("should have flattened field types after ++ or +") {
         val r1 = %(name = "tarao")
         val r2 = %(age = 3)
         val r3 = %(email = "tarao@example.com")
-        helper.showTypeOf((r1 |+| r2) ++ r3) shouldBe """% {
-                                                        |  val name: String
-                                                        |  val age: Int
-                                                        |  val email: String
-                                                        |}""".stripMargin
-        val r4 = (r1 |+| r2) + (email = "tarao@example.com")
+        helper.showTypeOf((r1 ++ r2) ++ r3) shouldBe """% {
+                                                       |  val name: String
+                                                       |  val age: Int
+                                                       |  val email: String
+                                                       |}""".stripMargin
+        val r4 = (r1 ++ r2) + (email = "tarao@example.com")
         helper.showTypeOf(r4) shouldBe """% {
                                          |  val name: String
                                          |  val age: Int
@@ -264,53 +244,6 @@ class RecordSpec extends helper.UnitSpec {
         r3.name shouldBe "ikura"
         r3.age shouldBe 3
         "r3.email" shouldNot compile
-      }
-    }
-
-    describe("|+|") {
-      it("should allow concatenation two disjoint records") {
-        val r1 = %(name = "tarao", age = 3)
-        val r2 = %(email = "tarao@example.com")
-        val r3 = r1 |+| r2
-        r3.name shouldBe "tarao"
-        r3.age shouldBe 3
-        r3.email shouldBe "tarao@example.com"
-
-        val r4 = %(occupation = "engineer")
-        val r5 = r1 |+| r4
-        r5.name shouldBe "tarao"
-        r5.age shouldBe 3
-        r5.occupation shouldBe "engineer"
-      }
-
-      it("should reject duplicated fields") {
-        val r1 = %(name = "tarao", age = 3)
-        val r2 = %(name = "ikura", email = "ikura@example.com")
-        "r1 |+| r2" shouldNot compile
-      }
-
-      it("should not break other operations") {
-        val r1 = %(name = "tarao") |+| %(age = 3)
-        val r2 = %(email = "tarao@example.com")
-        val r3 = r1 ++ r2
-        r3.name shouldBe "tarao"
-        r3.age shouldBe 3
-        r3.email shouldBe "tarao@example.com"
-
-        val r4 = r1 + (email = "tarao@example.com")
-        r4.name shouldBe "tarao"
-        r4.age shouldBe 3
-        r4.email shouldBe "tarao@example.com"
-      }
-
-      it("should not affected by type-hidden values") {
-        val r1 = %(name = "tarao", age = 3)
-        val r2: % { val email: String } =
-          %(name = "ikura", age = 1, email = "ikura@example.com")
-        val r3 = r1 |+| r2
-        r3.name shouldBe "tarao"
-        r3.age shouldBe 3
-        r3.email shouldBe "ikura@example.com"
       }
     }
 
@@ -571,8 +504,6 @@ class RecordSpec extends helper.UnitSpec {
         val r3 = %(name = "ikura", age = 1)
         val r4 = %(name = "tarao", age = 3, email = "tarao@example.com")
         val r5: % { val name: String; val age: Int } = r4
-        val r6 = %(age = 3) |+| %(name = "tarao")
-        val r7 = r1 ++ r6
 
         (r1 == r1) shouldBe true
         (r1 == r2) shouldBe true
@@ -585,10 +516,6 @@ class RecordSpec extends helper.UnitSpec {
         (r5 == r1) shouldBe false
         (r1 == r5.as) shouldBe true
         (r5.as == r1) shouldBe true
-        (r1 == r6) shouldBe true
-        (r6 == r1) shouldBe true
-        (r1 == r7) shouldBe true
-        (r7 == r1) shouldBe true
       }
 
       it("should statically reject equality test of different types") {

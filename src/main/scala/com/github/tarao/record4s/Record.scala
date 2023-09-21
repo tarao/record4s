@@ -103,28 +103,6 @@ object Record {
     transparent inline def ++[R2](other: R2)(using RecordLike[R2]) =
       ${ Macros.concatImpl('record, 'other) }
 
-    /** Concatenate this record and another record.
-      *
-      * A field of the same name in the both record is statically rejected.
-      *
-      * @example
-      *   {{{
-      * val r1 = %(name = "tarao", age = 3)
-      * val r2 = %(email = "tarao@example.com")
-      * val r3 = r1 |+| r2
-      * // val r3: com.github.tarao.record4s.%{val name: String; val age: Int} & com.github.tarao.record4s.%{val email: String} = %(name = tarao, age = 3, email = tarao@example.com)
-      *   }}}
-      *
-      * @tparam R2
-      *   a record type (given `RecordLike[R2]`)
-      * @param other
-      *   a record to concatenate
-      * @return
-      *   a new record which has the both fields from this record and `other`
-      */
-    inline def |+|[R2 <: %](other: R2)(using RecordLike[R2]): R & R2 =
-      ${ Macros.concatDirectlyImpl('record, 'other) }
-
     /** Give a type tag to this record.
       *
       * @example
