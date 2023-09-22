@@ -14,6 +14,8 @@ object Concat {
     ${ Macros.derivedTypingConcatImpl }
 }
 
+type Append[R1, R2 <: Tuple] = Concat[R1, R2]
+
 object Append {
   type Aux[R1, R2 <: Tuple, Out0 <: %] = Concat[R1, R2] { type Out = Out0 }
 }
