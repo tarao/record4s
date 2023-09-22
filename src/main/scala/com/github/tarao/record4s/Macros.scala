@@ -153,7 +153,7 @@ object Macros {
     val schema1 = schemaOf[R1]
     val schema2 = schemaOf[R2]
 
-    (schema1 ++ schema2).deduped._1.asType match {
+    (schema1 ++ schema2).deduped.asType match {
       case '[tpe] =>
         '{
           (new typing.Concat).asInstanceOf[

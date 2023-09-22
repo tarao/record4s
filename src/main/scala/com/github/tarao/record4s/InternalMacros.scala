@@ -19,16 +19,14 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
       fieldTypes = fieldTypes ++ other,
     )
 
-    def deduped: (Schema, Seq[(String, Type[_])]) = {
+    def deduped: Schema = {
       val seen = collection.mutable.HashSet[String]()
       val deduped = collection.mutable.ListBuffer.empty[(String, Type[_])]
-      val duplications = collection.mutable.ListBuffer.empty[(String, Type[_])]
       fieldTypes.reverseIterator.foreach { case (label, tpe) =>
         if (seen.add(label)) deduped.prepend((label, tpe))
-        else duplications.prepend((label, tpe))
       }
 
-      (copy(fieldTypes = deduped.toSeq), duplications.toSeq)
+      copy(fieldTypes = deduped.toSeq)
     }
 
     def asType: Type[_] = {
