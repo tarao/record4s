@@ -181,7 +181,7 @@ object Record {
 
   given canEqualReflexive[R <: %]: CanEqual[R, R] = CanEqual.derived
 
-  class RecordLikeRecord[R <: %] extends RecordLike[R] {
+  final class RecordLikeRecord[R <: %] extends RecordLike[R] {
     def iterableOf(r: R): Iterable[(String, Any)] = r.__data
   }
 

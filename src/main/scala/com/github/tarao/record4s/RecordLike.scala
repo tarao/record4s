@@ -25,7 +25,7 @@ object RecordLike {
         setOfLabels[ts] + stringOf(value)
     }
 
-  class RecordLikeProductMirror[
+  final class RecordLikeProductMirror[
     P <: Product,
     ElemLabels0 <: Tuple,
     FieldTypes0 <: Tuple,
@@ -48,7 +48,7 @@ object RecordLike {
     case _              => EmptyTuple
   }
 
-  class RecordLikeTuple[T <: Tuple] extends RecordLike[T] {
+  final class RecordLikeTuple[T <: Tuple] extends RecordLike[T] {
     type FieldTypes = T
     type ElemLabels = LabelsOf[T]
 
