@@ -466,14 +466,20 @@ class RecordSpec extends helper.UnitSpec {
                                          |  val age: Int
                                          |}""".stripMargin
 
-        val t = ("foo", 1)
-        val r2 = Record.from(t)
-        r2._1 shouldBe "foo"
-        r2._2 shouldBe 1
-        r2.toString() shouldBe "%(_1 = foo, _2 = 1)"
+        val t1: ("foo", Int) *: EmptyTuple = ("foo", 1) *: EmptyTuple
+        val r2 = Record.from(t1)
+        r2.foo shouldBe 1
+        r2.toString() shouldBe "%(foo = 1)"
         helper.showTypeOf(r2) shouldBe """% {
-                                         |  val _1: String
-                                         |  val _2: Int
+                                         |  val foo: Int
+                                         |}""".stripMargin
+
+        val t2: ("foo", Int) *: Int *: EmptyTuple = ("foo", 1) *: 3 *: EmptyTuple
+        val r3 = Record.from(t2)
+        r3.foo shouldBe 1
+        r3.toString() shouldBe "%(foo = 1)"
+        helper.showTypeOf(r2) shouldBe """% {
+                                         |  val foo: Int
                                          |}""".stripMargin
       }
 
@@ -488,12 +494,19 @@ class RecordSpec extends helper.UnitSpec {
         r2.age shouldBe 3
         r2.email shouldBe "tarao@example.com"
 
-        val r3 = r1 ++ p ++ ("foo", 1)
+        val t: ("foo", Int) *: EmptyTuple = ("foo", 1) *: EmptyTuple
+        val r3 = r1 ++ p ++ t
         r3.name shouldBe "tarao"
         r3.age shouldBe 3
         r3.email shouldBe "tarao@example.com"
-        r3._1 shouldBe "foo"
-        r3._2 shouldBe 1
+        r3.foo shouldBe 1
+
+        val t2: ("foo", Int) *: Int *: EmptyTuple = ("foo", 1) *: 3 *: EmptyTuple
+        val r4 = r1 ++ p ++ t
+        r4.name shouldBe "tarao"
+        r4.age shouldBe 3
+        r4.email shouldBe "tarao@example.com"
+        r4.foo shouldBe 1
       }
     }
 

@@ -66,7 +66,7 @@ object Record {
 
   extension [R <: %](record: R) {
 
-    /** Extends fields of the record.
+    /** Extend the record by fields.
       *
       * If a new field has the same name as the existing field, then the new
       * field overrides the old one.

@@ -41,4 +41,24 @@ object RecordLike {
       def iterableOf(p: P): Iterable[(String, Any)] =
         p.productElementNames.zip(p.productIterator).toSeq
     }
+
+  type LabelsOf[T <: Tuple] <: Tuple = T match {
+    case (l, _) *: tail => l *: LabelsOf[tail]
+    case head *: tail   => LabelsOf[tail]
+    case _              => EmptyTuple
+  }
+
+  class RecordLikeTuple[T <: Tuple] extends RecordLike[T] {
+    type FieldTypes = T
+    type ElemLabels = LabelsOf[T]
+
+    def iterableOf(tp: T): Iterable[(String, Any)] =
+      tp.productIterator
+        .collect { case (label: String, value) =>
+          (label, value)
+        }
+        .toSeq
+  }
+
+  given ofTuple[T <: Tuple]: RecordLikeTuple[T] = new RecordLikeTuple
 }
