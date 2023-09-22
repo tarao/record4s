@@ -61,12 +61,12 @@ object Record {
     */
   inline def from[T, RR <: %](x: T)(using
     RecordLike[T],
-    Typing.Aux[T, RR],
+    typing.Aux[T, RR],
   ): RR = empty ++ x
 
   extension [R <: %](record: R) {
 
-    /** Extends fields of the record.
+    /** Extend the record by fields.
       *
       * If a new field has the same name as the existing field, then the new
       * field overrides the old one.
@@ -104,7 +104,7 @@ object Record {
       */
     inline def ++[R2: RecordLike, RR <: %](
       other: R2,
-    )(using Typing.Concat.Aux[R, R2, RR]): RR =
+    )(using typing.Concat.Aux[R, R2, RR]): RR =
       newMapRecord[RR](
         record.__data ++ summon[RecordLike[R2]].tidiedIterableOf(other),
       )
@@ -181,7 +181,7 @@ object Record {
 
   given canEqualReflexive[R <: %]: CanEqual[R, R] = CanEqual.derived
 
-  class RecordLikeRecord[R <: %] extends RecordLike[R] {
+  final class RecordLikeRecord[R <: %] extends RecordLike[R] {
     def iterableOf(r: R): Iterable[(String, Any)] = r.__data
   }
 

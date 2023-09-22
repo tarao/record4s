@@ -42,28 +42,30 @@ object Macros {
     val internal = summon[InternalMacros]
     import internal.*
 
-    method.asTerm match {
-      case Inlined(_, _, Literal(StringConstant(name))) if name == "apply" =>
-        val (rec, base) = iterableOf(record)
+    requireApply(record, method) {
+      val (rec, _) = iterableOf(record)
 
-        val fields = args match {
-          case Varargs(args) => args
-          case _ =>
-            report.errorAndAbort("Expected explicit varargs sequence", args)
-        }
-        val fieldTypes = fieldTypesOf(fields)
+      val fields = args match {
+        case Varargs(args) => args
+        case _ =>
+          report.errorAndAbort("Expected explicit varargs sequence", args)
+      }
+      val fieldTypes = fieldTypesOf(fields)
 
-        val newSchema = (base ++ fieldTypes).deduped._1.asType
-        extend(rec, Expr.ofSeq(fields))(newSchema)
+      val fieldTypesTuple =
+        typeReprOfTupleFromSeq(fieldTypes.map { case (label, '[tpe]) =>
+          ConstantType(StringConstant(label)).asType match {
+            case '[label] => TypeRepr.of[(label, tpe)]
+          }
+        }).asType
 
-      case Inlined(_, _, Literal(StringConstant(name))) =>
-        report.errorAndAbort(
-          s"'${name}' is not a member of ${record.asTerm.tpe.widen.show} constructor",
-        )
-      case _ =>
-        report.errorAndAbort(
-          s"Invalid method invocation on ${record.asTerm.tpe.widen.show} constructor",
-        )
+      fieldTypesTuple match {
+        case '[tpe] =>
+          evidenceOf[typing.Concat[R, tpe]] match {
+            case '{ ${ _ }: typing.Concat[R, tpe] { type Out = returnType } } =>
+              newMapRecord[returnType]('{ ${ rec } ++ ${ Expr.ofSeq(fields) } })
+          }
+      }
     }
   }
 
@@ -143,7 +145,7 @@ object Macros {
 
   def derivedTypingConcatImpl[R1: Type, R2: Type](using
     Quotes,
-  ): Expr[Typing.Concat[R1, R2]] = {
+  ): Expr[typing.Concat[R1, R2]] = {
     import quotes.reflect.*
     val internal = summon[InternalMacros]
     import internal.*
@@ -154,8 +156,8 @@ object Macros {
     (schema1 ++ schema2).deduped._1.asType match {
       case '[tpe] =>
         '{
-          (new Typing.Concat).asInstanceOf[
-            Typing.Concat[R1, R2] {
+          (new typing.Concat).asInstanceOf[
+            typing.Concat[R1, R2] {
               type Out = tpe
             },
           ]
@@ -170,6 +172,21 @@ object Macros {
 
     tpe match {
       case '[tpe] => TypeRepr.of[tpe]
+    }
+  }
+
+  private def typeReprOfTupleFromSeq(using Quotes)(
+    typeReprs: Seq[quotes.reflect.TypeRepr],
+  ): quotes.reflect.TypeRepr = {
+    import quotes.reflect.*
+
+    typeReprs.foldRight(TypeRepr.of[EmptyTuple]) { case (tpr, base) =>
+      (base.asType, tpr.asType) match {
+        case ('[head *: tail], '[tpe]) =>
+          TypeRepr.of[tpe *: head *: tail]
+        case ('[EmptyTuple], '[tpe]) =>
+          TypeRepr.of[tpe *: EmptyTuple]
+      }
     }
   }
 }

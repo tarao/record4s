@@ -252,14 +252,22 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
   def newMapRecord[R: Type](record: Expr[Iterable[(String, Any)]]): Expr[R] =
     '{ new MapRecord(${ record }.toMap).asInstanceOf[R] }
 
-  def extend(
-    record: Expr[Iterable[(String, Any)]],
-    fields: Expr[IterableOnce[(String, Any)]],
-  )(newSchema: Type[_]): Expr[Any] =
-    newSchema match {
-      case '[tpe] =>
-        newMapRecord[tpe]('{ ${ record } ++ ${ fields } })
+  def requireApply[C, T](context: Expr[C], method: Expr[String])(
+    block: => T,
+  ): T = {
+    method.asTerm match {
+      case Inlined(_, _, Literal(StringConstant(name))) if name == "apply" =>
+        block
+      case Inlined(_, _, Literal(StringConstant(name))) =>
+        report.errorAndAbort(
+          s"'${name}' is not a member of ${context.asTerm.tpe.widen.show} constructor",
+        )
+      case _ =>
+        report.errorAndAbort(
+          s"Invalid method invocation on ${context.asTerm.tpe.widen.show} constructor",
+        )
     }
+  }
 }
 
 private[record4s] object InternalMacros {
