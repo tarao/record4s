@@ -2,11 +2,12 @@ package external
 
 class UseCaseSpec extends helper.UnitSpec {
   describe("Generic record extension with ++") {
-    import com.github.tarao.record4s.*
+    import com.github.tarao.record4s.%
+    import com.github.tarao.record4s.typing.Concat
 
     it("can be done by using Concat.Aux") {
       def addEmail[R <: %, RR <: %](record: R, email: String)(using
-        Typing.Concat.Aux[R, % { val email: String }, RR],
+        Concat.Aux[R, % { val email: String }, RR],
       ): RR = record ++ %(email = email)
 
       val r0 = %(name = "tarao", age = 3)
@@ -19,7 +20,7 @@ class UseCaseSpec extends helper.UnitSpec {
 
     it("can replace existing field") {
       def addEmail[R <: %, T, RR <: %](record: R, email: T)(using
-        Typing.Concat.Aux[R, % { val email: T }, RR],
+        Concat.Aux[R, % { val email: T }, RR],
       ): RR = record ++ %(email = email)
 
       val r0 = %(name = "tarao", age = 3, email = "tarao@example.com")
@@ -38,11 +39,12 @@ class UseCaseSpec extends helper.UnitSpec {
   }
 
   describe("Generic record extension with +") {
-    import com.github.tarao.record4s.*
+    import com.github.tarao.record4s.%
+    import com.github.tarao.record4s.typing.Append
 
     it("can be done by using Append.Aux") {
       def addEmail[R <: %, RR <: %](record: R, email: String)(using
-        Typing.Append.Aux[R, ("email", String) *: EmptyTuple, RR],
+        Append.Aux[R, ("email", String) *: EmptyTuple, RR],
       ): RR = record + (email = email)
 
       val r0 = %(name = "tarao", age = 3)
@@ -55,7 +57,7 @@ class UseCaseSpec extends helper.UnitSpec {
 
     it("can replace existing field") {
       def addEmail[R <: %, T, RR <: %](record: R, email: T)(using
-        Typing.Append.Aux[R, ("email", T) *: EmptyTuple, RR],
+        Append.Aux[R, ("email", T) *: EmptyTuple, RR],
       ): RR = record + (email = email)
 
       val r0 = %(name = "tarao", age = 3, email = "tarao@example.com")

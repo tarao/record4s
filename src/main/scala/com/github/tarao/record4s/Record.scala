@@ -61,7 +61,7 @@ object Record {
     */
   inline def from[T, RR <: %](x: T)(using
     RecordLike[T],
-    Typing.Aux[T, RR],
+    typing.Aux[T, RR],
   ): RR = empty ++ x
 
   extension [R <: %](record: R) {
@@ -104,7 +104,7 @@ object Record {
       */
     inline def ++[R2: RecordLike, RR <: %](
       other: R2,
-    )(using Typing.Concat.Aux[R, R2, RR]): RR =
+    )(using typing.Concat.Aux[R, R2, RR]): RR =
       newMapRecord[RR](
         record.__data ++ summon[RecordLike[R2]].tidiedIterableOf(other),
       )

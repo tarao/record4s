@@ -61,8 +61,8 @@ object Macros {
 
       fieldTypesTuple match {
         case '[tpe] =>
-          evidenceOf[Typing.Concat[R, tpe]] match {
-            case '{ ${ _ }: Typing.Concat[R, tpe] { type Out = returnType } } =>
+          evidenceOf[typing.Concat[R, tpe]] match {
+            case '{ ${ _ }: typing.Concat[R, tpe] { type Out = returnType } } =>
               newMapRecord[returnType]('{ ${ rec } ++ ${ Expr.ofSeq(fields) } })
           }
       }
@@ -145,7 +145,7 @@ object Macros {
 
   def derivedTypingConcatImpl[R1: Type, R2: Type](using
     Quotes,
-  ): Expr[Typing.Concat[R1, R2]] = {
+  ): Expr[typing.Concat[R1, R2]] = {
     import quotes.reflect.*
     val internal = summon[InternalMacros]
     import internal.*
@@ -156,8 +156,8 @@ object Macros {
     (schema1 ++ schema2).deduped._1.asType match {
       case '[tpe] =>
         '{
-          (new Typing.Concat).asInstanceOf[
-            Typing.Concat[R1, R2] {
+          (new typing.Concat).asInstanceOf[
+            typing.Concat[R1, R2] {
               type Out = tpe
             },
           ]
