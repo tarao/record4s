@@ -25,22 +25,22 @@ object RecordLike {
         setOfLabels[ts] + stringOf(value)
     }
 
-  trait RecordLikeProductMirror[
+  class RecordLikeProductMirror[
     P <: Product,
     ElemLabels0 <: Tuple,
     FieldTypes0 <: Tuple,
   ] extends RecordLike[P] {
     type FieldTypes = Tuple.Zip[ElemLabels0, FieldTypes0]
     type ElemLabels = ElemLabels0
+
+    def iterableOf(p: P): Iterable[(String, Any)] =
+      p.productElementNames.zip(p.productIterator).toSeq
   }
 
   given ofProduct[P <: Product](using
     m: Mirror.Of[P],
   ): RecordLikeProductMirror[P, m.MirroredElemLabels, m.MirroredElemTypes] =
-    new RecordLikeProductMirror {
-      def iterableOf(p: P): Iterable[(String, Any)] =
-        p.productElementNames.zip(p.productIterator).toSeq
-    }
+    new RecordLikeProductMirror
 
   type LabelsOf[T <: Tuple] <: Tuple = T match {
     case (l, _) *: tail => l *: LabelsOf[tail]
