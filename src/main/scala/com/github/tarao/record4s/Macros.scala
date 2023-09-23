@@ -121,22 +121,30 @@ object Macros {
     import internal.*
 
     val schema = schemaOfRecord[R]
-    val elemLabels = schema
+    val base = (Type.of[EmptyTuple]: Type[_], Type.of[EmptyTuple]: Type[_])
+    val (elemLabels, elemTypes) = schema
       .fieldTypes
-      .foldRight(Type.of[EmptyTuple]: Type[_]) { case ((label, _), base) =>
-        (base, ConstantType(StringConstant(label)).asType) match {
-          case ('[EmptyTuple], '[label])   => Type.of[label *: EmptyTuple]
-          case ('[head *: tail], '[label]) => Type.of[label *: head *: tail]
+      .foldRight(base) { case ((label, tpe), (baseLabels, baseTypes)) =>
+        val labels =
+          (baseLabels, ConstantType(StringConstant(label)).asType) match {
+            case ('[EmptyTuple], '[label])   => Type.of[label *: EmptyTuple]
+            case ('[head *: tail], '[label]) => Type.of[label *: head *: tail]
+          }
+        val types = (baseTypes, tpe) match {
+          case ('[EmptyTuple], '[tpe])   => Type.of[tpe *: EmptyTuple]
+          case ('[head *: tail], '[tpe]) => Type.of[tpe *: head *: tail]
         }
+        (labels, types)
       }
 
-    elemLabels match {
-      case '[elemLabels] =>
+    (elemLabels, elemTypes) match {
+      case ('[elemLabels], '[elemTypes]) =>
         '{
           (new Record.RecordLikeRecord[R]).asInstanceOf[
             RecordLike[R] {
               type FieldTypes = R
               type ElemLabels = elemLabels
+              type ElemTypes = elemTypes
             },
           ]
         }
@@ -158,6 +166,25 @@ object Macros {
         '{
           (new typing.Concat).asInstanceOf[
             typing.Concat[R1, R2] {
+              type Out = tpe
+            },
+          ]
+        }
+    }
+  }
+
+  def derivedProductProxyOfRecordImpl[R <: `%`: Type](using
+    Quotes,
+  ): Expr[ProductProxy.OfRecord[R]] = {
+    import quotes.reflect.*
+    val internal = summon[InternalMacros]
+    import internal.*
+
+    schemaOf[R].asType(Type.of[ProductProxy]) match {
+      case '[tpe] =>
+        '{
+          (new ProductProxy.OfRecord).asInstanceOf[
+            ProductProxy.OfRecord[R] {
               type Out = tpe
             },
           ]

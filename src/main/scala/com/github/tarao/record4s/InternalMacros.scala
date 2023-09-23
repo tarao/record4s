@@ -29,7 +29,11 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
       copy(fieldTypes = deduped.toSeq)
     }
 
-    def asType: Type[_] = {
+    def asType: Type[_] = asType(Type.of[%])
+
+    def asType(base: Type[_]): Type[_] = {
+      val baseRepr = base match { case '[tpe] => TypeRepr.of[tpe] }
+
       // Generates:
       //   % {
       //     val ${schema(0)._1}: ${schema(0)._2}
@@ -41,13 +45,13 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
       //     & { val ${schema(0)._1}: ${schema(0)._2} })
       //     & { val ${schema(1)._1}: ${schema(1)._2} })
       //     ...)
-      val base = fieldTypes
-        .foldLeft(TypeRepr.of[%]) { case (base, (label, '[tpe])) =>
+      val record = fieldTypes
+        .foldLeft(baseRepr) { case (base, (label, '[tpe])) =>
           Refinement(base, label, TypeRepr.of[tpe])
         }
 
       tags
-        .foldLeft(base) { case (base, '[tag]) =>
+        .foldLeft(record) { case (base, '[tag]) =>
           AndType(base, TypeRepr.of[Tag[tag]])
         }
         .asType
