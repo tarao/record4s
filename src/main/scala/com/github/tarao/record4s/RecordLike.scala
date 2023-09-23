@@ -28,7 +28,7 @@ object RecordLike {
         stringOf(value) +: seqOfLabels[ts]
     }
 
-  final class RecordLikeProductMirror[
+  final class ProductMirrorRecordLike[
     P <: Product,
     ElemLabels0 <: Tuple,
     ElemTypes0 <: Tuple,
@@ -43,8 +43,8 @@ object RecordLike {
 
   given ofProduct[P <: Product](using
     m: Mirror.Of[P],
-  ): RecordLikeProductMirror[P, m.MirroredElemLabels, m.MirroredElemTypes] =
-    new RecordLikeProductMirror
+  ): ProductMirrorRecordLike[P, m.MirroredElemLabels, m.MirroredElemTypes] =
+    new ProductMirrorRecordLike
 
   type LabelsOf[T <: Tuple] <: Tuple = T match {
     case (l, _) *: tail => l *: LabelsOf[tail]
