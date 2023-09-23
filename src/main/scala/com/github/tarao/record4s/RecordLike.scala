@@ -6,32 +6,36 @@ import scala.deriving.Mirror
 trait RecordLike[R] {
   type FieldTypes
   type ElemLabels <: Tuple
+  type ElemTypes <: Tuple
 
   def iterableOf(r: R): Iterable[(String, Any)]
 
   inline def tidiedIterableOf(r: R): Iterable[(String, Any)] = {
-    val labels = RecordLike.setOfLabels[ElemLabels]
+    val labels = elemLabels.toSet
     iterableOf(r).filter { case (label, _) => labels.contains(label) }
   }
+
+  inline def elemLabels: Seq[String] = RecordLike.seqOfLabels[ElemLabels]
 }
 
 object RecordLike {
-  private inline def setOfLabels[T <: Tuple]: Set[String] =
+  private inline def seqOfLabels[T <: Tuple]: Seq[String] =
     inline erasedValue[T] match {
-      case _: EmptyTuple => Set.empty
+      case _: EmptyTuple => Seq.empty
       case _: (t *: ts) =>
         val stringOf = summonInline[t <:< String]
         val value = valueOf[t]
-        setOfLabels[ts] + stringOf(value)
+        stringOf(value) +: seqOfLabels[ts]
     }
 
   final class RecordLikeProductMirror[
     P <: Product,
     ElemLabels0 <: Tuple,
-    FieldTypes0 <: Tuple,
+    ElemTypes0 <: Tuple,
   ] extends RecordLike[P] {
-    type FieldTypes = Tuple.Zip[ElemLabels0, FieldTypes0]
+    type FieldTypes = Tuple.Zip[ElemLabels0, ElemTypes0]
     type ElemLabels = ElemLabels0
+    type ElemTypes = ElemTypes0
 
     def iterableOf(p: P): Iterable[(String, Any)] =
       p.productElementNames.zip(p.productIterator).toSeq
@@ -48,9 +52,16 @@ object RecordLike {
     case _              => EmptyTuple
   }
 
+  type TypesOf[T] <: Tuple = T match {
+    case (_, t) *: tail => t *: TypesOf[tail]
+    case head *: tail   => TypesOf[tail]
+    case _              => EmptyTuple
+  }
+
   final class RecordLikeTuple[T <: Tuple] extends RecordLike[T] {
     type FieldTypes = T
     type ElemLabels = LabelsOf[T]
+    type ElemTypes = TypesOf[T]
 
     def iterableOf(tp: T): Iterable[(String, Any)] =
       tp.productIterator
