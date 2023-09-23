@@ -104,6 +104,10 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
         case _      => false
       }
 
+    def dealias(tpr: TypeRepr): TypeRepr =
+      if (isTag(tpr)) tpr
+      else tpr.dealias
+
     val nothing = TypeRepr.of[Nothing]
 
     @tailrec def collectTupledFieldTypes(
@@ -147,7 +151,7 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
       //   )
       case Refinement(base, label, valueType) :: rest =>
         collectFieldTypesAndTags(
-          base :: rest,
+          dealias(base) :: rest,
           acc.copy(fieldTypes =
             (validatedLabel(label), valueType.asType) +: acc.fieldTypes,
           ),
@@ -155,7 +159,7 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
 
       // tpr1 & tpr2
       case AndType(tpr1, tpr2) :: rest =>
-        collectFieldTypesAndTags(tpr2 :: tpr1 :: rest, acc)
+        collectFieldTypesAndTags(dealias(tpr2) :: dealias(tpr1) :: rest, acc)
 
       // Tag[T]
       case (head @ AppliedType(_, List(tpr))) :: rest if isTag(head) =>
@@ -180,7 +184,7 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
         acc
     }
 
-    collectFieldTypesAndTags(List(TypeRepr.of[R]), Schema.empty)
+    collectFieldTypesAndTags(List(dealias(TypeRepr.of[R])), Schema.empty)
   }
 
   def schemaOf[R: Type](
