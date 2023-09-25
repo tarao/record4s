@@ -379,6 +379,27 @@ class RecordSpec extends helper.UnitSpec {
       }
     }
 
+    describe(".values") {
+      it("should extract values of records") {
+        val r1 = %(name = "tarao", age = 3)
+        val t1 = r1.values
+        t1 shouldBe a[(String, Int)]
+        t1._1 shouldBe "tarao"
+        t1._2 shouldBe 3
+
+        val r2: % { val age: Int } = r1
+        val t2 = r2.values
+        t2 shouldBe a[Int *: EmptyTuple]
+        t2._1 shouldBe 3
+
+        val r3: % { val age: Int; val name: String } = r1
+        val t3 = r3.values
+        t3 shouldBe a[(Int, String)]
+        t3._1 shouldBe 3
+        t3._2 shouldBe "tarao"
+      }
+    }
+
     describe(".as[]") {
       it("should return the same type if no type is specified") {
         val r = %(name = "tarao", age = 3)
@@ -453,27 +474,29 @@ class RecordSpec extends helper.UnitSpec {
     }
 
     describe(".toTuple") {
-      val r1 = %(name = "tarao", age = 3)
-      val t1 = r1.toTuple
-      t1 shouldBe a[("name", String) *: ("age", Int) *: EmptyTuple]
-      t1._1._1 shouldBe "name"
-      t1._1._2 shouldBe "tarao"
-      t1._2._1 shouldBe "age"
-      t1._2._2 shouldBe 3
+      it("should convert records to tuples") {
+        val r1 = %(name = "tarao", age = 3)
+        val t1 = r1.toTuple
+        t1 shouldBe a[("name", String) *: ("age", Int) *: EmptyTuple]
+        t1._1._1 shouldBe "name"
+        t1._1._2 shouldBe "tarao"
+        t1._2._1 shouldBe "age"
+        t1._2._2 shouldBe 3
 
-      val r2: % { val age: Int } = r1
-      val t2 = r2.toTuple
-      t2 shouldBe a[("age", Int) *: EmptyTuple]
-      t2._1._1 shouldBe "age"
-      t2._1._2 shouldBe 3
+        val r2: % { val age: Int } = r1
+        val t2 = r2.toTuple
+        t2 shouldBe a[("age", Int) *: EmptyTuple]
+        t2._1._1 shouldBe "age"
+        t2._1._2 shouldBe 3
 
-      val r3: % { val age: Int; val name: String } = r1
-      val t3 = r3.toTuple
-      t3 shouldBe a[("age", Int) *: ("name", String) *: EmptyTuple]
-      t3._1._1 shouldBe "age"
-      t3._1._2 shouldBe 3
-      t3._2._1 shouldBe "name"
-      t3._2._2 shouldBe "tarao"
+        val r3: % { val age: Int; val name: String } = r1
+        val t3 = r3.toTuple
+        t3 shouldBe a[("age", Int) *: ("name", String) *: EmptyTuple]
+        t3._1._1 shouldBe "age"
+        t3._1._2 shouldBe 3
+        t3._2._1 shouldBe "name"
+        t3._2._2 shouldBe "tarao"
+      }
     }
 
     describe("Product support") {

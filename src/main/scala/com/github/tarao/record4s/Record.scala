@@ -132,6 +132,25 @@ object Record {
     def tag[T]: R & Tag[T] =
       record.asInstanceOf[R & Tag[T]]
 
+    /** Return values of this record as a `Tuple`.
+      *
+      * @example
+      *   {{{
+      * val r1 = %(name = "tarao", age = 3)
+      * r1.values
+      * // val res0: (String, Int) = (tarao,3)
+      *   }}}
+      *
+      * @return
+      *   values of the record as a tuple
+      */
+    inline def values(using r: RecordLike[R]): r.ElemTypes =
+      r.elemLabels
+        .foldRight(EmptyTuple: Tuple) { (label, tuple) =>
+          record.__data(label) *: tuple
+        }
+        .asInstanceOf[r.ElemTypes]
+
     /** Upcast the record to specified type.
       *
       * @example
@@ -187,7 +206,8 @@ object Record {
       * // val res0: (("name", String), ("age", Int)) = ((name,tarao),(age,3))
       *   }}}
       *
-      * @return fields of label-value pairs as a tuple
+      * @return
+      *   fields of label-value pairs as a tuple
       */
     inline def toTuple(using
       r: RecordLike[R],
