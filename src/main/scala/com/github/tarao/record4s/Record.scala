@@ -160,7 +160,7 @@ object Record {
       *     - the argument order must be the same as
       *       `Mirror.Of[P]#MirroredElemLabels`
       *
-      * `Tuple`s and `case class`es conform to the above conditions.
+      * `case class`es conform to the above conditions.
       *
       * @example
       *   {{{
@@ -177,6 +177,28 @@ object Record {
       */
     inline def to[P <: Product](using RecordLike[P]): P =
       ${ Macros.toProductImpl[R, P]('record) }
+
+    /** Convert this record to a `Tuple`.
+      *
+      * @example
+      *   {{{
+      * val r1 = %(name = "tarao", age = 3)
+      * r1.toTuple
+      * // val res0: (("name", String), ("age", Int)) = ((name,tarao),(age,3))
+      *   }}}
+      *
+      * @return fields of label-value pairs as a tuple
+      */
+    inline def toTuple(using
+      r: RecordLike[R],
+    ): Tuple.Zip[r.ElemLabels, r.ElemTypes] = {
+      val tuple = r
+        .elemLabels
+        .foldRight(EmptyTuple: Tuple) { (label, tuple) =>
+          (label, record.__data(label)) *: tuple
+        }
+      tuple.asInstanceOf[Tuple.Zip[r.ElemLabels, r.ElemTypes]]
+    }
   }
 
   given canEqualReflexive[R <: %]: CanEqual[R, R] = CanEqual.derived
