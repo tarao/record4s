@@ -109,6 +109,51 @@ object Record {
         record.__data ++ summon[RecordLike[R2]].tidiedIterableOf(other),
       )
 
+    /** Create a new record by selecting some fields of an existing record.
+      *
+      * @example
+      *   {{{
+      * val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+      * val r2 = r1(select.name.age)
+      * // val r2: com.github.tarao.record4s.%{val name: String; val age: Int} = %(name = tarao, age = 3)
+      * val r3 = r1(select.name(rename = "nickname").age)
+      * // val r3: com.github.tarao.record4s.%{val nickname: String; val age: Int} = %(nickname = tarao, age = 3)
+      *   }}}
+      *
+      * @tparam S
+      *   list of selected field as a Tuple
+      * @tparam RR
+      *   type of the new record
+      * @param s
+      *   selection of fields created by `select`
+      * @return
+      *   a new record with the selected fields
+      */
+    inline def apply[S <: Tuple, RR <: %](s: Selector[S])(using
+      typing.Select.Aux[R, S, RR],
+    ): RR = ${ Macros.selectImpl[R, S, RR]('record, 's) }
+
+    /** Create a new record by unselecting some fields of an existing record.
+      *
+      * @example
+      *   {{{
+      * val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+      * val r2 = r1(unselect.email)
+      *   }}}
+      *
+      * @tparam U
+      *   list of unselected field as a Tuple
+      * @tparam RR
+      *   type of the new record
+      * @param u
+      *   unselection of fields created by `unselect`
+      * @return
+      *   a new record without the unselected fields
+      */
+    inline def apply[U <: Tuple, RR <: %](u: Unselector[U])(using
+      typing.Unselect.Aux[R, U, RR],
+    ): RR = ${ Macros.unselectImpl[R, U, RR]('record, 'u) }
+
     /** Give a type tag to this record.
       *
       * @example

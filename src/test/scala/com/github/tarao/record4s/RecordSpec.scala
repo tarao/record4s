@@ -247,6 +247,101 @@ class RecordSpec extends helper.UnitSpec {
       }
     }
 
+    describe(".apply(select)") {
+      it("should create a new record with selected fields") {
+        val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+
+        val r2 = r1(select.name.age)
+        r2.name shouldBe "tarao"
+        r2.age shouldBe 3
+        "r2.email" shouldNot compile
+
+        val r3 = r1(select)
+        r3.toString shouldBe "%()"
+      }
+
+      it("should preserve the order of selection") {
+        val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+
+        val r2 = r1(select.name.age)
+        helper.showTypeOf(r2) shouldBe """% {
+                                         |  val name: String
+                                         |  val age: Int
+                                         |}""".stripMargin
+
+        val r3 = r1(select.age.name)
+        helper.showTypeOf(r3) shouldBe """% {
+                                         |  val age: Int
+                                         |  val name: String
+                                         |}""".stripMargin
+      }
+
+      it("should allow to rename fields") {
+        val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+
+        val r2 = r1(select.name("nickname").age)
+        r2.nickname shouldBe "tarao"
+        r2.age shouldBe 3
+        "r2.name" shouldNot compile
+
+        val r3 = r1(select.name(rename = "nickname").age.name)
+        r3.nickname shouldBe "tarao"
+        r3.age shouldBe 3
+        r3.name shouldBe "tarao"
+        helper.showTypeOf(r3) shouldBe """% {
+                                         |  val nickname: String
+                                         |  val age: Int
+                                         |  val name: String
+                                         |}""".stripMargin
+      }
+
+      it("should reject giving a new name by non-literal string") {
+        val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+        val newName = "nickname"
+        "r1(select.name(newName).age)" shouldNot compile
+      }
+
+      it("should reject selecting missing fields") {
+        val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+        "r1(select.nickname)" shouldNot compile
+      }
+
+      it("should take the last one for duplicated fields") {
+        val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+
+        val r2 = r1(select.name("value").age("value"))
+        r2.value shouldBe 3
+        "r2.name" shouldNot compile
+        "r2.age" shouldNot compile
+      }
+    }
+
+    describe(".apply(unselect)") {
+      it("should create a new record without unselected fields") {
+        val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+
+        val r2 = r1(unselect.email)
+        r2.name shouldBe "tarao"
+        r2.age shouldBe 3
+        "r2.email" shouldNot compile
+
+        val r3 = r1(unselect)
+        r3 shouldBe r1
+      }
+
+      it("should do nothing for missing fields") {
+        val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+
+        val r2 = r1(unselect.nickname)
+        r2 shouldBe r1
+
+        val r3 = r1(unselect.email.age.nickname)
+        r3.name shouldBe "tarao"
+        "r3.age" shouldNot compile
+        "r3.email" shouldNot compile
+      }
+    }
+
     describe(".tag[]") {
       it("should give a tag") {
         trait MyType
@@ -391,12 +486,15 @@ class RecordSpec extends helper.UnitSpec {
         val t2 = r2.values
         t2 shouldBe a[Int *: EmptyTuple]
         t2._1 shouldBe 3
+      }
 
-        val r3: % { val age: Int; val name: String } = r1
-        val t3 = r3.values
-        t3 shouldBe a[(Int, String)]
-        t3._1 shouldBe 3
-        t3._2 shouldBe "tarao"
+      it("should preserve the order of static type of fields") {
+        val r1 = %(name = "tarao", age = 3)
+        val r2: % { val age: Int; val name: String } = r1
+        val t2 = r2.values
+        t2 shouldBe a[(Int, String)]
+        t2._1 shouldBe 3
+        t2._2 shouldBe "tarao"
       }
     }
 
@@ -521,7 +619,8 @@ class RecordSpec extends helper.UnitSpec {
                                          |  val foo: Int
                                          |}""".stripMargin
 
-        val t2: ("foo", Int) *: Int *: EmptyTuple = ("foo", 1) *: 3 *: EmptyTuple
+        val t2: ("foo", Int) *: Int *: EmptyTuple =
+          ("foo", 1) *: 3 *: EmptyTuple
         val r3 = Record.from(t2)
         r3.foo shouldBe 1
         r3.toString() shouldBe "%(foo = 1)"
@@ -548,7 +647,8 @@ class RecordSpec extends helper.UnitSpec {
         r3.email shouldBe "tarao@example.com"
         r3.foo shouldBe 1
 
-        val t2: ("foo", Int) *: Int *: EmptyTuple = ("foo", 1) *: 3 *: EmptyTuple
+        val t2: ("foo", Int) *: Int *: EmptyTuple =
+          ("foo", 1) *: 3 *: EmptyTuple
         val r4 = r1 ++ p ++ t
         r4.name shouldBe "tarao"
         r4.age shouldBe 3

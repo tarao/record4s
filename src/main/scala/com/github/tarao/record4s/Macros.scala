@@ -69,6 +69,44 @@ object Macros {
     }
   }
 
+  /** Macro implementation of `%().apply(select)` */
+  def selectImpl[R <: `%`: Type, S <: Tuple: Type, RR <: `%`: Type](
+    record: Expr[R],
+    s: Expr[Selector[S]],
+  )(using Quotes): Expr[RR] = {
+    import quotes.reflect.*
+    val internal = summon[InternalMacros]
+    import internal.*
+
+    val schema = schemaOf[R]
+    val fieldTypes = fieldSelectionsOf[S](schema)
+
+    val args = fieldTypes.map { (label, newLabel, _) =>
+      '{ (${ Expr(newLabel) }, Record.lookup(${ record }, ${ Expr(label) })) }
+    }
+
+    '{ %(${ Expr.ofSeq(args) }: _*).asInstanceOf[RR] }
+  }
+
+  /** Macro implementation of `%().apply(unselect)` */
+  def unselectImpl[R <: `%`: Type, U <: Tuple: Type, RR <: `%`: Type](
+    record: Expr[R],
+    s: Expr[Unselector[U]],
+  )(using Quotes): Expr[RR] = {
+    import quotes.reflect.*
+    val internal = summon[InternalMacros]
+    import internal.*
+
+    val schema = schemaOf[R]
+
+    val fieldTypes = fieldUnselectionsOf[U](schema)
+    val args = fieldTypes.map { (label, _) =>
+      '{ (${ Expr(label) }, Record.lookup(${ record }, ${ Expr(label) })) }
+    }
+
+    '{ %(${ Expr.ofSeq(args) }: _*).asInstanceOf[RR] }
+  }
+
   /** Macro implementation of `%.to` */
   def toProductImpl[R <: `%`: Type, P <: Product: Type](
     record: Expr[R],
@@ -164,11 +202,67 @@ object Macros {
     (schema1 ++ schema2).deduped.asType match {
       case '[tpe] =>
         '{
-          typing.Concat.instance.asInstanceOf[
-            typing.Concat[R1, R2] {
-              type Out = tpe
-            },
-          ]
+          typing
+            .Concat
+            .instance
+            .asInstanceOf[
+              typing.Concat[R1, R2] {
+                type Out = tpe
+              },
+            ]
+        }
+    }
+  }
+
+  def derivedTypingSelectImpl[R: Type, S: Type](using
+    Quotes,
+  ): Expr[typing.Select[R, S]] = {
+    import quotes.reflect.*
+    val internal = summon[InternalMacros]
+    import internal.*
+
+    val schema = schemaOf[R]
+    val fieldTypes = fieldSelectionsOf[S](schema)
+
+    val newSchema =
+      schema.copy(fieldTypes = fieldTypes.map((_, label, tpe) => (label, tpe)))
+    newSchema.deduped.asType match {
+      case '[tpe] =>
+        '{
+          typing
+            .Select
+            .instance
+            .asInstanceOf[
+              typing.Select[R, S] {
+                type Out = tpe
+              },
+            ]
+        }
+    }
+  }
+
+  def derivedTypingUnselectImpl[R: Type, U <: Tuple: Type](using
+    Quotes,
+  ): Expr[typing.Unselect[R, U]] = {
+    import quotes.reflect.*
+    val internal = summon[InternalMacros]
+    import internal.*
+
+    val schema = schemaOf[R]
+    val fieldTypes = fieldUnselectionsOf[U](schema)
+
+    val newSchema = schema.copy(fieldTypes = fieldTypes)
+    newSchema.deduped.asType match {
+      case '[tpe] =>
+        '{
+          typing
+            .Unselect
+            .instance
+            .asInstanceOf[
+              typing.Unselect[R, U] {
+                type Out = tpe
+              },
+            ]
         }
     }
   }
