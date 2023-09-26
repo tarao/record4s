@@ -164,7 +164,7 @@ object Macros {
     (schema1 ++ schema2).deduped.asType match {
       case '[tpe] =>
         '{
-          (new typing.Concat).asInstanceOf[
+          typing.Concat.instance.asInstanceOf[
             typing.Concat[R1, R2] {
               type Out = tpe
             },
