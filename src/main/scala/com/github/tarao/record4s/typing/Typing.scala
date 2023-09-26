@@ -22,6 +22,19 @@ object Append {
   type Aux[R1, R2 <: Tuple, Out0 <: %] = Concat[R1, R2] { type Out = Out0 }
 }
 
+final class Lookup[R, Label] private {
+  type Out
+}
+
+object Lookup {
+  private[record4s] val instance = new Lookup[Nothing, Nothing]
+
+  type Aux[R, Label, Out0] = Lookup[R, Label] { type Out = Out0 }
+
+  transparent inline given [R: RecordLike, L <: String]: Lookup[R, L] =
+    ${ Macros.derivedTypingLookupImpl }
+}
+
 final class Select[R, S] private {
   type Out <: %
 }

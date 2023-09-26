@@ -3,35 +3,6 @@ package com.github.tarao.record4s
 object Macros {
   import scala.quoted.*
 
-  /** Macro implementation of `Record.lookup` */
-  def lookupImpl[R <: `%`: Type](
-    record: Expr[R],
-    label: Expr[String],
-  )(using Quotes): Expr[Any] = {
-    import quotes.reflect.*
-    val internal = summon[InternalMacros]
-    import internal.*
-
-    label.asTerm match {
-      case Inlined(_, _, Literal(StringConstant(label))) =>
-        val schema = schemaOfRecord[R]
-        val valueType =
-          schema.fieldTypes.find(_._1 == label).map(_._2).getOrElse {
-            report
-              .errorAndAbort(
-                s"value ${label} is not a member of ${Type.show[R]}",
-              )
-          }
-
-        valueType match {
-          case '[tpe] =>
-            '{ ${ record }.__data(${ Expr(label) }).asInstanceOf[tpe] }
-        }
-      case _ =>
-        report.errorAndAbort("label must be a literal string", label)
-    }
-  }
-
   /** Macro implementation of `%.apply` */
   def applyImpl[R: Type](
     record: Expr[R],
@@ -82,7 +53,7 @@ object Macros {
     val fieldTypes = fieldSelectionsOf[S](schema)
 
     val args = fieldTypes.map { (label, newLabel, _) =>
-      '{ (${ Expr(newLabel) }, Record.lookup(${ record }, ${ Expr(label) })) }
+      '{ (${ Expr(newLabel) }, ${ record }.__data(${ Expr(label) })) }
     }
 
     '{ %(${ Expr.ofSeq(args) }: _*).asInstanceOf[RR] }
@@ -101,7 +72,7 @@ object Macros {
 
     val fieldTypes = fieldUnselectionsOf[U](schema)
     val args = fieldTypes.map { (label, _) =>
-      '{ (${ Expr(label) }, Record.lookup(${ record }, ${ Expr(label) })) }
+      '{ (${ Expr(label) }, ${ record }.__data(${ Expr(label) })) }
     }
 
     '{ %(${ Expr.ofSeq(args) }: _*).asInstanceOf[RR] }
@@ -163,6 +134,43 @@ object Macros {
             .instance
             .asInstanceOf[
               typing.Concat[R1, R2] {
+                type Out = tpe
+              },
+            ]
+        }
+    }
+  }
+
+  def derivedTypingLookupImpl[R: Type, Label: Type](using
+    Quotes,
+  ): Expr[typing.Lookup[R, Label]] = {
+    import quotes.reflect.*
+    val internal = summon[InternalMacros]
+    import internal.*
+
+    val valueType = TypeRepr.of[Label] match {
+      case ConstantType(StringConstant(label)) =>
+        val schema = schemaOfRecord[R]
+        schema.fieldTypes.find(_._1 == label).map(_._2).getOrElse {
+          report
+            .errorAndAbort(s"value ${label} is not a member of ${Type.show[R]}")
+        }
+      case _ =>
+        report.errorAndAbort(
+          s"""Found:    ${Type.show[Label]}
+             |Required: (a literal string)
+             |""".stripMargin,
+        )
+    }
+
+    valueType match {
+      case '[tpe] =>
+        '{
+          typing
+            .Lookup
+            .instance
+            .asInstanceOf[
+              typing.Lookup[R, Label] {
                 type Out = tpe
               },
             ]

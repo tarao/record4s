@@ -41,8 +41,9 @@ object Record {
     * @return
     *   the value of the field named by `label`
     */
-  transparent inline def lookup[R <: %](record: R, label: String) =
-    ${ Macros.lookupImpl('record, 'label) }
+  def lookup[R <: %, L <: String & Singleton, Out](record: R, label: L)(using
+    typing.Lookup.Aux[R, L, Out],
+  ): Out = record.__data(label).asInstanceOf[Out]
 
   /** Construct a record from something else.
     *
