@@ -40,25 +40,6 @@ object Macros {
     }
   }
 
-  /** Macro implementation of `%().apply(select)` */
-  def selectImpl[R <: `%`: Type, S <: Tuple: Type, RR <: `%`: Type](
-    record: Expr[R],
-    s: Expr[Selector[S]],
-  )(using Quotes): Expr[RR] = {
-    import quotes.reflect.*
-    val internal = summon[InternalMacros]
-    import internal.*
-
-    val schema = schemaOf[R]
-    val fieldTypes = fieldSelectionsOf[S](schema)
-
-    val args = fieldTypes.map { (label, newLabel, _) =>
-      '{ (${ Expr(newLabel) }, ${ record }.__data(${ Expr(label) })) }
-    }
-
-    '{ %(${ Expr.ofSeq(args) }: _*).asInstanceOf[RR] }
-  }
-
   def derivedRecordLikeImpl[R <: `%`: Type](using
     Quotes,
   ): Expr[RecordLike[R]] = {

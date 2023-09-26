@@ -132,7 +132,27 @@ object Record {
       */
     inline def apply[S <: Tuple, RR <: %](s: Selector[S])(using
       typing.Select.Aux[R, S, RR],
-    ): RR = ${ Macros.selectImpl[R, S, RR]('record, 's) }
+    ): RR = newMapRecord[RR](toSelectedIterable[S])
+
+    private inline def toSelectedIterable[S <: Tuple]: Seq[(String, Any)] = {
+      import scala.compiletime.{erasedValue, summonInline}
+
+      inline erasedValue[S] match {
+        case _: ((label, newLabel) *: tail) =>
+          val st1 = summonInline[label <:< String]
+          val st2 = summonInline[newLabel <:< String]
+          (
+            st2(valueOf[newLabel]),
+            record.__data(st1(valueOf[label])),
+          ) +: toSelectedIterable[tail]
+        case _: (label *: tail) =>
+          val st = summonInline[label <:< String]
+          val labelStr = st(valueOf[label])
+          (labelStr, record.__data(labelStr)) +: toSelectedIterable[tail]
+        case _: EmptyTuple =>
+          Seq.empty
+      }
+    }
 
     /** Create a new record by unselecting some fields of an existing record.
       *
