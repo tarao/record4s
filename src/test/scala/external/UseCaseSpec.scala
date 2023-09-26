@@ -204,4 +204,28 @@ class UseCaseSpec extends helper.UnitSpec {
       r2 shouldBe a[% { val email: String }]
     }
   }
+
+  describe("Pattern matching") {
+    import com.github.tarao.record4s.{%, select}
+
+    it("should be possible to match records by `select` and `values`") {
+      val r = %(name = "tarao", age = 3, email = "tarao@example.com")
+
+      r(select.name.age).values match {
+        case (name, age) =>
+          name shouldBe "tarao"
+          age shouldBe 3
+      }
+
+      val pattern = "(.*)@(.*)".r
+      r(select.name.email).values match {
+        case (name, pattern(user, domain)) =>
+          name shouldBe "tarao"
+          user shouldBe "tarao"
+          domain shouldBe "example.com"
+        case _ =>
+          fail()
+      }
+    }
+  }
 }
