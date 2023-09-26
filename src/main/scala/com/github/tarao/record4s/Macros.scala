@@ -107,50 +107,6 @@ object Macros {
     '{ %(${ Expr.ofSeq(args) }: _*).asInstanceOf[RR] }
   }
 
-  /** Macro implementation of `%.to` */
-  def toProductImpl[R <: `%`: Type, P <: Product: Type](
-    record: Expr[R],
-  )(using Quotes): Expr[P] = {
-    import quotes.reflect.*
-    val internal = summon[InternalMacros]
-    import internal.*
-
-    val schema = schemaOfRecord[R].fieldTypes.toMap
-    val fieldTypes = schemaOf(evidenceOf[RecordLike[P]]).fieldTypes
-
-    // type check
-    for ((label, tpe) <- fieldTypes) {
-      val valueTpe = schema.getOrElse(
-        label,
-        report.errorAndAbort(s"Missing key '${label}'", record),
-      )
-      if (!(typeReprOf(valueTpe) <:< typeReprOf(tpe))) {
-        report.errorAndAbort(
-          s"""Found:    (${record.show}.${label}: ${typeReprOf(valueTpe).show})
-             |Required: ${typeReprOf(tpe).show}
-             |""".stripMargin,
-          record,
-        )
-      }
-    }
-
-    val term = record.asTerm
-    val args = fieldTypes.map { case (label, _) =>
-      '{ Record.lookup(${ record }, ${ Expr(label) }) }.asTerm
-    }
-
-    val sym = TypeRepr.of[P].typeSymbol
-    val companion = sym.companionClass
-    val method = companion.declarations.find(_.name == "apply").getOrElse {
-      report.errorAndAbort(s"${Type.show[P]} has no `apply` method")
-    }
-
-    Ref(sym.companionModule)
-      .select(method)
-      .appliedToArgs(args.toList)
-      .asExprOf[P]
-  }
-
   def derivedRecordLikeImpl[R <: `%`: Type](using
     Quotes,
   ): Expr[RecordLike[R]] = {

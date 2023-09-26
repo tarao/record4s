@@ -1,5 +1,7 @@
 package com.github.tarao.record4s
 
+import scala.deriving.Mirror
+
 /** Base trait for record types.
   *
   * This trait is a placeholder to avoid trouble with defining methods on
@@ -239,8 +241,16 @@ object Record {
       * @return
       *   a new product instance
       */
-    inline def to[P <: Product](using RecordLike[P]): P =
-      ${ Macros.toProductImpl[R, P]('record) }
+    inline def to[P <: Product](using
+      m: Mirror.ProductOf[P],
+      r1: RecordLike[P],
+      s: typing.Select[R, r1.ElemLabels],
+      r2: RecordLike[s.Out],
+      ev: r2.ElemTypes <:< m.MirroredElemTypes,
+    ): P = {
+      val s = Selector.of[r1.ElemLabels]
+      m.fromTuple(ev(record(s).values))
+    }
 
     /** Convert this record to a `Tuple`.
       *

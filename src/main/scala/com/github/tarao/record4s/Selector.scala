@@ -34,6 +34,8 @@ class Selector[T <: Tuple] extends Dynamic {
 
 object Selector {
   type :*[T1 <: Tuple, T2] = Selector[Tuple.Concat[T1, T2 *: EmptyTuple]]
+
+  def of[T <: Tuple]: Selector[T] = new Selector
 }
 
 class Unselector[T <: Tuple] extends Dynamic {
