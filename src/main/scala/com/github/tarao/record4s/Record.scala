@@ -1,7 +1,5 @@
 package com.github.tarao.record4s
 
-import scala.deriving.Mirror
-
 /** Base trait for record types.
   *
   * This trait is a placeholder to avoid trouble with defining methods on
@@ -217,17 +215,7 @@ object Record {
     inline def as[R2 >: R <: `%`: RecordLike]: R2 =
       newMapRecord[R2](summon[RecordLike[R2]].tidiedIterableOf(record))
 
-    /** Convert this record to a `Product`.
-      *
-      * Target product type `P` must provide:
-      *
-      *   - a `Mirror.Of[P]`
-      *     - used via `RecordLike[P]`
-      *   - an `apply` method in the companion object of `P`
-      *     - the argument order must be the same as
-      *       `Mirror.Of[P]#MirroredElemLabels`
-      *
-      * `case class`es conform to the above conditions.
+    /** Convert this record to a `To`.
       *
       * @example
       *   {{{
@@ -237,21 +225,12 @@ object Record {
       * // val res0: Person = Person(tarao,3)
       *   }}}
       *
-      * @tparam P
-      *   a target product type (given `RecordLike[P]`)
+      * @tparam To
+      *   a type to which the record is converted
       * @return
       *   a new product instance
       */
-    inline def to[P <: Product](using
-      m: Mirror.ProductOf[P],
-      r1: RecordLike[P],
-      s: typing.Select[R, r1.ElemLabels],
-      r2: RecordLike[s.Out],
-      ev: r2.ElemTypes <:< m.MirroredElemTypes,
-    ): P = {
-      val s = Selector.of[r1.ElemLabels]
-      m.fromTuple(ev(record(s).values))
-    }
+    def to[To](using conv: Converter[R, To]): To = conv(record)
 
     /** Convert this record to a `Tuple`.
       *

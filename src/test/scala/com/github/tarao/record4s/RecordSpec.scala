@@ -569,6 +569,27 @@ class RecordSpec extends helper.UnitSpec {
         val r = %(value = "foo")
         "r.to[Cell]" shouldNot compile
       }
+
+      it("should convert a record to a Tuple") {
+        val r1 = %(name = "tarao", age = 3)
+        val t1 = r1.to[("name", String) *: ("age", Int) *: EmptyTuple]
+        t1._1._1 shouldBe "name"
+        t1._1._2 shouldBe "tarao"
+        t1._2._1 shouldBe "age"
+        t1._2._2 shouldBe 3
+
+        val r2: % { val age: Int } = r1
+        val t2 = r2.to[("age", Int) *: EmptyTuple]
+        t2._1._1 shouldBe "age"
+        t2._1._2 shouldBe 3
+
+        val r3: % { val age: Int; val name: String } = r1
+        val t3 = r3.to[("age", Int) *: ("name", String) *: EmptyTuple]
+        t3._1._1 shouldBe "age"
+        t3._1._2 shouldBe 3
+        t3._2._1 shouldBe "name"
+        t3._2._2 shouldBe "tarao"
+      }
     }
 
     describe(".toTuple") {
