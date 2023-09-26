@@ -133,6 +133,27 @@ object Record {
       typing.Select.Aux[R, S, RR],
     ): RR = ${ Macros.selectImpl[R, S, RR]('record, 's) }
 
+    /** Create a new record by unselecting some fields of an existing record.
+      *
+      * @example
+      *   {{{
+      * val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+      * val r2 = r1(unselect.email)
+      *   }}}
+      *
+      * @tparam U
+      *   list of unselected field as a Tuple
+      * @tparam RR
+      *   type of the new record
+      * @param u
+      *   unselection of fields created by `unselect`
+      * @return
+      *   a new record without the unselected fields
+      */
+    inline def apply[U <: Tuple, RR <: %](u: Unselector[U])(using
+      typing.Unselect.Aux[R, U, RR],
+    ): RR = ${ Macros.unselectImpl[R, U, RR]('record, 'u) }
+
     /** Give a type tag to this record.
       *
       * @example

@@ -34,3 +34,16 @@ object Select {
   transparent inline given [R: RecordLike, S <: Tuple]: Select[R, S] =
     ${ Macros.derivedTypingSelectImpl }
 }
+
+final class Unselect[R, U] private {
+  type Out <: %
+}
+
+object Unselect {
+  private[record4s] val instance = new Unselect[Nothing, Nothing]
+
+  type Aux[R, U, Out0 <: %] = Unselect[R, U] { type Out = Out0 }
+
+  transparent inline given [R: RecordLike, S <: Tuple]: Unselect[R, S] =
+    ${ Macros.derivedTypingUnselectImpl }
+}

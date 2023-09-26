@@ -255,7 +255,9 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
     ('{ ${ ev }.iterableOf($record) }, schema)
   }
 
-  def fieldSelectionsOf[S: Type](schema: Schema): Seq[(String, String, Type[_])] = {
+  def fieldSelectionsOf[S: Type](
+    schema: Schema,
+  ): Seq[(String, String, Type[_])] = {
     val fieldTypeMap = schema.fieldTypes.toMap
 
     def normalize(t: Type[_]): (TypeRepr, TypeRepr) = t match {
@@ -291,6 +293,30 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
       }
 
     fieldTypes(Type.of[S], Seq.empty)
+  }
+
+  def fieldUnselectionsOf[U <: Tuple: Type](
+    schema: Schema,
+  ): Seq[(String, Type[_])] = {
+    @tailrec def unselectedLabelsOf[U <: Tuple: Type](
+      acc: Set[String],
+    ): Set[String] =
+      Type.of[U] match {
+        case '[head *: tail] =>
+          TypeRepr.of[head] match {
+            case ConstantType(StringConstant(label)) =>
+              unselectedLabelsOf[tail](acc + label)
+            case _ =>
+              report.errorAndAbort(
+                "Selector type element must be a literal label",
+              )
+          }
+        case '[EmptyTuple] =>
+          acc
+      }
+    val unselected = unselectedLabelsOf[U](Set.empty)
+
+    schema.fieldTypes.filterNot((label, _) => unselected.contains(label))
   }
 
   def newMapRecord[R: Type](record: Expr[Iterable[(String, Any)]]): Expr[R] =
