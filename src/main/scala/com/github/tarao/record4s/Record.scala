@@ -153,7 +153,9 @@ object Record {
       */
     inline def apply[U <: Tuple, RR <: %](u: Unselector[U])(using
       typing.Unselect.Aux[R, U, RR],
-    ): RR = ${ Macros.unselectImpl[R, U, RR]('record, 'u) }
+      RecordLike[RR],
+      R <:< RR,
+    ): RR = newMapRecord[RR](summon[RecordLike[RR]].tidiedIterableOf(record))
 
     /** Give a type tag to this record.
       *

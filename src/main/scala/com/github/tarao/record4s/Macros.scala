@@ -59,25 +59,6 @@ object Macros {
     '{ %(${ Expr.ofSeq(args) }: _*).asInstanceOf[RR] }
   }
 
-  /** Macro implementation of `%().apply(unselect)` */
-  def unselectImpl[R <: `%`: Type, U <: Tuple: Type, RR <: `%`: Type](
-    record: Expr[R],
-    s: Expr[Unselector[U]],
-  )(using Quotes): Expr[RR] = {
-    import quotes.reflect.*
-    val internal = summon[InternalMacros]
-    import internal.*
-
-    val schema = schemaOf[R]
-
-    val fieldTypes = fieldUnselectionsOf[U](schema)
-    val args = fieldTypes.map { (label, _) =>
-      '{ (${ Expr(label) }, ${ record }.__data(${ Expr(label) })) }
-    }
-
-    '{ %(${ Expr.ofSeq(args) }: _*).asInstanceOf[RR] }
-  }
-
   def derivedRecordLikeImpl[R <: `%`: Type](using
     Quotes,
   ): Expr[RecordLike[R]] = {
