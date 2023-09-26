@@ -255,6 +255,44 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
     ('{ ${ ev }.iterableOf($record) }, schema)
   }
 
+  def fieldSelectionsOf[S: Type](schema: Schema): Seq[(String, String, Type[_])] = {
+    val fieldTypeMap = schema.fieldTypes.toMap
+
+    def normalize(t: Type[_]): (TypeRepr, TypeRepr) = t match {
+      case '[(l1, l2)] => (TypeRepr.of[l1], TypeRepr.of[l2])
+      case '[l]        => (TypeRepr.of[l], TypeRepr.of[l])
+    }
+
+    @tailrec def fieldTypes(
+      t: Type[_],
+      acc: Seq[(String, String, Type[_])],
+    ): Seq[(String, String, Type[_])] =
+      t match {
+        case '[head *: tail] =>
+          normalize(Type.of[head]) match {
+            case (
+                ConstantType(StringConstant(label)),
+                ConstantType(StringConstant(renamed)),
+              ) =>
+              val fieldType = fieldTypeMap.getOrElse(
+                label,
+                report.errorAndAbort(s"Missing key ${label}"),
+              )
+              fieldTypes(Type.of[tail], acc :+ (label, renamed, fieldType))
+            case _ =>
+              report.errorAndAbort(
+                "Selector type element must be a literal (possibly paired) label",
+              )
+          }
+        case '[EmptyTuple] =>
+          acc
+        case _ =>
+          report.errorAndAbort("Selector type must be a Tuple")
+      }
+
+    fieldTypes(Type.of[S], Seq.empty)
+  }
+
   def newMapRecord[R: Type](record: Expr[Iterable[(String, Any)]]): Expr[R] =
     '{ new MapRecord(${ record }.toMap).asInstanceOf[R] }
 

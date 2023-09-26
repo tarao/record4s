@@ -247,6 +247,75 @@ class RecordSpec extends helper.UnitSpec {
       }
     }
 
+    describe(".apply(select)") {
+      it("should create a new record with selected fields") {
+        val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+
+        val r2 = r1(select.name.age)
+        r2.name shouldBe "tarao"
+        r2.age shouldBe 3
+        "r2.email" shouldNot compile
+
+        val r3 = r1(select)
+        r3.toString shouldBe "%()"
+      }
+
+      it("should preserve the order of selection") {
+        val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+
+        val r2 = r1(select.name.age)
+        helper.showTypeOf(r2) shouldBe """% {
+                                         |  val name: String
+                                         |  val age: Int
+                                         |}""".stripMargin
+
+        val r3 = r1(select.age.name)
+        helper.showTypeOf(r3) shouldBe """% {
+                                         |  val age: Int
+                                         |  val name: String
+                                         |}""".stripMargin
+      }
+
+      it("should allow to rename fields") {
+        val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+
+        val r2 = r1(select.name("nickname").age)
+        r2.nickname shouldBe "tarao"
+        r2.age shouldBe 3
+        "r2.name" shouldNot compile
+
+        val r3 = r1(select.name(rename = "nickname").age.name)
+        r3.nickname shouldBe "tarao"
+        r3.age shouldBe 3
+        r3.name shouldBe "tarao"
+        helper.showTypeOf(r3) shouldBe """% {
+                                         |  val nickname: String
+                                         |  val age: Int
+                                         |  val name: String
+                                         |}""".stripMargin
+      }
+
+      it("should reject giving a new name by non-literal string") {
+        val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+        val newName = "nickname"
+        "r1(select.name(newName).age)" shouldNot compile
+      }
+
+      it("should reject selecting missing fields") {
+        val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+        "r1(select.nickname)" shouldNot compile
+      }
+
+      it("should take the last one for duplicated fields") {
+        val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+
+        val r2 = r1(select.name("value").age("value"))
+        r2.value shouldBe 3
+        "r2.name" shouldNot compile
+        "r2.age" shouldNot compile
+      }
+    }
+
     describe(".tag[]") {
       it("should give a tag") {
         trait MyType
