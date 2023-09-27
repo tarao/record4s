@@ -16,6 +16,13 @@ object Macros {
     requireApply(record, method) {
       val (rec, _) = iterableOf(record)
 
+      // We have no way to write this without transparent inline macro.  Literal string
+      // types are subject to widening and they become `String`s at the type level.  A
+      // `transparent inline given` also doesn't work since it can only depend on
+      // type-level information.
+      //
+      // See the discussion here for the details about attempts to suppress widening:
+      // https://contributors.scala-lang.org/t/pre-sip-exact-type-annotation/5835/22
       val fields = args match {
         case Varargs(args) => args
         case _ =>
