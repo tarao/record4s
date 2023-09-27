@@ -31,7 +31,7 @@ object Lookup {
 
   type Aux[R, Label, Out0] = Lookup[R, Label] { type Out = Out0 }
 
-  transparent inline given [R: RecordLike, L <: String]: Lookup[R, L] =
+  transparent inline given [R <: %, L <: String]: Lookup[R, L] =
     ${ Macros.derivedTypingLookupImpl }
 }
 
