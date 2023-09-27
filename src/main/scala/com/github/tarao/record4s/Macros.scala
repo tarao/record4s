@@ -219,16 +219,6 @@ object Macros {
     }
   }
 
-  private def typeReprOf(
-    tpe: Type[_],
-  )(using Quotes): quotes.reflect.TypeRepr = {
-    import quotes.reflect.*
-
-    tpe match {
-      case '[tpe] => TypeRepr.of[tpe]
-    }
-  }
-
   private def typeReprOfTupleFromSeq(using Quotes)(
     typeReprs: Seq[quotes.reflect.TypeRepr],
   ): quotes.reflect.TypeRepr = {
