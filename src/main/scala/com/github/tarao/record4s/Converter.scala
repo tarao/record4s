@@ -7,6 +7,7 @@ trait Converter[From, To] {
 }
 
 object Converter {
+  import typing.withPotentialTypingError
 
   /** Converter instance for a record to a product
     *
@@ -26,10 +27,12 @@ object Converter {
     s: typing.Select[R, r1.ElemLabels],
     r2: RecordLike[s.Out],
     ev: r2.ElemTypes <:< m.MirroredElemTypes,
-  ): Converter[R, P] = new Converter {
-    def apply(record: R): P = {
-      val s = Selector.of[r1.ElemLabels]
-      m.fromTuple(ev(record(s).values))
+  ): Converter[R, P] = withPotentialTypingError {
+    new Converter {
+      def apply(record: R): P = {
+        val s = Selector.of[r1.ElemLabels]
+        m.fromTuple(ev(record(s).values))
+      }
     }
   }
 

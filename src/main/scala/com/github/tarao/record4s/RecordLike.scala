@@ -1,6 +1,6 @@
 package com.github.tarao.record4s
 
-import scala.compiletime.{erasedValue, summonInline}
+import scala.compiletime.{constValueOpt, erasedValue, error, summonInline}
 import scala.deriving.Mirror
 
 trait RecordLike[R] {
@@ -24,8 +24,15 @@ object RecordLike {
       case _: EmptyTuple => Seq.empty
       case _: (t *: ts) =>
         val stringOf = summonInline[t <:< String]
-        val value = valueOf[t]
-        stringOf(value) +: seqOfLabels[ts]
+        inline constValueOpt[t] match {
+          case Some(value) =>
+            stringOf(value) +: seqOfLabels[ts]
+          case None =>
+            error(
+              "Types of field labels must be literal string types.\n" + "Found:    " + Macros
+                .typeNameOf[t] + "\nRequired: (a literal string type)",
+            )
+        }
     }
 
   final class OfProduct[

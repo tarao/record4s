@@ -8,6 +8,7 @@ package com.github.tarao.record4s
 trait Record
 
 object Record {
+  import typing.withPotentialTypingError
 
   /** An empty record. */
   val empty = newMapRecord[%](Map.empty)
@@ -39,9 +40,11 @@ object Record {
     * @return
     *   the value of the field named by `label`
     */
-  def lookup[R <: %, L <: String & Singleton, Out](record: R, label: L)(using
-    typing.Lookup.Aux[R, L, Out],
-  ): Out = record.__data(label).asInstanceOf[Out]
+  inline def lookup[R <: %, L <: String & Singleton, Out](record: R, label: L)(
+    using typing.Lookup.Aux[R, L, Out],
+  ): Out = withPotentialTypingError {
+    record.__data(label).asInstanceOf[Out]
+  }
 
   /** Construct a record from something else.
     *
@@ -63,7 +66,9 @@ object Record {
   inline def from[T, RR <: %](x: T)(using
     RecordLike[T],
     typing.Aux[T, RR],
-  ): RR = empty ++ x
+  ): RR = withPotentialTypingError {
+    empty ++ x
+  }
 
   extension [R <: %](record: R) {
 
@@ -105,10 +110,11 @@ object Record {
       */
     inline def ++[R2: RecordLike, RR <: %](
       other: R2,
-    )(using typing.Concat.Aux[R, R2, RR]): RR =
+    )(using typing.Concat.Aux[R, R2, RR]): RR = withPotentialTypingError {
       newMapRecord[RR](
         record.__data ++ summon[RecordLike[R2]].tidiedIterableOf(other),
       )
+    }
 
     /** Create a new record by selecting some fields of an existing record.
       *
@@ -132,7 +138,9 @@ object Record {
       */
     inline def apply[S <: Tuple, RR <: %](s: Selector[S])(using
       typing.Select.Aux[R, S, RR],
-    ): RR = newMapRecord[RR](toSelectedIterable[S])
+    ): RR = withPotentialTypingError {
+      newMapRecord[RR](toSelectedIterable[S])
+    }
 
     private inline def toSelectedIterable[S <: Tuple]: Seq[(String, Any)] = {
       import scala.compiletime.{erasedValue, summonInline}
@@ -175,7 +183,9 @@ object Record {
       typing.Unselect.Aux[R, U, RR],
       RecordLike[RR],
       R <:< RR,
-    ): RR = newMapRecord[RR](summon[RecordLike[RR]].tidiedIterableOf(record))
+    ): RR = withPotentialTypingError {
+      newMapRecord[RR](summon[RecordLike[RR]].tidiedIterableOf(record))
+    }
 
     /** Give a type tag to this record.
       *

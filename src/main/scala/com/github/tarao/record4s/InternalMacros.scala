@@ -2,9 +2,40 @@ package com.github.tarao.record4s
 
 import scala.annotation.tailrec
 
-private[record4s] class InternalMacros(using scala.quoted.Quotes) {
+private[record4s] class InternalMacros(using
+  scala.quoted.Quotes,
+  InternalMacros.MacroContext,
+) {
   import scala.quoted.*
   import quotes.reflect.*
+
+  case class TypingResult(
+    resultType: Type[_],
+    error: Type[_],
+  )
+
+  object TypingResult {
+    def success(tpe: Type[_]): TypingResult = TypingResult(
+      resultType = tpe,
+      error      = Type.of[Nothing],
+    )
+
+    def error(msg: String): TypingResult = TypingResult(
+      resultType = Type.of[Nothing],
+      error      = ConstantType(StringConstant(msg)).asType,
+    )
+  }
+
+  def errorAndAbort(msg: String, expr: Option[Expr[Any]] = None): Nothing =
+    summon[InternalMacros.MacroContext].reporter.errorAndAbort(msg, expr)
+
+  def catching(block: => Type[_]): TypingResult =
+    try
+      TypingResult.success(block)
+    catch {
+      case e: InternalMacros.TypingError =>
+        TypingResult.error(e.getMessage())
+    }
 
   case class Schema(
     fieldTypes: Seq[(String, Type[_])],
@@ -57,6 +88,7 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
         .asType
     }
   }
+
   object Schema {
     val empty = apply(Seq.empty, Seq.empty)
   }
@@ -65,14 +97,6 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
     label: String,
     context: Option[Expr[Any]] = None,
   ): String = {
-    def errorAndAbort(msg: String, context: Option[Expr[Any]]): Nothing =
-      context match {
-        case Some(expr) =>
-          report.errorAndAbort(msg, expr)
-        case None =>
-          report.errorAndAbort(msg)
-      }
-
     if (label.isEmpty)
       errorAndAbort(
         "Field label must be a non-empty string",
@@ -93,7 +117,7 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
 
   def evidenceOf[T: Type]: Expr[T] =
     Expr.summon[T].getOrElse {
-      report.errorAndAbort(
+      errorAndAbort(
         s"No given instance of ${Type.show[T]}",
       )
     }
@@ -218,9 +242,9 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
         case Literal(StringConstant(label)) =>
           validatedLabel(label, Some(labelExpr))
         case _ =>
-          report.errorAndAbort(
+          errorAndAbort(
             "Field label must be a literal string",
-            labelExpr,
+            Some(labelExpr),
           )
       }
       val tpe = valueExpr match {
@@ -239,7 +263,7 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
         fieldTypeOf(labelExpr, valueExpr)
 
       case expr =>
-        report.errorAndAbort(s"Invalid field", expr)
+        errorAndAbort(s"Invalid field", Some(expr))
     }
   }
 
@@ -278,18 +302,18 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
               ) =>
               val fieldType = fieldTypeMap.getOrElse(
                 label,
-                report.errorAndAbort(s"Missing key ${label}"),
+                errorAndAbort(s"Missing key ${label}"),
               )
               fieldTypes(Type.of[tail], acc :+ (label, renamed, fieldType))
             case _ =>
-              report.errorAndAbort(
+              errorAndAbort(
                 "Selector type element must be a literal (possibly paired) label",
               )
           }
         case '[EmptyTuple] =>
           acc
         case _ =>
-          report.errorAndAbort("Selector type must be a Tuple")
+          errorAndAbort("Selector type must be a Tuple")
       }
 
     fieldTypes(Type.of[S], Seq.empty)
@@ -307,7 +331,7 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
             case ConstantType(StringConstant(label)) =>
               unselectedLabelsOf[tail](acc + label)
             case _ =>
-              report.errorAndAbort(
+              errorAndAbort(
                 "Selector type element must be a literal label",
               )
           }
@@ -329,11 +353,11 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
       case Inlined(_, _, Literal(StringConstant(name))) if name == "apply" =>
         block
       case Inlined(_, _, Literal(StringConstant(name))) =>
-        report.errorAndAbort(
+        errorAndAbort(
           s"'${name}' is not a member of ${context.asTerm.tpe.widen.show} constructor",
         )
       case _ =>
-        report.errorAndAbort(
+        errorAndAbort(
           s"Invalid method invocation on ${context.asTerm.tpe.widen.show} constructor",
         )
     }
@@ -341,5 +365,45 @@ private[record4s] class InternalMacros(using scala.quoted.Quotes) {
 }
 
 private[record4s] object InternalMacros {
-  given (using scala.quoted.Quotes): InternalMacros = new InternalMacros
+  import scala.quoted.*
+  import scala.util.NotGiven
+
+  given (using Quotes, MacroContext): InternalMacros = new InternalMacros
+
+  class TypingError(message: String) extends Error(message)
+
+  sealed trait MacroContext {
+    def reporter: Reporter
+  }
+
+  object MacroContext {
+    case class Default()(using Quotes) extends MacroContext {
+      override val reporter: Reporter = MacroReporter()
+    }
+
+    case object Typing extends MacroContext {
+      override val reporter: Reporter = TypingReporter
+    }
+  }
+
+  sealed trait Reporter {
+    def errorAndAbort(msg: String, expr: Option[Expr[Any]] = None): Nothing
+  }
+
+  case class MacroReporter()(using Quotes) extends Reporter {
+    def errorAndAbort(msg: String, expr: Option[Expr[Any]] = None): Nothing =
+      expr match {
+        case Some(expr) =>
+          quotes.reflect.report.errorAndAbort(msg, expr)
+        case None =>
+          quotes.reflect.report.errorAndAbort(msg)
+      }
+  }
+
+  case object TypingReporter extends Reporter {
+    def errorAndAbort(msg: String, expr: Option[Expr[Any]] = None): Nothing =
+      throw TypingError(msg)
+  }
+
+  given (using Quotes): MacroContext = MacroContext.Default()
 }

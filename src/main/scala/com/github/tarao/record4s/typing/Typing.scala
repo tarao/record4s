@@ -1,9 +1,23 @@
 package com.github.tarao.record4s
 package typing
 
+/** Base trait typing given instances.
+  *
+  * Typing given instances infers result type as `Out`.  If it is impossible to infer the
+  * type then, `Out` is `Nothing` and `Msg` is a string literal type of a message
+  * describing violation of the typing rule.  `Out` is `Nothing` if the type is
+  * successfully inferred.
+  *
+  * To show the typing failure, use `withPotentialTypingError { ... }`.
+  */
+trait MaybeError {
+  type Out
+  type Msg <: String
+}
+
 type Aux[R, Out0 <: %] = Concat[%, R] { type Out = Out0 }
 
-final class Concat[R1, R2] private {
+final class Concat[R1, R2] private extends MaybeError {
   type Out <: %
 }
 
@@ -22,7 +36,7 @@ object Append {
   type Aux[R1, R2 <: Tuple, Out0 <: %] = Concat[R1, R2] { type Out = Out0 }
 }
 
-final class Lookup[R, Label] private {
+final class Lookup[R, Label] private extends MaybeError {
   type Out
 }
 
@@ -35,7 +49,7 @@ object Lookup {
     ${ Macros.derivedTypingLookupImpl }
 }
 
-final class Select[R, S] private {
+final class Select[R, S] private extends MaybeError {
   type Out <: %
 }
 
@@ -48,7 +62,7 @@ object Select {
     ${ Macros.derivedTypingSelectImpl }
 }
 
-final class Unselect[R, U] private {
+final class Unselect[R, U] private extends MaybeError {
   type Out <: %
 }
 
@@ -59,4 +73,20 @@ object Unselect {
 
   transparent inline given [R: RecordLike, S <: Tuple]: Unselect[R, S] =
     ${ Macros.derivedTypingUnselectImpl }
+}
+
+private inline def showTypingError(using err: typing.MaybeError): Unit = {
+  import scala.compiletime.{erasedValue, constValue, error}
+
+  inline erasedValue[err.Out] match {
+    case _: Nothing => error(constValue[err.Msg])
+    case _          => // no error
+  }
+}
+
+inline def withPotentialTypingError[T](
+  inline block: => T,
+)(using err: typing.MaybeError): T = {
+  showTypingError
+  block
 }

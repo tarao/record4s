@@ -2,6 +2,7 @@ package com.github.tarao.record4s
 
 object Macros {
   import scala.quoted.*
+  import InternalMacros.MacroContext
 
   /** Macro implementation of `%.apply` */
   def applyImpl[R: Type](
@@ -26,7 +27,7 @@ object Macros {
       val fields = args match {
         case Varargs(args) => args
         case _ =>
-          report.errorAndAbort("Expected explicit varargs sequence", args)
+          errorAndAbort("Expected explicit varargs sequence", Some(args))
       }
       val fieldTypes = fieldTypesOf(fields)
 
@@ -85,121 +86,6 @@ object Macros {
     }
   }
 
-  def derivedTypingConcatImpl[R1: Type, R2: Type](using
-    Quotes,
-  ): Expr[typing.Concat[R1, R2]] = {
-    import quotes.reflect.*
-    val internal = summon[InternalMacros]
-    import internal.*
-
-    val schema1 = schemaOf[R1]
-    val schema2 = schemaOf[R2]
-
-    (schema1 ++ schema2).deduped.asType match {
-      case '[tpe] =>
-        '{
-          typing
-            .Concat
-            .instance
-            .asInstanceOf[
-              typing.Concat[R1, R2] {
-                type Out = tpe
-              },
-            ]
-        }
-    }
-  }
-
-  def derivedTypingLookupImpl[R: Type, Label: Type](using
-    Quotes,
-  ): Expr[typing.Lookup[R, Label]] = {
-    import quotes.reflect.*
-    val internal = summon[InternalMacros]
-    import internal.*
-
-    val valueType = TypeRepr.of[Label] match {
-      case ConstantType(StringConstant(label)) =>
-        val schema = schemaOfRecord[R]
-        schema.fieldTypes.find(_._1 == label).map(_._2).getOrElse {
-          report
-            .errorAndAbort(s"value ${label} is not a member of ${Type.show[R]}")
-        }
-      case _ =>
-        report.errorAndAbort(
-          s"""Found:    ${Type.show[Label]}
-             |Required: (a literal string)
-             |""".stripMargin,
-        )
-    }
-
-    valueType match {
-      case '[tpe] =>
-        '{
-          typing
-            .Lookup
-            .instance
-            .asInstanceOf[
-              typing.Lookup[R, Label] {
-                type Out = tpe
-              },
-            ]
-        }
-    }
-  }
-
-  def derivedTypingSelectImpl[R: Type, S: Type](using
-    Quotes,
-  ): Expr[typing.Select[R, S]] = {
-    import quotes.reflect.*
-    val internal = summon[InternalMacros]
-    import internal.*
-
-    val schema = schemaOf[R]
-    val fieldTypes = fieldSelectionsOf[S](schema)
-
-    val newSchema =
-      schema.copy(fieldTypes = fieldTypes.map((_, label, tpe) => (label, tpe)))
-    newSchema.deduped.asType match {
-      case '[tpe] =>
-        '{
-          typing
-            .Select
-            .instance
-            .asInstanceOf[
-              typing.Select[R, S] {
-                type Out = tpe
-              },
-            ]
-        }
-    }
-  }
-
-  def derivedTypingUnselectImpl[R: Type, U <: Tuple: Type](using
-    Quotes,
-  ): Expr[typing.Unselect[R, U]] = {
-    import quotes.reflect.*
-    val internal = summon[InternalMacros]
-    import internal.*
-
-    val schema = schemaOf[R]
-    val fieldTypes = fieldUnselectionsOf[U](schema)
-
-    val newSchema = schema.copy(fieldTypes = fieldTypes)
-    newSchema.deduped.asType match {
-      case '[tpe] =>
-        '{
-          typing
-            .Unselect
-            .instance
-            .asInstanceOf[
-              typing.Unselect[R, U] {
-                type Out = tpe
-              },
-            ]
-        }
-    }
-  }
-
   def derivedProductProxyOfRecordImpl[R <: `%`: Type](using
     Quotes,
   ): Expr[ProductProxy.OfRecord[R]] = {
@@ -215,6 +101,148 @@ object Macros {
               type Out = tpe
             },
           ]
+        }
+    }
+  }
+
+  def derivedTypingConcatImpl[R1: Type, R2: Type](using
+    Quotes,
+  ): Expr[typing.Concat[R1, R2]] = {
+    given MacroContext = MacroContext.Typing
+
+    import quotes.reflect.*
+    val internal = summon[InternalMacros]
+    import internal.*
+
+    val result = catching {
+      val schema1 = schemaOf[R1]
+      val schema2 = schemaOf[R2]
+
+      (schema1 ++ schema2).deduped.asType
+    }
+
+    result match {
+      case TypingResult('[tpe], '[err]) =>
+        '{
+          typing
+            .Concat
+            .instance
+            .asInstanceOf[
+              typing.Concat[R1, R2] {
+                type Out = tpe
+                type Msg = err
+              },
+            ]
+        }
+    }
+  }
+
+  def derivedTypingLookupImpl[R: Type, Label: Type](using
+    Quotes,
+  ): Expr[typing.Lookup[R, Label]] = {
+    given MacroContext = MacroContext.Typing
+
+    import quotes.reflect.*
+    val internal = summon[InternalMacros]
+    import internal.*
+
+    val result = catching {
+      TypeRepr.of[Label] match {
+        case ConstantType(StringConstant(label)) =>
+          val schema = schemaOfRecord[R]
+          schema.fieldTypes.find(_._1 == label).map(_._2).getOrElse {
+            errorAndAbort(s"value ${label} is not a member of ${Type.show[R]}")
+          }
+        case _ =>
+          errorAndAbort(
+            s"""Found:    ${Type.show[Label]}
+               |Required: (a literal string)
+               |""".stripMargin,
+          )
+      }
+    }
+
+    result match {
+      case TypingResult('[tpe], '[err]) =>
+        '{
+          typing
+            .Lookup
+            .instance
+            .asInstanceOf[
+              typing.Lookup[R, Label] {
+                type Out = tpe
+                type Msg = err
+              },
+            ]
+        }
+    }
+  }
+
+  def derivedTypingSelectImpl[R: Type, S: Type](using
+    Quotes,
+  ): Expr[typing.Select[R, S]] = {
+    given MacroContext = MacroContext.Typing
+
+    import quotes.reflect.*
+    val internal = summon[InternalMacros]
+    import internal.*
+
+    val result = catching {
+      val schema = schemaOf[R]
+      val fieldTypes = fieldSelectionsOf[S](schema)
+
+      val newSchema =
+        schema.copy(fieldTypes =
+          fieldTypes.map((_, label, tpe) => (label, tpe)),
+        )
+      newSchema.deduped.asType
+    }
+
+    result match {
+      case TypingResult('[tpe], '[err]) =>
+        '{
+          typing
+            .Select
+            .instance
+            .asInstanceOf[
+              typing.Select[R, S] {
+                type Out = tpe
+                type Msg = err
+              },
+            ]
+        }
+    }
+  }
+
+  def derivedTypingUnselectImpl[R: Type, U <: Tuple: Type](using
+    Quotes,
+  ): Expr[typing.Unselect[R, U]] = {
+    given MacroContext = MacroContext.Typing
+
+    import quotes.reflect.*
+    val internal = summon[InternalMacros]
+    import internal.*
+
+    val result = catching {
+      val schema = schemaOf[R]
+      val fieldTypes = fieldUnselectionsOf[U](schema)
+
+      val newSchema = schema.copy(fieldTypes = fieldTypes)
+      newSchema.deduped.asType
+    }
+
+    result match {
+      case TypingResult('[tpe], '[err]) =>
+        '{
+          typing
+            .Unselect
+            .instance
+            .asInstanceOf[
+              typing.Unselect[R, U] {
+                type Out = tpe
+                type Msg = err
+              },
+            ]
         }
     }
   }
