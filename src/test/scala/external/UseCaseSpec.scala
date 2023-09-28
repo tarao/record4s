@@ -88,16 +88,16 @@ class UseCaseSpec extends helper.UnitSpec {
 
       val r0 = %(name = "tarao", age = 3)
       val r1 = addEmail(r0, "tarao@example.com")
-      "r1.name" shouldNot compile
-      "r1.age" shouldNot compile
+      "r1.name" shouldNot typeCheck
+      "r1.age" shouldNot typeCheck
       r1.email shouldBe "tarao@example.com"
       r1 shouldBe a[% { val email: String }]
 
       def addEmail2[R <: % { val name: String }](record: R, email: String) =
         record ++ %(email = email)
       val r2 = addEmail(r0, "tarao@example.com")
-      "r2.name" shouldNot compile
-      "r2.age" shouldNot compile
+      "r2.name" shouldNot typeCheck
+      "r2.age" shouldNot typeCheck
       r2.email shouldBe "tarao@example.com"
       r2 shouldBe a[% { val email: String }]
     }
@@ -190,16 +190,16 @@ class UseCaseSpec extends helper.UnitSpec {
 
       val r0 = %(name = "tarao", age = 3)
       val r1 = addEmail(r0, "tarao@example.com")
-      "r1.name" shouldNot compile
-      "r1.age" shouldNot compile
+      "r1.name" shouldNot typeCheck
+      "r1.age" shouldNot typeCheck
       r1.email shouldBe "tarao@example.com"
       r1 shouldBe a[% { val email: String }]
 
       def addEmail2[R <: % { val name: String }](record: R, email: String) =
         record + (email = email)
       val r2 = addEmail(r0, "tarao@example.com")
-      "r2.name" shouldNot compile
-      "r2.age" shouldNot compile
+      "r2.name" shouldNot typeCheck
+      "r2.age" shouldNot typeCheck
       r2.email shouldBe "tarao@example.com"
       r2 shouldBe a[% { val email: String }]
     }

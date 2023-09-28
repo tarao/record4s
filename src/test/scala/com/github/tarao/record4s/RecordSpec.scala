@@ -55,22 +55,22 @@ class RecordSpec extends helper.UnitSpec {
 
       it("should reject non-literal labels") {
         val label = "name"
-        """%((label, "tarao"))""" shouldNot compile
+        """%((label, "tarao"))""" shouldNot typeCheck
 
-        """%(("age", 3), (label, "tarao"))""" shouldNot compile
+        """%(("age", 3), (label, "tarao"))""" shouldNot typeCheck
 
-        """%("age" -> 3, label -> "tarao")""" shouldNot compile
+        """%("age" -> 3, label -> "tarao")""" shouldNot typeCheck
       }
 
       it("should not allow '$' in labels") {
-        "%($value = 3)" shouldNot compile
-        "%(value$ = 3)" shouldNot compile
-        "%($minusfoobar = 3)" shouldNot compile
-        "%(foo$minusbar = 3)" shouldNot compile
-        "%(foobar$minus = 3)" shouldNot compile
+        "%($value = 3)" shouldNot typeCheck
+        "%(value$ = 3)" shouldNot typeCheck
+        "%($minusfoobar = 3)" shouldNot typeCheck
+        "%(foo$minusbar = 3)" shouldNot typeCheck
+        "%(foobar$minus = 3)" shouldNot typeCheck
 
         case class Cell($value: Int)
-        "Record.from(Cell(3))" shouldNot compile
+        "Record.from(Cell(3))" shouldNot typeCheck
       }
 
       it("should allow other signs in labels") {
@@ -80,23 +80,23 @@ class RecordSpec extends helper.UnitSpec {
 
       it("should reject non-vararg construction") {
         val args = Seq("name" -> "tarao")
-        "%(args: _*)" shouldNot compile
+        "%(args: _*)" shouldNot typeCheck
       }
 
       it("should reject accessing non-existing fields") {
         val r1 = %(name = "tarao", age = 3)
-        "r1.email" shouldNot compile
+        "r1.email" shouldNot typeCheck
 
         val r2: Record { val name: String } = r1
-        "r2.age" shouldNot compile
+        "r2.age" shouldNot typeCheck
       }
 
       it("should not allow nothing except named construction by `apply`") {
-        """%.foo(name = "tarao")""" shouldNot compile
+        """%.foo(name = "tarao")""" shouldNot typeCheck
 
-        """%("tarao")""" shouldNot compile
+        """%("tarao")""" shouldNot typeCheck
 
-        """%("tarao", age = 3)""" shouldNot compile
+        """%("tarao", age = 3)""" shouldNot typeCheck
       }
     }
 
@@ -198,12 +198,12 @@ class RecordSpec extends helper.UnitSpec {
       it("should reject non-literal key names") {
         val r = %(name = "tarao", age = 3)
         val key = "name"
-        "Record.lookup(r, key)" shouldNot compile
+        "Record.lookup(r, key)" shouldNot typeCheck
       }
 
       it("should reject statically key names not in the record") {
         val r = %(name = "tarao", age = 3)
-        """Record.lookup(r, "email")""" shouldNot compile
+        """Record.lookup(r, "email")""" shouldNot typeCheck
       }
 
       it("should allow shadowed field to be extracted") {
@@ -248,7 +248,7 @@ class RecordSpec extends helper.UnitSpec {
         val r3 = r1 ++ r2
         r3.name shouldBe "ikura"
         r3.age shouldBe 3
-        "r3.email" shouldNot compile
+        "r3.email" shouldNot typeCheck
       }
     }
 
@@ -259,7 +259,7 @@ class RecordSpec extends helper.UnitSpec {
         val r2 = r1(select.name.age)
         r2.name shouldBe "tarao"
         r2.age shouldBe 3
-        "r2.email" shouldNot compile
+        "r2.email" shouldNot typeCheck
 
         val r3 = r1(select)
         r3.toString shouldBe "%()"
@@ -287,7 +287,7 @@ class RecordSpec extends helper.UnitSpec {
         val r2 = r1(select.name("nickname").age)
         r2.nickname shouldBe "tarao"
         r2.age shouldBe 3
-        "r2.name" shouldNot compile
+        "r2.name" shouldNot typeCheck
 
         val r3 = r1(select.name(rename = "nickname").age.name)
         r3.nickname shouldBe "tarao"
@@ -303,12 +303,12 @@ class RecordSpec extends helper.UnitSpec {
       it("should reject giving a new name by non-literal string") {
         val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
         val newName = "nickname"
-        "r1(select.name(newName).age)" shouldNot compile
+        "r1(select.name(newName).age)" shouldNot typeCheck
       }
 
       it("should reject selecting missing fields") {
         val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
-        "r1(select.nickname)" shouldNot compile
+        "r1(select.nickname)" shouldNot typeCheck
       }
 
       it("should take the last one for duplicated fields") {
@@ -316,8 +316,8 @@ class RecordSpec extends helper.UnitSpec {
 
         val r2 = r1(select.name("value").age("value"))
         r2.value shouldBe 3
-        "r2.name" shouldNot compile
-        "r2.age" shouldNot compile
+        "r2.name" shouldNot typeCheck
+        "r2.age" shouldNot typeCheck
       }
     }
 
@@ -328,7 +328,7 @@ class RecordSpec extends helper.UnitSpec {
         val r2 = r1(unselect.email)
         r2.name shouldBe "tarao"
         r2.age shouldBe 3
-        "r2.email" shouldNot compile
+        "r2.email" shouldNot typeCheck
 
         val r3 = r1(unselect)
         r3 shouldBe r1
@@ -342,8 +342,8 @@ class RecordSpec extends helper.UnitSpec {
 
         val r3 = r1(unselect.email.age.nickname)
         r3.name shouldBe "tarao"
-        "r3.age" shouldNot compile
-        "r3.email" shouldNot compile
+        "r3.age" shouldNot typeCheck
+        "r3.email" shouldNot typeCheck
       }
     }
 
@@ -353,7 +353,7 @@ class RecordSpec extends helper.UnitSpec {
         trait AnotherType
 
         val r0 = %(name = "tarao", age = 3)
-        "val t0: Tag[MyType]] = r0" shouldNot compile
+        "val t0: Tag[MyType] = r0" shouldNot typeCheck
 
         val r1 = r0.tag[MyType]
         r1 shouldBe a[Tag[MyType]]
@@ -375,13 +375,13 @@ class RecordSpec extends helper.UnitSpec {
         }
 
         val r0 = %(name = "tarao fuguta", age = 3)
-        "r0.firstName" shouldNot compile
+        "r0.firstName" shouldNot typeCheck
 
         val r1 = r0.tag[Person]
         r1.firstName shouldBe "tarao"
 
         val r2 = %(age = 3).tag[Person]
-        "r2.firstName" shouldNot compile
+        "r2.firstName" shouldNot typeCheck
       }
 
       it("should preserve tags after concatenation") {
@@ -475,7 +475,7 @@ class RecordSpec extends helper.UnitSpec {
         trait MyType
 
         val r1 = %(name = "tarao", age = 3)
-        "r1.as[%{val name: String; val age: Int} & Tag[MyType]]" shouldNot compile
+        "r1.as[%{val name: String; val age: Int} & Tag[MyType]]" shouldNot typeCheck
       }
     }
 
@@ -522,12 +522,12 @@ class RecordSpec extends helper.UnitSpec {
 
       it("should reject downcast") {
         val r1 = %(name = "tarao")
-        "val r2 = r1.as[% { val name: String; val age: Int }]" shouldNot compile
+        "val r2 = r1.as[% { val name: String; val age: Int }]" shouldNot typeCheck
       }
 
       it("should reject unrelated types") {
         val r1 = %(name = "tarao", age = 3)
-        "val r2 = r1.as[% { val name: String; val email: String }]" shouldNot compile
+        "val r2 = r1.as[% { val name: String; val email: String }]" shouldNot typeCheck
       }
 
       it("should strip away statically invisible fields") {
@@ -564,7 +564,7 @@ class RecordSpec extends helper.UnitSpec {
       it("should not convert a record to a different shape of Product") {
         case class Person(name: String, age: Int)
         val r = %(value = 10)
-        "r.to[Person]" shouldNot compile
+        "r.to[Person]" shouldNot typeCheck
       }
 
       it(
@@ -572,7 +572,7 @@ class RecordSpec extends helper.UnitSpec {
       ) {
         case class Cell(value: Int)
         val r = %(value = "foo")
-        "r.to[Cell]" shouldNot compile
+        "r.to[Cell]" shouldNot typeCheck
       }
 
       it("should convert a record to a Tuple") {
@@ -709,7 +709,7 @@ class RecordSpec extends helper.UnitSpec {
         case class Person(name: String, age: Int)
         val r2 = Person("tarao", 3)
 
-        "r1 == r2" shouldNot compile
+        "r1 == r2" shouldNot typeCheck
       }
     }
 
