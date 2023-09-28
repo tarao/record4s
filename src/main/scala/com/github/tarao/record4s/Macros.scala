@@ -151,11 +151,12 @@ object Macros {
         case ConstantType(StringConstant(label)) =>
           val schema = schemaOfRecord[R]
           schema.fieldTypes.find(_._1 == label).map(_._2).getOrElse {
-            errorAndAbort(s"value ${label} is not a member of ${Type.show[R]}")
+            errorAndAbort(s"Value '${label}' is not a member of ${Type.show[R]}")
           }
         case _ =>
           errorAndAbort(
-            s"""Found:    ${Type.show[Label]}
+            s"""Invalid type of key.
+               |Found:    ${Type.show[Label]}
                |Required: (a literal string)
                |""".stripMargin,
           )
@@ -246,6 +247,11 @@ object Macros {
         }
     }
   }
+
+  private def typeNameOfImpl[T: Type](using Quotes): Expr[String] =
+    Expr(Type.show[T])
+
+  inline def typeNameOf[T]: String = ${ typeNameOfImpl[T] }
 
   private def typeReprOfTupleFromSeq(using Quotes)(
     typeReprs: Seq[quotes.reflect.TypeRepr],

@@ -108,7 +108,7 @@ private[record4s] class InternalMacros(using
       // - (2) "$" itself never gets encoded i.e. we can't distinguish for example between
       //       "$minus-" and "--" (both are encoded to "$minus$minus").
       errorAndAbort(
-        "'$' cannot be used as field label",
+        "'$' cannot be used in a field label",
         context,
       )
     else
@@ -302,7 +302,7 @@ private[record4s] class InternalMacros(using
               ) =>
               val fieldType = fieldTypeMap.getOrElse(
                 label,
-                errorAndAbort(s"Missing key ${label}"),
+                errorAndAbort(s"Missing key '${label}'"),
               )
               fieldTypes(Type.of[tail], acc :+ (label, renamed, fieldType))
             case _ =>
@@ -332,7 +332,7 @@ private[record4s] class InternalMacros(using
               unselectedLabelsOf[tail](acc + label)
             case _ =>
               errorAndAbort(
-                "Selector type element must be a literal label",
+                "Unselector type element must be a literal label",
               )
           }
         case '[EmptyTuple] =>

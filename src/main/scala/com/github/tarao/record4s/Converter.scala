@@ -27,14 +27,13 @@ object Converter {
     s: typing.Select[R, r1.ElemLabels],
     r2: RecordLike[s.Out],
     ev: r2.ElemTypes <:< m.MirroredElemTypes,
-  ): Converter[R, P] = withPotentialTypingError {
+  ): Converter[R, P] =
     new Converter {
       def apply(record: R): P = {
         val s = Selector.of[r1.ElemLabels]
         m.fromTuple(ev(record(s).values))
       }
     }
-  }
 
   inline given [R <: %, T <: NonEmptyTuple](using
     r: RecordLike[R],

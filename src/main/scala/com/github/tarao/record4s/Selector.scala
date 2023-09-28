@@ -3,7 +3,7 @@ package com.github.tarao.record4s
 import scala.compiletime.requireConst
 import scala.language.dynamics
 
-class Selector[T <: Tuple] extends Dynamic {
+final class Selector[T <: Tuple] extends Dynamic {
   import Selector.:*
 
   inline def applyDynamic[
@@ -38,7 +38,7 @@ object Selector {
   def of[T <: Tuple]: Selector[T] = new Selector
 }
 
-class Unselector[T <: Tuple] extends Dynamic {
+final class Unselector[T <: Tuple] extends Dynamic {
   import Unselector.:*
 
   inline def selectDynamic[
