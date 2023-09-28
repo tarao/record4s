@@ -186,7 +186,7 @@ class RecordSpec extends helper.UnitSpec {
       }
     }
 
-    describe("Lookup") {
+    describe("Record.lookup") {
       it("should return a value by a string key name") {
         val r = %(name = "tarao", age = 3)
         Record.lookup(r, "name") shouldBe a[String]
@@ -199,6 +199,11 @@ class RecordSpec extends helper.UnitSpec {
         val r = %(name = "tarao", age = 3)
         val key = "name"
         "Record.lookup(r, key)" shouldNot compile
+      }
+
+      it("should reject statically key names not in the record") {
+        val r = %(name = "tarao", age = 3)
+        """Record.lookup(r, "email")""" shouldNot compile
       }
 
       it("should allow shadowed field to be extracted") {
