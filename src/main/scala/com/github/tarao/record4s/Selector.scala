@@ -39,6 +39,8 @@ object Selector {
   def of[T <: Tuple]: Selector[T] = new Selector
 
   extension [T <: Tuple](s: Selector[T]) {
+    // This should be `inline def` with `typing.potentialTypingError` but it seems that
+    // inlining doesn't work in `unapply`.
     def unapply[R: RecordLike](record: R)(using
       t: typing.Select[R, T],
       r: RecordLike[t.Out],
