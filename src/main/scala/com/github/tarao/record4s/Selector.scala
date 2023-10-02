@@ -39,15 +39,17 @@ object Selector {
   def of[T <: Tuple]: Selector[T] = new Selector
 
   extension [T <: Tuple](s: Selector[T]) {
-    def unapply[R <: %](record: R)(using
+    def unapply[R: RecordLike](record: R)(using
       t: typing.Select[R, T],
       r: RecordLike[t.Out],
-    ): r.ElemTypes =
+    ): r.ElemTypes = {
+      val m = summon[RecordLike[R]].iterableOf(record).toMap
       s.labels
         .foldRight(EmptyTuple: Tuple) { (label, values) =>
-          record.__data(label) *: values
+          m(label) *: values
         }
         .asInstanceOf[r.ElemTypes]
+    }
   }
 }
 

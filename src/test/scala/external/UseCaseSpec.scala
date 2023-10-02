@@ -226,6 +226,15 @@ class UseCaseSpec extends helper.UnitSpec {
         case _ =>
           fail()
       }
+
+      case class Person(name: String, age: Int)
+      val p = Person("tarao", 3)
+      p match {
+        case select.age(age) =>
+          age shouldBe 3
+        case _ =>
+          fail()
+      }
     }
   }
 }
