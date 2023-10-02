@@ -211,15 +211,15 @@ class UseCaseSpec extends helper.UnitSpec {
     it("should be possible to match records by `select` and `values`") {
       val r = %(name = "tarao", age = 3, email = "tarao@example.com")
 
-      r(select.name.age).values match {
-        case (name, age) =>
+      r match {
+        case select.name.age(name, age) =>
           name shouldBe "tarao"
           age shouldBe 3
       }
 
       val pattern = "(.*)@(.*)".r
-      r(select.name.email).values match {
-        case (name, pattern(user, domain)) =>
+      r match {
+        case select.name.email(name, pattern(user, domain)) =>
           name shouldBe "tarao"
           user shouldBe "tarao"
           domain shouldBe "example.com"
