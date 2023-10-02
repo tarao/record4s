@@ -25,13 +25,13 @@ class TypeErrorSpec extends helper.UnitSpec {
           def addEmail[R <: %, RR <: %](record: R, email: String)(using
             typing.Concat.Aux[R, Nothing, RR],
           ): RR = record ++ %(email = email)
-        """ shouldNot compile
+        """ shouldNot typeCheck
 
         """
           def addEmail[R <: %, RR <: %](record: R, email: String)(using
             typing.Concat.Aux[R, % { val name: String }, RR],
           ): RR = record ++ %(email = email)
-        """ shouldNot compile
+        """ shouldNot typeCheck
       }
     }
 
