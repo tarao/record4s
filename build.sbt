@@ -36,6 +36,16 @@ lazy val commonSettings = Def.settings(
 )
 
 lazy val root = (project in file("."))
+  .aggregate(core)
+  .settings(commonSettings)
+  .settings(
+    crossScalaVersions := Nil,
+    console := (core / Compile / console).value,
+    Test / console := (core / Test / console).value,
+    ThisBuild / Test / parallelExecution := false
+  )
+
+lazy val core = (project in file("modules/core"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
