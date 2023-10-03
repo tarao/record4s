@@ -9,7 +9,7 @@ class TypeErrorSpec extends helper.UnitSpec {
         def checkErrors(errs: List[Error]): Unit = {
           errs should not be empty
           errs.head.kind shouldBe ErrorKind.Typer
-          errs.head.message should startWith(
+          val _ = errs.head.message should startWith(
             "'$' cannot be used in a field label",
           )
         }
@@ -59,7 +59,8 @@ class TypeErrorSpec extends helper.UnitSpec {
         def checkErrors(errs: List[Error]): Unit = {
           errs should not be empty
           errs.head.kind shouldBe ErrorKind.Typer
-          errs.head.message should include regex "Missing key \\\\?'age\\\\?'"
+          val _ =
+            errs.head.message should include regex "Missing key \\\\?'age\\\\?'"
         }
 
         val r = %(name = "tarao")
