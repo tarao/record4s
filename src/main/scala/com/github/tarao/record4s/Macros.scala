@@ -89,7 +89,6 @@ object Macros {
   def derivedProductProxyOfRecordImpl[R <: `%`: Type](using
     Quotes,
   ): Expr[ProductProxy.OfRecord[R]] = {
-    import quotes.reflect.*
     val internal = summon[InternalMacros]
     import internal.*
 
@@ -110,7 +109,6 @@ object Macros {
   ): Expr[typing.Concat[R1, R2]] = {
     given MacroContext = MacroContext.Typing
 
-    import quotes.reflect.*
     val internal = summon[InternalMacros]
     import internal.*
 
@@ -184,7 +182,6 @@ object Macros {
   ): Expr[typing.Select[R, S]] = {
     given MacroContext = MacroContext.Typing
 
-    import quotes.reflect.*
     val internal = summon[InternalMacros]
     import internal.*
 
@@ -220,7 +217,6 @@ object Macros {
   ): Expr[typing.Unselect[R, U]] = {
     given MacroContext = MacroContext.Typing
 
-    import quotes.reflect.*
     val internal = summon[InternalMacros]
     import internal.*
 

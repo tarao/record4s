@@ -7,8 +7,6 @@ trait Converter[From, To] {
 }
 
 object Converter {
-  import typing.withPotentialTypingError
-
   /** Converter instance from a record to a product
     *
     * Target product type `P` must provide `Mirror.Of[P]`.

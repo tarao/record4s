@@ -366,7 +366,6 @@ private[record4s] class InternalMacros(using
 
 private[record4s] object InternalMacros {
   import scala.quoted.*
-  import scala.util.NotGiven
 
   given (using Quotes, MacroContext): InternalMacros = new InternalMacros
 
