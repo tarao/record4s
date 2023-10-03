@@ -43,7 +43,7 @@ object Record {
   inline def lookup[R <: %, L <: String & Singleton, Out](record: R, label: L)(
     using typing.Lookup.Aux[R, L, Out],
   ): Out = withPotentialTypingError {
-    record.__data(label).asInstanceOf[Out]
+    record.__lookup(label).asInstanceOf[Out]
   }
 
   /** Construct a record from something else.
@@ -112,7 +112,7 @@ object Record {
       other: R2,
     )(using typing.Concat.Aux[R, R2, RR]): RR = withPotentialTypingError {
       newMapRecord[RR](
-        record.__data ++ summon[RecordLike[R2]].tidiedIterableOf(other),
+        record.__iterable ++ summon[RecordLike[R2]].tidiedIterableOf(other),
       )
     }
 
@@ -151,12 +151,12 @@ object Record {
           val st2 = summonInline[newLabel <:< String]
           (
             st2(valueOf[newLabel]),
-            record.__data(st1(valueOf[label])),
+            record.__lookup(st1(valueOf[label])),
           ) +: toSelectedIterable[tail]
         case _: (label *: tail) =>
           val st = summonInline[label <:< String]
           val labelStr = st(valueOf[label])
-          (labelStr, record.__data(labelStr)) +: toSelectedIterable[tail]
+          (labelStr, record.__lookup(labelStr)) +: toSelectedIterable[tail]
         case _: EmptyTuple =>
           Seq.empty
       }
@@ -225,7 +225,7 @@ object Record {
     inline def values(using r: RecordLike[R]): r.ElemTypes =
       r.elemLabels
         .foldRight(EmptyTuple: Tuple) { (label, tuple) =>
-          record.__data(label) *: tuple
+          record.__lookup(label) *: tuple
         }
         .asInstanceOf[r.ElemTypes]
 
@@ -282,7 +282,7 @@ object Record {
       val tuple = r
         .elemLabels
         .foldRight(EmptyTuple: Tuple) { (label, tuple) =>
-          (label, record.__data(label)) *: tuple
+          (label, record.__lookup(label)) *: tuple
         }
       tuple.asInstanceOf[Tuple.Zip[r.ElemLabels, r.ElemTypes]]
     }
@@ -291,7 +291,7 @@ object Record {
   given canEqualReflexive[R <: %]: CanEqual[R, R] = CanEqual.derived
 
   final class RecordLikeRecord[R <: %] extends RecordLike[R] {
-    def iterableOf(r: R): Iterable[(String, Any)] = r.__data
+    def iterableOf(r: R): Iterable[(String, Any)] = r.__iterable
   }
 
   transparent inline given recordLike[R <: %]: RecordLike[R] =
@@ -328,18 +328,23 @@ object Record {
   * }}}
   */
 abstract class % extends Record with Selectable {
-  private[record4s] def __data: Map[String, Any]
+  private[record4s] def __lookup(key: String): Any
+
+  private[record4s] def __iterable: Iterable[(String, Any)]
 
   def selectDynamic(name: String): Any =
-    __data(scala.reflect.NameTransformer.decode(name))
+    __lookup(scala.reflect.NameTransformer.decode(name))
 
   override def toString(): String =
-    __data.iterator.map { case (k, v) => s"$k = $v" }.mkString("%(", ", ", ")")
+    __iterable
+      .iterator
+      .map { case (k, v) => s"$k = $v" }
+      .mkString("%(", ", ", ")")
 
   override def equals(other: Any): Boolean =
     other match {
       case other: % =>
-        __data == other.__data
+        __iterable == other.__iterable
       case _ =>
         false
     }
@@ -351,4 +356,8 @@ val % = new Record.Extensible(Record.empty)
   *
   * This class is exposed due to inlining but not intended to be used directly.
   */
-final class MapRecord(private[record4s] val __data: Map[String, Any]) extends %
+final class MapRecord(private val __data: Map[String, Any]) extends % {
+  override private[record4s] def __lookup(key: String): Any = __data(key)
+
+  override private[record4s] def __iterable: Iterable[(String, Any)] = __data
+}
