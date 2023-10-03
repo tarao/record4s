@@ -2,16 +2,15 @@ package com.github.tarao.record4s
 
 object Macros {
   import scala.quoted.*
-  import InternalMacros.MacroContext
+  import InternalMacros.{internal, withInternal, withTyping}
 
   /** Macro implementation of `%.apply` */
   def applyImpl[R: Type](
     record: Expr[R],
     method: Expr[String],
     args: Expr[Seq[(String, Any)]],
-  )(using Quotes): Expr[Any] = {
+  )(using Quotes): Expr[Any] = withInternal {
     import quotes.reflect.*
-    val internal = summon[InternalMacros]
     import internal.*
 
     requireApply(record, method) {
@@ -50,9 +49,8 @@ object Macros {
 
   def derivedRecordLikeImpl[R <: `%`: Type](using
     Quotes,
-  ): Expr[RecordLike[R]] = {
+  ): Expr[RecordLike[R]] = withInternal {
     import quotes.reflect.*
-    val internal = summon[InternalMacros]
     import internal.*
 
     val schema = schemaOfRecord[R]
@@ -88,8 +86,7 @@ object Macros {
 
   def derivedProductProxyOfRecordImpl[R <: `%`: Type](using
     Quotes,
-  ): Expr[ProductProxy.OfRecord[R]] = {
-    val internal = summon[InternalMacros]
+  ): Expr[ProductProxy.OfRecord[R]] = withInternal {
     import internal.*
 
     schemaOf[R].asType(Type.of[ProductProxy]) match {
@@ -106,10 +103,7 @@ object Macros {
 
   def derivedTypingConcatImpl[R1: Type, R2: Type](using
     Quotes,
-  ): Expr[typing.Concat[R1, R2]] = {
-    given MacroContext = MacroContext.Typing
-
-    val internal = summon[InternalMacros]
+  ): Expr[typing.Concat[R1, R2]] = withTyping {
     import internal.*
 
     val result = catching {
@@ -137,11 +131,8 @@ object Macros {
 
   def derivedTypingLookupImpl[R: Type, Label: Type](using
     Quotes,
-  ): Expr[typing.Lookup[R, Label]] = {
-    given MacroContext = MacroContext.Typing
-
+  ): Expr[typing.Lookup[R, Label]] = withTyping {
     import quotes.reflect.*
-    val internal = summon[InternalMacros]
     import internal.*
 
     val result = catching {
@@ -149,7 +140,9 @@ object Macros {
         case ConstantType(StringConstant(label)) =>
           val schema = schemaOfRecord[R]
           schema.fieldTypes.find(_._1 == label).map(_._2).getOrElse {
-            errorAndAbort(s"Value '${label}' is not a member of ${Type.show[R]}")
+            errorAndAbort(
+              s"Value '${label}' is not a member of ${Type.show[R]}",
+            )
           }
         case _ =>
           errorAndAbort(
@@ -179,10 +172,7 @@ object Macros {
 
   def derivedTypingSelectImpl[R: Type, S: Type](using
     Quotes,
-  ): Expr[typing.Select[R, S]] = {
-    given MacroContext = MacroContext.Typing
-
-    val internal = summon[InternalMacros]
+  ): Expr[typing.Select[R, S]] = withTyping {
     import internal.*
 
     val result = catching {
@@ -214,10 +204,7 @@ object Macros {
 
   def derivedTypingUnselectImpl[R: Type, U <: Tuple: Type](using
     Quotes,
-  ): Expr[typing.Unselect[R, U]] = {
-    given MacroContext = MacroContext.Typing
-
-    val internal = summon[InternalMacros]
+  ): Expr[typing.Unselect[R, U]] = withTyping {
     import internal.*
 
     val result = catching {

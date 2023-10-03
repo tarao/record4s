@@ -369,6 +369,20 @@ private[record4s] object InternalMacros {
 
   given (using Quotes, MacroContext): InternalMacros = new InternalMacros
 
+  transparent inline def internal(using i: InternalMacros): i.type = i
+
+  inline def withInternal[T](using Quotes, InternalMacros)(
+    inline block: InternalMacros ?=> T,
+  ): T =
+    block(using summon[InternalMacros])
+
+  inline def withTyping[T](using Quotes)(
+    inline block: (MacroContext, InternalMacros) ?=> T,
+  ): T = {
+    given MacroContext = MacroContext.Typing
+    block(using summon[MacroContext], summon[InternalMacros])
+  }
+
   class TypingError(message: String) extends Error(message)
 
   sealed trait MacroContext {
