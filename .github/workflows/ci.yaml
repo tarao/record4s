@@ -23,4 +23,4 @@ jobs:
         distribution: temurin
         java-version: ${{ matrix.java }}
     - name: Run tests
-      run: sbt test
+      run: sbt +test
