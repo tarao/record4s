@@ -19,19 +19,22 @@ object Record {
     * hidden by own methods of `class %`.
     *
     * @example
-    *   {{{
-    * val r = %(value = 3, toString = 10)
+    *   ```
+    *   //{
+    *   import com.github.tarao.record4s.%
+    *   //}
+    *   val r = %(value = 3, toString = 10)
     *
-    * r.value
-    * // val res0: Int = 3
-    * r.toString
-    * // val res1: String = %(value = 3, toString = 10)
+    *   r.value
+    *   // val res0: Int = 3
+    *   r.toString
+    *   // val res1: String = %(value = 3, toString = 10)
     *
-    * Record.lookup(r, "value")
-    * // val res2: Int = 3
-    * Record.lookup(r, "toString")
-    * // val res3: Int = 10
-    *   }}}
+    *   Record.lookup(r, "value")
+    *   // val res2: Int = 3
+    *   Record.lookup(r, "toString")
+    *   // val res3: Int = 10
+    *   ```
     *
     * @param record
     *   a record
@@ -49,12 +52,12 @@ object Record {
   /** Construct a record from something else.
     *
     * @example
-    *   {{{
-    * case class Person(name: String, age: Int)
-    * val p = Person("tarao", 3)
-    * val r = Record.from(p)
-    * // val r: com.github.tarao.record4s.%{val name: String; val age: Int} = %(name = tarao, age = 3)
-    *   }}}
+    *   ```
+    *   case class Person(name: String, age: Int)
+    *   val p = Person("tarao", 3)
+    *   val r = Record.from(p)
+    *   // val r: com.github.tarao.record4s.%{val name: String; val age: Int} = %(name = tarao, age = 3)
+    *   ```
     *
     * @tparam T
     *   some type given `RecordLike[T]`
@@ -78,10 +81,10 @@ object Record {
       * field overrides the old one.
       *
       * @example
-      *   {{{
-      * val r = %(name = "tarao") + (age = 3, email = "tarao@example.com")
-      * // val r: com.github.tarao.record4s.%{val name: String; val age: Int; val email: String} = %(name = tarao, age = 3, email = tarao@example.com)
-      *   }}}
+      *   ```
+      *   val r = %(name = "tarao") + (age = 3, email = "tarao@example.com")
+      *   // val r: com.github.tarao.record4s.%{val name: String; val age: Int; val email: String} = %(name = tarao, age = 3, email = tarao@example.com)
+      *   ```
       *
       * @return
       *   an object to define new fields
@@ -94,12 +97,12 @@ object Record {
       * from the latter record.
       *
       * @example
-      *   {{{
-      * val r1 = %(name = "tarao", age = 3)
-      * val r2 = %(age = 4, email = "tarao@example.com")
-      * val r3 = r1 ++ r2
-      * // val r3: com.github.tarao.record4s.%{val name: String; val age: Int; val email: String} = %(name = tarao, age = 4, email = tarao@example.com)
-      *   }}}
+      *   ```
+      *   val r1 = %(name = "tarao", age = 3)
+      *   val r2 = %(age = 4, email = "tarao@example.com")
+      *   val r3 = r1 ++ r2
+      *   // val r3: com.github.tarao.record4s.%{val name: String; val age: Int; val email: String} = %(name = tarao, age = 4, email = tarao@example.com)
+      *   ```
       *
       * @tparam R2
       *   a record type (given `RecordLike[R2]`)
@@ -119,13 +122,13 @@ object Record {
     /** Create a new record by selecting some fields of an existing record.
       *
       * @example
-      *   {{{
-      * val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
-      * val r2 = r1(select.name.age)
-      * // val r2: com.github.tarao.record4s.%{val name: String; val age: Int} = %(name = tarao, age = 3)
-      * val r3 = r1(select.name(rename = "nickname").age)
-      * // val r3: com.github.tarao.record4s.%{val nickname: String; val age: Int} = %(nickname = tarao, age = 3)
-      *   }}}
+      *   ```
+      *   val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+      *   val r2 = r1(select.name.age)
+      *   // val r2: com.github.tarao.record4s.%{val name: String; val age: Int} = %(name = tarao, age = 3)
+      *   val r3 = r1(select.name(rename = "nickname").age)
+      *   // val r3: com.github.tarao.record4s.%{val nickname: String; val age: Int} = %(nickname = tarao, age = 3)
+      *   ```
       *
       * @tparam S
       *   list of selected field as a Tuple
@@ -165,10 +168,10 @@ object Record {
     /** Create a new record by unselecting some fields of an existing record.
       *
       * @example
-      *   {{{
-      * val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
-      * val r2 = r1(unselect.email)
-      *   }}}
+      *   ```
+      *   val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+      *   val r2 = r1(unselect.email)
+      *   ```
       *
       * @tparam U
       *   list of unselected field as a Tuple
@@ -190,17 +193,17 @@ object Record {
     /** Give a type tag to this record.
       *
       * @example
-      *   {{{
-      * trait Person; object Person {
-      *   extension (p: %{val name: String} & Tag[Person]) {
-      *     def firstName: String = p.name.split(" ").head
+      *   ```
+      *   trait Person; object Person {
+      *     extension (p: %{val name: String} & Tag[Person]) {
+      *       def firstName: String = p.name.split(" ").head
+      *     }
       *   }
-      * }
       *
-      * val r = %(name = "tarao fuguta", age = 3).tag[Person]
-      * r.firstName
-      * // val res0: String = tarao
-      *   }}}
+      *   val r = %(name = "tarao fuguta", age = 3).tag[Person]
+      *   r.firstName
+      *   // val res0: String = tarao
+      *   ```
       *
       * @tparam T
       *   an arbitrary type used as a tag
@@ -213,11 +216,11 @@ object Record {
     /** Return values of this record as a `Tuple`.
       *
       * @example
-      *   {{{
-      * val r1 = %(name = "tarao", age = 3)
-      * r1.values
-      * // val res0: (String, Int) = (tarao,3)
-      *   }}}
+      *   ```
+      *   val r1 = %(name = "tarao", age = 3)
+      *   r1.values
+      *   // val res0: (String, Int) = (tarao,3)
+      *   ```
       *
       * @return
       *   values of the record as a tuple
@@ -232,12 +235,12 @@ object Record {
     /** Upcast the record to specified type.
       *
       * @example
-      *   {{{
-      * val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
-      * // val r1: com.github.tarao.record4s.%{val name: String; val age: Int; val email: String} = %(name = tarao, age = 3, email = tarao@example.com)
-      * val r2 = r1.as[% { val name: String; val age: Int }]
-      * // val r2: com.github.tarao.record4s.%{val name: String; val age: Int} = %(name = tarao, age = 3)
-      *   }}}
+      *   ```
+      *   val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
+      *   // val r1: com.github.tarao.record4s.%{val name: String; val age: Int; val email: String} = %(name = tarao, age = 3, email = tarao@example.com)
+      *   val r2 = r1.as[% { val name: String; val age: Int }]
+      *   // val r2: com.github.tarao.record4s.%{val name: String; val age: Int} = %(name = tarao, age = 3)
+      *   ```
       *
       * @tparam R2
       *   target type
@@ -250,12 +253,12 @@ object Record {
     /** Convert this record to a `To`.
       *
       * @example
-      *   {{{
-      * case class Person(name: String, age: Int)
-      * val r = %(name = "tarao", age = 3)
-      * r.to[Person]
-      * // val res0: Person = Person(tarao,3)
-      *   }}}
+      *   ```
+      *   case class Person(name: String, age: Int)
+      *   val r = %(name = "tarao", age = 3)
+      *   r.to[Person]
+      *   // val res0: Person = Person(tarao,3)
+      *   ```
       *
       * @tparam To
       *   a type to which the record is converted
@@ -267,11 +270,11 @@ object Record {
     /** Convert this record to a `Tuple`.
       *
       * @example
-      *   {{{
-      * val r1 = %(name = "tarao", age = 3)
-      * r1.toTuple
-      * // val res0: (("name", String), ("age", Int)) = ((name,tarao),(age,3))
-      *   }}}
+      *   ```
+      *   val r1 = %(name = "tarao", age = 3)
+      *   r1.toTuple
+      *   // val res0: (("name", String), ("age", Int)) = ((name,tarao),(age,3))
+      *   ```
       *
       * @return
       *   fields of label-value pairs as a tuple
@@ -318,14 +321,14 @@ object Record {
 /** Base class for records.
   *
   * Example
-  * {{{
+  * ```
   * val r = %(name = "tarao", age = 3)
   * // val r: com.github.tarao.record4s.%{val name: String; val age: Int} = %(name = tarao, age = 3)
   * r.name
   * // val res0: String = tarao
   * r.age
   * // val res1: Int = 3
-  * }}}
+  * ```
   */
 abstract class % extends Record with Selectable {
   private[record4s] def __lookup(key: String): Any

@@ -12,12 +12,12 @@ object Converter {
     * Target product type `P` must provide `Mirror.Of[P]`.
     *
     * @example
-    *   {{{
-    * case class Person(name: String, age: Int)
-    * val r = %(name = "tarao", age = 3)
-    * r.to[Person]
-    * // val res0: Person = Person(tarao,3)
-    *   }}}
+    *   ```
+    *   case class Person(name: String, age: Int)
+    *   val r = %(name = "tarao", age = 3)
+    *   r.to[Person]
+    *   // val res0: Person = Person(tarao,3)
+    *   ```
     */
   inline given [R <: %, P <: Product](using
     m: Mirror.ProductOf[P],
