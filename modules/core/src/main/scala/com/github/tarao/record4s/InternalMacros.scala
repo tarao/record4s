@@ -10,12 +10,12 @@ private[record4s] class InternalMacros(using
   import quotes.reflect.*
 
   case class TypingResult(
-    resultType: Type[_],
-    error: Type[_],
+    resultType: Type[?],
+    error: Type[?],
   )
 
   object TypingResult {
-    def success(tpe: Type[_]): TypingResult = TypingResult(
+    def success(tpe: Type[?]): TypingResult = TypingResult(
       resultType = tpe,
       error      = Type.of[Nothing],
     )
@@ -29,7 +29,7 @@ private[record4s] class InternalMacros(using
   def errorAndAbort(msg: String, expr: Option[Expr[Any]] = None): Nothing =
     summon[InternalMacros.MacroContext].reporter.errorAndAbort(msg, expr)
 
-  def catching(block: => Type[_]): TypingResult =
+  def catching(block: => Type[?]): TypingResult =
     try
       TypingResult.success(block)
     catch {
@@ -38,21 +38,21 @@ private[record4s] class InternalMacros(using
     }
 
   case class Schema(
-    fieldTypes: Seq[(String, Type[_])],
-    tags: Seq[Type[_]],
+    fieldTypes: Seq[(String, Type[?])],
+    tags: Seq[Type[?]],
   ) {
     def ++(other: Schema): Schema = copy(
       fieldTypes = fieldTypes ++ other.fieldTypes,
       tags       = tags ++ other.tags,
     )
 
-    def ++(other: Seq[(String, Type[_])]): Schema = copy(
+    def ++(other: Seq[(String, Type[?])]): Schema = copy(
       fieldTypes = fieldTypes ++ other,
     )
 
     def deduped: Schema = {
       val seen = collection.mutable.HashSet[String]()
-      val deduped = collection.mutable.ListBuffer.empty[(String, Type[_])]
+      val deduped = collection.mutable.ListBuffer.empty[(String, Type[?])]
       fieldTypes.reverseIterator.foreach { case (label, tpe) =>
         if (seen.add(label)) deduped.prepend((label, tpe))
       }
@@ -60,9 +60,9 @@ private[record4s] class InternalMacros(using
       copy(fieldTypes = deduped.toSeq)
     }
 
-    def asType: Type[_] = asType(Type.of[%])
+    def asType: Type[?] = asType(Type.of[%])
 
-    def asType(base: Type[_]): Type[_] = {
+    def asType(base: Type[?]): Type[?] = {
       val baseRepr = base match { case '[tpe] => TypeRepr.of[tpe] }
 
       // Generates:
@@ -139,9 +139,9 @@ private[record4s] class InternalMacros(using
     val nothing = TypeRepr.of[Nothing]
 
     @tailrec def collectTupledFieldTypes(
-      tpe: Type[_],
-      acc: Seq[(String, Type[_])],
-    ): Seq[(String, Type[_])] = tpe match {
+      tpe: Type[?],
+      acc: Seq[(String, Type[?])],
+    ): Seq[(String, Type[?])] = tpe match {
       case '[(labelType, valueType) *: rest]
         // Type variable or Nothing always matches with `Nothing *: Nothing`
         if TypeRepr.of[labelType] != nothing
@@ -233,11 +233,11 @@ private[record4s] class InternalMacros(using
 
   def fieldTypeOf(
     field: Expr[(String, Any)],
-  ): (String, Type[_]) = {
+  ): (String, Type[?]) = {
     def fieldTypeOf(
       labelExpr: Expr[Any],
       valueExpr: Expr[Any],
-    ): (String, Type[_]) = {
+    ): (String, Type[?]) = {
       val label = labelExpr.asTerm match {
         case Literal(StringConstant(label)) =>
           validatedLabel(label, Some(labelExpr))
@@ -269,7 +269,7 @@ private[record4s] class InternalMacros(using
 
   def fieldTypesOf(
     fields: Seq[Expr[(String, Any)]],
-  ): Seq[(String, Type[_])] = fields.map(fieldTypeOf(_))
+  ): Seq[(String, Type[?])] = fields.map(fieldTypeOf(_))
 
   def iterableOf[R: Type](
     record: Expr[R],
@@ -281,18 +281,18 @@ private[record4s] class InternalMacros(using
 
   def fieldSelectionsOf[S: Type](
     schema: Schema,
-  ): Seq[(String, String, Type[_])] = {
+  ): Seq[(String, String, Type[?])] = {
     val fieldTypeMap = schema.fieldTypes.toMap
 
-    def normalize(t: Type[_]): (TypeRepr, TypeRepr) = t match {
+    def normalize(t: Type[?]): (TypeRepr, TypeRepr) = t match {
       case '[(l1, l2)] => (TypeRepr.of[l1], TypeRepr.of[l2])
       case '[l]        => (TypeRepr.of[l], TypeRepr.of[l])
     }
 
     @tailrec def fieldTypes(
-      t: Type[_],
-      acc: Seq[(String, String, Type[_])],
-    ): Seq[(String, String, Type[_])] =
+      t: Type[?],
+      acc: Seq[(String, String, Type[?])],
+    ): Seq[(String, String, Type[?])] =
       t match {
         case '[head *: tail] =>
           normalize(Type.of[head]) match {
@@ -321,7 +321,7 @@ private[record4s] class InternalMacros(using
 
   def fieldUnselectionsOf[U <: Tuple: Type](
     schema: Schema,
-  ): Seq[(String, Type[_])] = {
+  ): Seq[(String, Type[?])] = {
     @tailrec def unselectedLabelsOf[U <: Tuple: Type](
       acc: Set[String],
     ): Set[String] =

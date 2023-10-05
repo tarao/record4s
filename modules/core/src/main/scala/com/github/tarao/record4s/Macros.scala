@@ -54,7 +54,7 @@ object Macros {
     import internal.*
 
     val schema = schemaOfRecord[R]
-    val base = (Type.of[EmptyTuple]: Type[_], Type.of[EmptyTuple]: Type[_])
+    val base = (Type.of[EmptyTuple]: Type[?], Type.of[EmptyTuple]: Type[?])
     val (elemLabels, elemTypes) = schema
       .fieldTypes
       .foldRight(base) { case ((label, tpe), (baseLabels, baseTypes)) =>
