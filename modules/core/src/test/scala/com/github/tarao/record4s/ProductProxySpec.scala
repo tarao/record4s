@@ -14,10 +14,12 @@ class ProductProxySpec extends helper.UnitSpec {
       p1.name shouldBe "tarao"
       p1.age shouldBe 3
 
-      helper.showTypeOf(p1) shouldBe """ProductProxy {
-                                       |  val name: String
-                                       |  val age: Int
-                                       |}""".stripMargin
+      helper.showTypeOf(p1) should fullyMatch regex (
+        """ProductProxy\[.*\] \{
+          |  val name: String
+          |  val age: Int
+          |\}""".stripMargin
+      )
 
       trait Person
       val r2 = %(name = "tarao", age = 3).tag[Person]
@@ -32,16 +34,20 @@ class ProductProxySpec extends helper.UnitSpec {
       p2.name shouldBe "tarao"
       p2.age shouldBe 3
 
-      helper.showTypeOf(p2) shouldBe """ProductProxy {
-                                       |  val name: String
-                                       |  val age: Int
-                                       |} & Tag[Person]""".stripMargin
+      helper.showTypeOf(p2) should fullyMatch regex (
+        """ProductProxy\[.*\] \{
+          |  val name: String
+          |  val age: Int
+          |\} & Tag\[Person\]""".stripMargin
+      )
     }
 
     it("can be mirrored") {
       import scala.deriving.Mirror
 
-      type PersonRecord = ProductProxy {
+      type ElemLabels = "name" *: "age" *: EmptyTuple
+      type ElemTypes = String *: Int *: EmptyTuple
+      type PersonRecord = ProductProxy[ElemLabels, ElemTypes] {
         val name: String
         val age: Int
       }

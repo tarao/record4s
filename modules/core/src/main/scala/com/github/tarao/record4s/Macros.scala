@@ -89,14 +89,25 @@ object Macros {
   ): Expr[ProductProxy.OfRecord[R]] = withInternal {
     import internal.*
 
-    schemaOf[R].asType(Type.of[ProductProxy]) match {
-      case '[tpe] =>
-        '{
-          (new ProductProxy.OfRecord).asInstanceOf[
-            ProductProxy.OfRecord[R] {
-              type Out = tpe
-            },
-          ]
+    val schema = schemaOf[R]
+    val recordLike = evidenceOf[RecordLike[R]]
+
+    recordLike match {
+      case '{
+          ${ _ }: RecordLike[R] {
+            type ElemTypes = elemTypes
+            type ElemLabels = elemLabels
+          }
+        } =>
+        schema.asType(Type.of[ProductProxy[elemLabels, elemTypes]]) match {
+          case '[tpe] =>
+            '{
+              (new ProductProxy.OfRecord).asInstanceOf[
+                ProductProxy.OfRecord[R] {
+                  type Out = tpe
+                },
+              ]
+            }
         }
     }
   }

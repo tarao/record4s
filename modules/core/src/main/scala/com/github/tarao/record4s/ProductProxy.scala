@@ -2,7 +2,7 @@ package com.github.tarao.record4s
 
 import scala.deriving.Mirror
 
-final class ProductProxy(
+final class ProductProxy[ElemLabels, ElemTypes](
   override private[record4s] val __iterable: (String, Any)*,
 ) extends %
     with Product {
@@ -16,20 +16,21 @@ final class ProductProxy(
 
   override def productElementName(n: Int): String = __iterable(n)._1
 
-  override def canEqual(that: Any): Boolean = that.isInstanceOf[ProductProxy]
+  override def canEqual(that: Any): Boolean =
+    that.isInstanceOf[ProductProxy[?, ?]]
 
   override def equals(that: Any): Boolean =
     that match {
-      case that: ProductProxy => __iterable == that.__iterable
-      case _                  => false
+      case that: ProductProxy[?, ?] => __iterable == that.__iterable
+      case _                        => false
     }
 }
 
 object ProductProxy {
   final class ProductProxyMirror[
-    P <: ProductProxy,
-    ElemTypes,
     ElemLabels <: Tuple,
+    ElemTypes,
+    P <: ProductProxy[ElemLabels, ElemTypes],
   ](elemLabels: Seq[String])
       extends Mirror.Product {
     type MirroredMonoType = P
@@ -42,13 +43,15 @@ object ProductProxy {
       new ProductProxy(elemLabels.zip(p.productIterator): _*).asInstanceOf[P]
   }
 
-  inline given [P <: ProductProxy](using
-    r: RecordLike[P],
-  ): ProductProxyMirror[P, r.ElemTypes, r.ElemLabels] =
-    new ProductProxyMirror(r.elemLabels)
+  inline given [
+    ElemLabels <: Tuple,
+    ElemTypes,
+    P <: ProductProxy[ElemLabels, ElemTypes],
+  ]: ProductProxyMirror[ElemLabels, ElemTypes, P] =
+    new ProductProxyMirror(RecordLike.seqOfLabels[ElemLabels])
 
   final class OfRecord[R <: %] {
-    type Out <: ProductProxy
+    type Out <: ProductProxy[?, ?]
   }
 
   object OfRecord {

@@ -19,7 +19,7 @@ trait RecordLike[R] {
 }
 
 object RecordLike {
-  private inline def seqOfLabels[T <: Tuple]: Seq[String] =
+  private[record4s] inline def seqOfLabels[T <: Tuple]: Seq[String] =
     inline erasedValue[T] match {
       case _: EmptyTuple => Seq.empty
       case _: (t *: ts) =>
