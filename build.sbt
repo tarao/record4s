@@ -52,3 +52,8 @@ lazy val core = (project in file("modules/core"))
       "org.scalatest" %% "scalatest" % "3.2.17" % Test,
     )
   )
+
+lazy val benchmark_3 = (project in file("modules/benchmark_3"))
+  .dependsOn(core)
+  .settings(commonSettings)
+  .enablePlugins(JmhPlugin)
