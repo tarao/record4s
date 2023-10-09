@@ -54,6 +54,7 @@ to_json_rows() {
 run_feature() {
     FEATURE="$1"
     run "benchmark_3" "record4s" "${FEATURE}"
+    run "benchmark_3" "caseclass" "${FEATURE}"
 
     CHART_INPUT="${OUT_DIR}/${FEATURE}.json"
 
