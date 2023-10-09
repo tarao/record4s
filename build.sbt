@@ -3,6 +3,7 @@ val projectName = "record4s"
 val rootPkg = s"$groupId.$projectName"
 
 val Scala_3 = "3.3.1"
+val Scala_2_11 = "2.11.12"
 
 ThisBuild / scalaVersion := Scala_3
 ThisBuild / crossScalaVersions := Seq(Scala_3)
@@ -57,3 +58,12 @@ lazy val benchmark_3 = (project in file("modules/benchmark_3"))
   .dependsOn(core)
   .settings(commonSettings)
   .enablePlugins(JmhPlugin)
+
+lazy val benchmark_2_11 = (project in file("modules/benchmark_2_11"))
+  .enablePlugins(JmhPlugin)
+  .settings(
+    scalaVersion := Scala_2_11,
+    libraryDependencies ++= Seq(
+      "ch.epfl.lamp" %% "scala-records" % "0.4",
+    ),
+  )
