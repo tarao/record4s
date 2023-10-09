@@ -56,6 +56,7 @@ run_feature() {
     run "benchmark_3"    "record4s"     "${FEATURE}"
     run "benchmark_3"    "caseclass"    "${FEATURE}"
     run "benchmark_3"    "map"          "${FEATURE}"
+    run "benchmark_2_13" "shapeless"    "${FEATURE}"
     run "benchmark_2_11" "scalarecords" "${FEATURE}"
 
     CHART_INPUT="${OUT_DIR}/${FEATURE}.json"
