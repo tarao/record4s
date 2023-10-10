@@ -115,7 +115,10 @@ object Record {
       other: R2,
     )(using typing.Concat.Aux[R, R2, RR]): RR = withPotentialTypingError {
       newMapRecord[RR](
-        record.__iterable ++ summon[RecordLike[R2]].tidiedIterableOf(other),
+        record
+          .__iterable
+          .toMap
+          .concat(summon[RecordLike[R2]].tidiedIterableOf(other)),
       )
     }
 

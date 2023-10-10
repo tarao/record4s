@@ -41,7 +41,9 @@ object Macros {
         case '[tpe] =>
           evidenceOf[typing.Concat[R, tpe]] match {
             case '{ ${ _ }: typing.Concat[R, tpe] { type Out = returnType } } =>
-              newMapRecord[returnType]('{ ${ rec } ++ ${ Expr.ofSeq(fields) } })
+              newMapRecord[returnType]('{
+                ${ rec }.toMap.concat(${ Expr.ofSeq(fields) })
+              })
           }
       }
     }
