@@ -68,4 +68,5 @@ run_feature() {
     OUTPUTS=()
 }
 
+run_feature "Creation"
 run_feature "FieldAccess"

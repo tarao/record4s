@@ -9,7 +9,7 @@ import org.openjdk.jmh.annotations.*
 @State(Scope.Thread)
 class FieldAccess {
   // Use `var` to prevent constant folding
-  var r = Record(
+  var r = Record32(
     f1 = 1,
     f2 = 2,
     f3 = 3,
