@@ -1,3 +1,8 @@
 metals.sbt
 .bsp/
 target/
+
+.cache/
+.ipython/
+.jupyter/
+.local/

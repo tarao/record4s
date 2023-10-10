@@ -47,7 +47,9 @@ to_json_rows() {
 [ -n "$1" ] && [ -n "$2" ] && [ -n "$3" ] && {
     run "$1" "$2" "$3"
     CHART_INPUT="${OUT_DIR}/${FEATURE}_${TARGET}.json"
+    CHART_OUTPUT="${OUT_DIR}/${FEATURE}_${TARGET}.svg"
     jq '.[]' "${OUTPUT}" | to_json_rows > "${CHART_INPUT}"
+    script/benchmark/visualize.sh "${FEATURE}" "${CHART_INPUT}" "${CHART_OUTPUT}"
     exit
 }
 
@@ -60,10 +62,13 @@ run_feature() {
     run "benchmark_2_11" "scalarecords" "${FEATURE}"
 
     CHART_INPUT="${OUT_DIR}/${FEATURE}.json"
+    CHART_OUTPUT="${OUT_DIR}/${FEATURE}.svg"
 
     for output in ${OUTPUTS[@]}; do
         jq '.[]' "${output}"
     done | to_json_rows > "${CHART_INPUT}"
+
+    script/benchmark/visualize.sh "${FEATURE}" "${CHART_INPUT}" "${CHART_OUTPUT}"
 
     OUTPUTS=()
 }
