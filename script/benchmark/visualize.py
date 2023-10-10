@@ -25,6 +25,14 @@ plot_config = {
         'xstep': 2,
         'ystep': 500,
     },
+    'Update': {
+        'xlabel': 'Record size',
+        'ylabel': 'Update time [ns]',
+        'xmin': 20,
+        'ymin': 0,
+        'xstep': 20,
+        'ystep': 200,
+    },
     'FieldAccess': {
         'xlabel': 'Field index',
         'ylabel': 'Access time [ns]',

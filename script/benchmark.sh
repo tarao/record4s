@@ -12,10 +12,21 @@ sbt=sbt
 
 OUTPUTS=()
 
+file_path() {
+    PROJECT=$1
+    TARGET=$2
+    FEATURE=$3
+
+    echo "modules/${PROJECT}/src/main/scala/benchmark/${TARGET}/${FEATURE}.scala"
+}
+
 run() {
     PROJECT=$1
     TARGET=$2
     FEATURE=$3
+
+    FILE=$(file_path "$PROJECT" "$TARGET" "$FEATURE")
+    [ -r "$FILE" ] || return 0
 
     mkdir -p "${OUT_DIR}/${TARGET}"
     OUTPUT="${OUT_DIR}/${TARGET}/${FEATURE}.json"
@@ -46,10 +57,16 @@ to_json_rows() {
 
 [ -n "$1" ] && [ -n "$2" ] && [ -n "$3" ] && {
     run "$1" "$2" "$3"
+
     CHART_INPUT="${OUT_DIR}/${FEATURE}_${TARGET}.json"
     CHART_OUTPUT="${OUT_DIR}/${FEATURE}_${TARGET}.svg"
-    jq '.[]' "${OUTPUT}" | to_json_rows > "${CHART_INPUT}"
+
+    for output in ${OUTPUTS[@]}; do
+        jq '.[]' "${output}"
+    done | to_json_rows > "${CHART_INPUT}"
+
     script/benchmark/visualize.sh "${FEATURE}" "${CHART_INPUT}" "${CHART_OUTPUT}"
+
     exit
 }
 
@@ -74,4 +91,5 @@ run_feature() {
 }
 
 run_feature "Creation"
+run_feature "Update"
 run_feature "FieldAccess"
