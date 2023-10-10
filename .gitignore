@@ -1,6 +1,7 @@
 metals.sbt
 .bsp/
 target/
+/benchmark
 
 .cache/
 .ipython/
