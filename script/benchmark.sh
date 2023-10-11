@@ -60,6 +60,11 @@ to_json_rows() {
     OPTIONS="-wi 0 -i 1 -t 1 -f 1"
 }
 
+[ "$1" = "-3" ] && { # just run few iterations for test
+    shift
+    OPTIONS="-wi 0 -i 3 -t 1 -f 1"
+}
+
 [ -n "$1" ] && [ -n "$2" ] && [ -n "$3" ] && {
     run "$1" "$2" "$3"
 
@@ -98,3 +103,4 @@ run_feature() {
 run_feature "Creation"
 run_feature "Update"
 run_feature "FieldAccess"
+run_feature "FieldAccessSize"

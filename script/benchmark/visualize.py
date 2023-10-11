@@ -41,6 +41,14 @@ plot_config = {
         'xstep': 2,
         'ystep': 5,
     },
+    'FieldAccessSize': {
+        'xlabel': 'Record size',
+        'ylabel': 'Access time [ns]',
+        'xmin': 2,
+        'ymin': 0,
+        'xstep': 2,
+        'ystep': 5,
+    },
 }
 
 conf = plot_config[feature]
