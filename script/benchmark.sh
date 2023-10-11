@@ -100,6 +100,11 @@ run_feature() {
     OUTPUTS=()
 }
 
+[ -n "$1" ] && [ -z "$2" ] && {
+    run_feature "$1"
+    exit
+}
+
 run_feature "Creation"
 run_feature "Update"
 run_feature "FieldAccess"
