@@ -46,7 +46,11 @@ to_json_rows() {
     } ]'
 }
 
-[ "$1" = "-0" ] && { # dry run
+[ "$1" = "-0" ] && {
+    # Skip JMH run but accumulate outpus and plot the charts
+    # This is expecting the following workflow:
+    #   1. run `script/benchmark.sh <project> <target> <feature>` one by one
+    #   2. run `script/benchmark.sh -0 to accumulate all the results and plot the charts
     shift
     sbt=:
 }
