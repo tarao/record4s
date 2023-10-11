@@ -31,6 +31,7 @@ run() {
     mkdir -p "${OUT_DIR}/${TARGET}"
     OUTPUT="${OUT_DIR}/${TARGET}/${FEATURE}.json"
 
+    $sbt "${PROJECT} / clean"
     $sbt "${PROJECT} / Jmh / run $OPTIONS ${TARGET}.${FEATURE} -rf json -rff \"../../${OUTPUT}\""
     OUTPUTS+=("$OUTPUT")
 }
