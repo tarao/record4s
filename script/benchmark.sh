@@ -6,7 +6,7 @@ ROOT="$(cd $(dirname "$0")/..; pwd)"
 cd "$ROOT"
 
 OUT_DIR="benchmark"
-OPTIONS="-wi 10 -i 20 -t 1 -f 10"
+OPTIONS="-wi 10 -i 20 -t 1 -f 5"
 
 sbt=sbt
 

@@ -8,6 +8,8 @@ import com.github.tarao.record4s.%
 
 @BenchmarkMode(Array(Mode.AverageTime))
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
+@Warmup(iterations = 10, time = 200, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 20, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 class FieldAccess {
   // Use `var` to prevent constant folding
