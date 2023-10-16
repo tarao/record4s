@@ -59,13 +59,21 @@ lazy val benchmark_3 = (project in file("modules/benchmark_3"))
   .dependsOn(core)
   .settings(commonSettings)
   .enablePlugins(JmhPlugin)
+  .settings(
+    Compile / run / fork := true,
+    libraryDependencies ++= Seq(
+      scalaOrganization.value %% "scala3-compiler" % scalaVersion.value,
+    ),
+  )
 
 lazy val benchmark_2_13 = (project in file("modules/benchmark_2_13"))
   .enablePlugins(JmhPlugin)
   .settings(
     scalaVersion := Scala_2_13,
+    javaOptions+= "-Xss10m",
     libraryDependencies ++= Seq(
       "com.chuusai" %% "shapeless" % "2.3.10",
+      scalaOrganization.value % "scala-compiler" % scalaVersion.value,
     ),
   )
 
@@ -73,7 +81,9 @@ lazy val benchmark_2_11 = (project in file("modules/benchmark_2_11"))
   .enablePlugins(JmhPlugin)
   .settings(
     scalaVersion := Scala_2_11,
+    javaOptions+= "-Xss10m",
     libraryDependencies ++= Seq(
       "ch.epfl.lamp" %% "scala-records" % "0.4",
+      scalaOrganization.value % "scala-compiler" % scalaVersion.value,
     ),
   )

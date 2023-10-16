@@ -41,7 +41,7 @@ to_json_rows() {
         benchmark:.benchmark,
         target: .benchmark | sub("^benchmark[.](?<t>[^.]+)[.].*$"; "\(.t)"),
         feature: .benchmark | sub("^benchmark[.][^.]+[.](?<f>[^.]+)[.].*$"; "\(.f)"),
-        index: .benchmark | sub("^.*[^0-9](?<x>[0-9]+)$"; "\(.x)") | tonumber,
+        index: [ .params.size // "", .benchmark | sub("^.*[^0-9](?<x>[0-9]*)$"; "\(.x)") ] | map(select(. | length > 0) | tonumber)[0],
         score: (.primaryMetric.rawData[] | map({value:.}))[] | .value
     } ]'
 }
@@ -110,3 +110,5 @@ run_feature "Update"
 run_feature "FieldAccess"
 run_feature "FieldAccessSize"
 run_feature "FieldAccessPoly"
+
+run_feature "CompileCreation"

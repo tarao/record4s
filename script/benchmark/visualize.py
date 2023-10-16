@@ -57,6 +57,15 @@ plot_config = {
         'xstep': 2,
         'ystep': 5,
     },
+    'CompileCreation': {
+        'xlabel': 'Record size',
+        'ylabel': 'Compilation time (record creation) [s]',
+        'xmin': 0,
+        'ymin': 0,
+        'xstep': 50,
+        'ystep': 2,
+        'estimator': 'mean',
+    },
 }
 
 conf = plot_config[feature]
@@ -76,7 +85,7 @@ yticks = list(range(ymin, int(ymax / ystep) * ystep + 1, ystep))
 sns.set_theme()
 g = sns.relplot(
     data=df,
-    estimator="average",
+    estimator=conf.get('estimator', "average"),
     kind="line",
     x=x,
     y=y,
