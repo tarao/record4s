@@ -113,3 +113,4 @@ run_feature "FieldAccessPoly"
 
 run_feature "CompileCreation"
 run_feature "CompileCreationAndAccess"
+run_feature "CompileCreationAndAccessRep"

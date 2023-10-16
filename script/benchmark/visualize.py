@@ -75,6 +75,15 @@ plot_config = {
         'ystep': 2,
         'estimator': 'mean',
     },
+    'CompileCreationAndAccessRep': {
+        'xlabel': 'Record size',
+        'ylabel': 'Compilation time (record creation and repeated field access) [s]',
+        'xmin': 0,
+        'ymin': 0,
+        'xstep': 50,
+        'ystep': 2,
+        'estimator': 'mean',
+    },
 }
 
 conf = plot_config[feature]
