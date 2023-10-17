@@ -93,6 +93,14 @@ plot_config = {
         'ystep': 2,
         'estimator': 'mean',
     },
+    'CompileFieldAccess': {
+        'xlabel': 'Field index',
+        'ylabel': 'Compilation time time (field access) [s]',
+        'xmin': 2,
+        'ymin': 0,
+        'xstep': 2,
+        'ystep': 1,
+    },
 }
 
 conf = plot_config[feature]
