@@ -84,6 +84,15 @@ plot_config = {
         'ystep': 2,
         'estimator': 'mean',
     },
+    'CompileUpdate': {
+        'xlabel': 'Record size',
+        'ylabel': 'Compilation time (field update) [s]',
+        'xmin': 0,
+        'ymin': 0,
+        'xstep': 50,
+        'ystep': 2,
+        'estimator': 'mean',
+    },
 }
 
 conf = plot_config[feature]

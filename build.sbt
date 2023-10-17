@@ -61,6 +61,7 @@ lazy val benchmark_3 = (project in file("modules/benchmark_3"))
   .enablePlugins(JmhPlugin)
   .settings(
     Compile / run / fork := true,
+    javaOptions+= "-Xss10m",
     libraryDependencies ++= Seq(
       scalaOrganization.value %% "scala3-compiler" % scalaVersion.value,
     ),
