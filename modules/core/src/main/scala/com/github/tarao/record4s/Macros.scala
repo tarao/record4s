@@ -14,7 +14,11 @@ object Macros {
     import internal.*
 
     requireApply(record, method) {
-      val (rec, _) = iterableOf(record)
+      val rec =
+        if (TypeRepr.of[R] <:< TypeRepr.of[%])
+          '{ ${ record }.asInstanceOf[%].__iterable } // optimize
+        else
+          '{ ${ evidenceOf[RecordLike[R]] }.iterableOf($record) }
 
       // We have no way to write this without transparent inline macro.  Literal string
       // types are subject to widening and they become `String`s at the type level.  A

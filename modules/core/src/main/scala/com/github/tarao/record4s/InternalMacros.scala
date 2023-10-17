@@ -228,8 +228,19 @@ private[record4s] class InternalMacros(using
           schemaOfRecord[fieldTypes]
       }
 
-  def schemaOf[R: Type]: Schema =
-    schemaOf(evidenceOf[RecordLike[R]])
+  def schemaOf[R: Type]: Schema = {
+    def isTuple[T: Type]: Boolean = Type.of[T] match {
+      case '[_ *: _] => true
+      case _         => false
+    }
+
+    if (TypeRepr.of[R] <:< TypeRepr.of[%])
+      schemaOfRecord[R] // optimize
+    else if (isTuple[R])
+      schemaOfRecord[R] // optimize
+    else
+      schemaOf(evidenceOf[RecordLike[R]])
+  }
 
   def fieldTypeOf(
     field: Expr[(String, Any)],
@@ -270,14 +281,6 @@ private[record4s] class InternalMacros(using
   def fieldTypesOf(
     fields: Seq[Expr[(String, Any)]],
   ): Seq[(String, Type[?])] = fields.map(fieldTypeOf(_))
-
-  def iterableOf[R: Type](
-    record: Expr[R],
-  ): (Expr[Iterable[(String, Any)]], Schema) = {
-    val ev = evidenceOf[RecordLike[R]]
-    val schema = schemaOf(ev)
-    ('{ ${ ev }.iterableOf($record) }, schema)
-  }
 
   def fieldSelectionsOf[S: Type](
     schema: Schema,
