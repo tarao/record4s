@@ -127,12 +127,16 @@ private[record4s] class InternalMacros(using
     // because representation of opaque type varies among different package names such as
     // Tag$package.Tag[T] or $proxyN.Tag[T].
     def isTag(tpr: TypeRepr): Boolean =
-      tpr.asType match {
-        case '[tpe] => Expr.summon[Tag.IsTag[tpe]].nonEmpty
-        case _      => false
+      tpr match {
+        case AppliedType(t, _) =>
+          tpr.asType match {
+            case '[tpe] => Expr.summon[Tag.IsTag[tpe]].nonEmpty
+          }
+        case _ =>
+          false
       }
 
-    def dealias(tpr: TypeRepr): TypeRepr =
+    def safeDealias(tpr: TypeRepr): TypeRepr =
       if (isTag(tpr)) tpr
       else tpr.dealias
 
@@ -179,7 +183,7 @@ private[record4s] class InternalMacros(using
       //   )
       case Refinement(base, label, valueType) :: rest =>
         collectFieldTypesAndTags(
-          dealias(base) :: rest,
+          safeDealias(base) :: rest,
           acc.copy(fieldTypes =
             (validatedLabel(label), valueType.asType) +: acc.fieldTypes,
           ),
@@ -187,7 +191,10 @@ private[record4s] class InternalMacros(using
 
       // tpr1 & tpr2
       case AndType(tpr1, tpr2) :: rest =>
-        collectFieldTypesAndTags(dealias(tpr2) :: dealias(tpr1) :: rest, acc)
+        collectFieldTypesAndTags(
+          safeDealias(tpr2) :: safeDealias(tpr1) :: rest,
+          acc,
+        )
 
       // Tag[T]
       case (head @ AppliedType(_, List(tpr))) :: rest if isTag(head) =>
@@ -212,7 +219,7 @@ private[record4s] class InternalMacros(using
         acc
     }
 
-    collectFieldTypesAndTags(List(dealias(TypeRepr.of[R])), Schema.empty)
+    collectFieldTypesAndTags(List(safeDealias(TypeRepr.of[R])), Schema.empty)
   }
 
   def schemaOf[R: Type](
