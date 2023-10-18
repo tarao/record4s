@@ -5,7 +5,7 @@ object Macros {
   import InternalMacros.{internal, withInternal, withTyping}
 
   /** Macro implementation of `%.apply` */
-  def applyImpl[R: Type](
+  def applyImpl[R <: `%`: Type](
     record: Expr[R],
     method: Expr[String],
     args: Expr[Seq[(String, Any)]],
@@ -14,11 +14,7 @@ object Macros {
     import internal.*
 
     requireApply(record, method) {
-      val rec =
-        if (TypeRepr.of[R] <:< TypeRepr.of[%])
-          '{ ${ record }.asInstanceOf[%].__iterable } // optimize
-        else
-          '{ ${ evidenceOf[RecordLike[R]] }.iterableOf($record) }
+      val rec = '{ ${ record }.__iterable }
 
       // We have no way to write this without transparent inline macro.  Literal string
       // types are subject to widening and they become `String`s at the type level.  A

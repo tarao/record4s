@@ -308,7 +308,7 @@ object Record {
 
   import scala.language.dynamics
 
-  class Extensible[R](private val record: R) extends AnyVal with Dynamic {
+  class Extensible[R <: %](private val record: R) extends AnyVal with Dynamic {
     transparent inline def applyDynamic(method: String)(
       inline fields: (String, Any)*,
     ) =
