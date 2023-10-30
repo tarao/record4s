@@ -15,6 +15,16 @@ trait MaybeError {
   type Msg <: String
 }
 
+// A dummy class to carry type information of `T`.  Without this context bound, `Concat`
+// somehow drops tag types in `T`.  It can be removed if all tests pass since it does
+// nothing semantically.
+final class Context[T] private ()
+object Context {
+  private val instance = new Context[Nothing]
+
+  given [T]: Context[T] = instance.asInstanceOf[Context[T]]
+}
+
 type Aux[R, Out0 <: %] = Concat[%, R] { type Out = Out0 }
 
 final class Concat[R1, R2] private extends MaybeError {
@@ -26,7 +36,7 @@ object Concat {
 
   type Aux[R1, R2, Out0 <: %] = Concat[R1, R2] { type Out = Out0 }
 
-  transparent inline given [R1: RecordLike, R2: RecordLike]: Concat[R1, R2] =
+  transparent inline given [R1: Context, R2]: Concat[R1, R2] =
     ${ Macros.derivedTypingConcatImpl }
 }
 
