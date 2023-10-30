@@ -104,7 +104,15 @@ plot_config = {
     },
     'CompileFieldAccess': {
         'xlabel': 'Field index',
-        'ylabel': 'Compilation time time (field access) [s]',
+        'ylabel': 'Compilation time (field access) [s]',
+        'xmin': 2,
+        'ymin': 0,
+        'xstep': 2,
+        'ystep': 1,
+    },
+    'CompileFieldAccessSize': {
+        'xlabel': 'Record size',
+        'ylabel': 'Compilation time (field access) [s]',
         'xmin': 2,
         'ymin': 0,
         'xstep': 2,
