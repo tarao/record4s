@@ -61,6 +61,8 @@ object Compiler {
           "-usejavacp",
           "-color:never",
           "-Xrepl-disable-display",
+          "-Xmax-inlines",
+          "1000",
         ),
         out,
         None,

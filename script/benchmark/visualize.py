@@ -110,6 +110,15 @@ plot_config = {
         'ystep': 2,
         'estimator': 'mean',
     },
+    'CompileConcatenation': {
+        'xlabel': 'Record size',
+        'ylabel': 'Compilation time (concatenation) [s]',
+        'xmin': 0,
+        'ymin': 0,
+        'xstep': 50,
+        'ystep': 2,
+        'estimator': 'mean',
+    },
     'CompileFieldAccess': {
         'xlabel': 'Field index',
         'ylabel': 'Compilation time (field access) [s]',
