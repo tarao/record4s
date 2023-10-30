@@ -107,6 +107,7 @@ run_feature() {
 
 run_feature "Creation"
 run_feature "Update"
+run_feature "Concatenation"
 run_feature "FieldAccess"
 run_feature "FieldAccessSize"
 run_feature "FieldAccessPoly"

@@ -33,6 +33,14 @@ plot_config = {
         'xstep': 20,
         'ystep': 200,
     },
+    'Concatenation': {
+        'xlabel': 'Record size',
+        'ylabel': 'Concatenation time [ns]',
+        'xmin': 20,
+        'ymin': 0,
+        'xstep': 20,
+        'ystep': 1000,
+    },
     'FieldAccess': {
         'xlabel': 'Field index',
         'ylabel': 'Access time [ns]',

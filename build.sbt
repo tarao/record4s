@@ -62,6 +62,7 @@ lazy val benchmark_3 = (project in file("modules/benchmark_3"))
   .settings(
     Compile / run / fork := true,
     javaOptions+= "-Xss10m",
+    scalacOptions ++= Seq("-Xmax-inlines", "1000"),
     libraryDependencies ++= Seq(
       scalaOrganization.value %% "scala3-compiler" % scalaVersion.value,
     ),
