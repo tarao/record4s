@@ -17,6 +17,14 @@ case class Record4(
   f4: Int,
 )
 
+case class Record5(
+  f1: Int,
+  f2: Int,
+  f3: Int,
+  f4: Int,
+  f5: Int,
+)
+
 case class Record6(
   f1: Int,
   f2: Int,

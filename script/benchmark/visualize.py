@@ -93,6 +93,15 @@ plot_config = {
         'ystep': 2,
         'estimator': 'mean',
     },
+    'CompileUpdateRep': {
+        'xlabel': 'Repetitions',
+        'ylabel': 'Compilation time (repeted field updates) [s]',
+        'xmin': 0,
+        'ymin': 0,
+        'xstep': 5,
+        'ystep': 2,
+        'estimator': 'mean',
+    },
     'CompileFieldAccess': {
         'xlabel': 'Field index',
         'ylabel': 'Compilation time time (field access) [s]',
