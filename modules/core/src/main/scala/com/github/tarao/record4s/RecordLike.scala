@@ -11,8 +11,15 @@ trait RecordLike[R] {
   def iterableOf(r: R): Iterable[(String, Any)]
 
   inline def tidiedIterableOf(r: R): Iterable[(String, Any)] = {
-    val labels = elemLabels.toSet
-    iterableOf(r).filter { case (label, _) => labels.contains(label) }
+    val labels = elemLabels
+    val it = iterableOf(r)
+
+    if (labels.size != it.size) {
+      val labelSet = labels.toSet
+      it.filter { case (label, _) => labelSet.contains(label) }
+    } else {
+      it
+    }
   }
 
   inline def elemLabels: Seq[String] = RecordLike.seqOfLabels[ElemLabels]
