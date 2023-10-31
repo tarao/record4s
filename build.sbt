@@ -4,7 +4,7 @@ val rootPkg = s"$groupId.$projectName"
 
 val Scala_3 = "3.3.1"
 val Scala_2_13 = "2.13.12"
-val Scala_2_11 = "2.11.12"
+val Scala_2_11 = "2.13.12"
 
 ThisBuild / scalaVersion := Scala_3
 ThisBuild / crossScalaVersions := Seq(Scala_3)
