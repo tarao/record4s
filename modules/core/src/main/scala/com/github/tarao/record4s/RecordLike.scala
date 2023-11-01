@@ -2,6 +2,7 @@ package com.github.tarao.record4s
 
 import scala.compiletime.{constValueOpt, erasedValue, error, summonInline}
 import scala.deriving.Mirror
+import scala.util.NotGiven
 
 trait RecordLike[R] {
   type FieldTypes
@@ -66,6 +67,7 @@ object RecordLike {
 
   given ofProduct[P <: Product](using
     m: Mirror.Of[P],
+    nonRecord: NotGiven[P <:< Record],
   ): OfProduct[P, m.MirroredElemLabels, m.MirroredElemTypes] =
     new OfProduct
 

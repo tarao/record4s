@@ -1,5 +1,6 @@
 package com.github.tarao.record4s
 
+import scala.deriving.Mirror
 import scala.language.dynamics
 import util.SeqOps.deduped
 
@@ -119,12 +120,30 @@ object ArrayRecord extends ArrayRecord.Extensible[%] {
     def tag[T]: ArrayRecord[R & Tag[T]] =
       record.asInstanceOf[ArrayRecord[R & Tag[T]]]
 
+    def values(using
+      r: RecordLike[R],
+      conv: Converter[ArrayRecord[R], r.ElemTypes],
+    ): r.ElemTypes = record.to[r.ElemTypes]
+
     inline def upcast[R2 >: R <: `%`: RecordLike]: ArrayRecord[R2] =
       newArrayRecord[R2](
         summon[RecordLike[ArrayRecord[R2]]]
           .orderedIterableOf(record.asInstanceOf[ArrayRecord[R2]])
           .toVector,
       )
+
+    def to[To](using conv: Converter[ArrayRecord[R], To]): To = conv(record)
+
+    inline def toTuple(using
+      r: RecordLike[ArrayRecord[R]],
+      conv: Converter[ArrayRecord[R], r.ElemTypes],
+    ): Tuple.Zip[r.ElemLabels, r.ElemTypes] =
+      r.elemLabels
+        .zip(record.productIterator)
+        .foldRight(EmptyTuple: Tuple) { (zipped, tuple) =>
+          zipped *: tuple
+        }
+        .asInstanceOf[Tuple.Zip[r.ElemLabels, r.ElemTypes]]
   }
 
   given canEqualReflexive[R <: %]: CanEqual[ArrayRecord[R], ArrayRecord[R]] =
