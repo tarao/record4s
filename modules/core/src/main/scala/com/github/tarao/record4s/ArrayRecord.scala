@@ -146,6 +146,54 @@ object ArrayRecord extends ArrayRecord.Extensible[%] {
         .asInstanceOf[Tuple.Zip[r.ElemLabels, r.ElemTypes]]
   }
 
+  // Putting `apply` in the extension breaks `ArrayRecord.applyDynamicNamed`.
+  implicit class Apply[R <: %](private val record: ArrayRecord[R])
+      extends AnyVal {
+    inline def apply[S <: Tuple, RR <: %](s: Selector[S])(using
+      typing.Select.Aux[R, S, RR],
+      RecordLike[ArrayRecord[R]],
+    ): ArrayRecord[RR] = withPotentialTypingError {
+      val sel = selection[S]
+      val m = summon[RecordLike[ArrayRecord[R]]].iterableOf(record).toMap
+      newArrayRecord[RR](
+        sel
+          .map((label, newLabel) => (newLabel, m(label)))
+          .deduped
+          .iterator
+          .toVector,
+      )
+    }
+
+    private inline def selection[S <: Tuple]: Seq[(String, String)] = {
+      import scala.compiletime.{erasedValue, summonInline}
+
+      inline erasedValue[S] match {
+        case _: ((label, newLabel) *: tail) =>
+          val st1 = summonInline[label <:< String]
+          val st2 = summonInline[newLabel <:< String]
+          (st1(valueOf[label]), st2(valueOf[newLabel])) +: selection[tail]
+        case _: (label *: tail) =>
+          val st = summonInline[label <:< String]
+          val labelStr = st(valueOf[label])
+          (labelStr, labelStr) +: selection[tail]
+        case _: EmptyTuple =>
+          Seq.empty
+      }
+    }
+
+    inline def apply[U <: Tuple, RR <: %](u: Unselector[U])(using
+      typing.Unselect.Aux[R, U, RR],
+      RecordLike[ArrayRecord[RR]],
+      R <:< RR,
+    ): ArrayRecord[RR] = withPotentialTypingError {
+      newArrayRecord[RR](
+        summon[RecordLike[ArrayRecord[RR]]]
+          .orderedIterableOf(record.asInstanceOf[ArrayRecord[RR]])
+          .toVector,
+      )
+    }
+  }
+
   given canEqualReflexive[R <: %]: CanEqual[ArrayRecord[R], ArrayRecord[R]] =
     CanEqual.derived
 
