@@ -92,6 +92,9 @@ object ArrayRecord extends ArrayRecord.Extensible[%] {
 
   import typing.withPotentialTypingError
 
+  transparent inline def lookup[R <: %](record: ArrayRecord[R], label: String) =
+    ${ ArrayRecordMacros.selectImpl('record, 'label) }
+
   inline def from[T, RR <: %](x: T)(using
     RecordLike[T],
     typing.Aux[T, RR],
