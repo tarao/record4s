@@ -737,6 +737,23 @@ class ArrayRecordSpec extends helper.UnitSpec {
       }
     }
 
+    describe(".toRecord") {
+      it("should convert to a non-array record") {
+        val r1 = ArrayRecord(name = "tarao", age = 3)
+        val r2 = r1.toRecord
+        r2 shouldBe a[% { val name: String; val age: Int }]
+        r2.name shouldBe "tarao"
+        r2.age shouldBe 3
+
+        trait MyType
+        val r3 = r1.tag[MyType]
+        val r4 = r3.toRecord
+        r4 shouldBe a[% { val name: String; val age: Int } & Tag[MyType]]
+        r4.name shouldBe "tarao"
+        r4.age shouldBe 3
+      }
+    }
+
     describe("Product support") {
       it("should convert a Product to a record") {
         case class Person(name: String, age: Int)

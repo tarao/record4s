@@ -147,6 +147,8 @@ object ArrayRecord extends ArrayRecord.Extensible[%] {
           zipped *: tuple
         }
         .asInstanceOf[Tuple.Zip[r.ElemLabels, r.ElemTypes]]
+
+    def toRecord: R = new MapRecord(record.__fields.toMap).asInstanceOf[R]
   }
 
   // Putting `apply` in the extension breaks `ArrayRecord.applyDynamicNamed`.

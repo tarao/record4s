@@ -86,34 +86,6 @@ object Macros {
     }
   }
 
-  def derivedProductProxyOfRecordImpl[R <: `%`: Type](using
-    Quotes,
-  ): Expr[ProductProxy.OfRecord[R]] = withInternal {
-    import internal.*
-
-    val schema = schemaOf[R]
-    val recordLike = evidenceOf[RecordLike[R]]
-
-    recordLike match {
-      case '{
-          ${ _ }: RecordLike[R] {
-            type ElemTypes = elemTypes
-            type ElemLabels = elemLabels
-          }
-        } =>
-        schema.asType(Type.of[ProductProxy[elemLabels, elemTypes]]) match {
-          case '[tpe] =>
-            '{
-              (new ProductProxy.OfRecord).asInstanceOf[
-                ProductProxy.OfRecord[R] {
-                  type Out = tpe
-                },
-              ]
-            }
-        }
-    }
-  }
-
   def derivedTypingConcatImpl[R1: Type, R2: Type](using
     Quotes,
   ): Expr[typing.Concat[R1, R2]] = withTyping {
