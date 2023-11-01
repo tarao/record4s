@@ -186,6 +186,106 @@ class ArrayRecordSpec extends helper.UnitSpec {
       }
     }
 
+    describe("As a Product") {
+      it("should be a Product") {
+        val r1 = ArrayRecord(name = "tarao", age = 3)
+        r1 shouldBe a[Product]
+        r1.productArity shouldBe 2
+        r1.productElement(0) shouldBe "tarao"
+        r1.productElement(1) shouldBe 3
+        r1.productElementName(0) shouldBe "name"
+        r1.productElementName(1) shouldBe "age"
+      }
+
+      it("can be converted from a non-array record") {
+        val r1 = ArrayRecord.from(%(name = "tarao", age = 3))
+        r1 shouldBe an[ArrayRecord[% { val name: String; val age: Int }]]
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+      }
+
+      it("can be mirrored") {
+        import scala.deriving.Mirror
+
+        type ElemLabels = "name" *: "age" *: EmptyTuple
+        type ElemTypes = String *: Int *: EmptyTuple
+        type PersonFields = % {
+          val name: String
+          val age: Int
+        }
+        type PersonRecord = ArrayRecord[PersonFields]
+
+        case class Person(name: String, age: Int)
+        case class NonPerson(name: String)
+
+        val m1 = summon[Mirror.ProductOf[PersonRecord]]
+        summon[m1.MirroredMonoType =:= PersonRecord]
+        summon[m1.MirroredType =:= PersonRecord]
+        summon[m1.MirroredElemTypes =:= (String, Int)]
+        summon[m1.MirroredElemLabels =:= ("name", "age")]
+
+        val p1 = m1.fromProduct(("tarao", 3))
+        p1 shouldBe an[ArrayRecord[PersonFields]]
+        p1 shouldBe a[Product]
+        p1.productElement(0) shouldBe "tarao"
+        p1.productElement(1) shouldBe 3
+
+        val p2 = m1.fromProduct(Person("tarao", 3))
+        p2 shouldBe an[ArrayRecord[PersonFields]]
+        p2 shouldBe a[Product]
+        p2.productElement(0) shouldBe "tarao"
+        p2.productElement(1) shouldBe 3
+
+        val p3 = m1.fromProductTyped(("tarao", 3))
+        p3 shouldBe an[ArrayRecord[PersonFields]]
+        p3 shouldBe a[Product]
+        p3.productElement(0) shouldBe "tarao"
+        p3.productElement(1) shouldBe 3
+
+        val p4 = m1.fromProductTyped(Person("tarao", 3))
+        p4 shouldBe an[ArrayRecord[PersonFields]]
+        p4 shouldBe a[Product]
+        p4.productElement(0) shouldBe "tarao"
+        p4.productElement(1) shouldBe 3
+
+        """m1.fromProductTyped((3, "tarao"))""" shouldNot typeCheck
+        """m1.fromProductTyped(NonPerson("tarao"))""" shouldNot typeCheck
+
+        val m2 = summon[Mirror.ProductOf[ArrayRecord[PersonFields & Tag[Person]]]]
+        summon[m2.MirroredMonoType =:= (ArrayRecord[PersonFields & Tag[Person]])]
+        summon[m2.MirroredType =:= (ArrayRecord[PersonFields & Tag[Person]])]
+        summon[m2.MirroredElemTypes =:= (String, Int)]
+        summon[m2.MirroredElemLabels =:= ("name", "age")]
+
+        """m2.fromProductTyped((3, "tarao"))""" shouldNot typeCheck
+        """m2.fromProductTyped(NonPerson("tarao"))""" shouldNot typeCheck
+
+        val p5 = m2.fromProduct(("tarao", 3))
+        p5 shouldBe an[ArrayRecord[PersonFields & Tag[Person]]]
+        p5 shouldBe a[Product]
+        p5.productElement(0) shouldBe "tarao"
+        p5.productElement(1) shouldBe 3
+
+        val p6 = m2.fromProduct(Person("tarao", 3))
+        p6 shouldBe an[ArrayRecord[PersonFields & Tag[Person]]]
+        p6 shouldBe a[Product]
+        p6.productElement(0) shouldBe "tarao"
+        p6.productElement(1) shouldBe 3
+
+        val p7 = m2.fromProductTyped(("tarao", 3))
+        p7 shouldBe an[ArrayRecord[PersonFields & Tag[Person]]]
+        p7 shouldBe a[Product]
+        p7.productElement(0) shouldBe "tarao"
+        p7.productElement(1) shouldBe 3
+
+        val p8 = m2.fromProductTyped(Person("tarao", 3))
+        p8 shouldBe an[ArrayRecord[PersonFields & Tag[Person]]]
+        p8 shouldBe a[Product]
+        p8.productElement(0) shouldBe "tarao"
+        p8.productElement(1) shouldBe 3
+      }
+    }
+
     describe("ArrayRecord.lookup") {
       it("should return a value by a string key name") {
         val r = ArrayRecord(name = "tarao", age = 3)
