@@ -1,6 +1,7 @@
 package com.github.tarao.record4s
 
 import scala.annotation.tailrec
+import util.SeqOps.deduped
 
 private[record4s] class InternalMacros(using
   scala.quoted.Quotes,
@@ -50,15 +51,8 @@ private[record4s] class InternalMacros(using
       fieldTypes = fieldTypes ++ other,
     )
 
-    def deduped: Schema = {
-      val seen = collection.mutable.HashSet[String]()
-      val deduped = collection.mutable.ListBuffer.empty[(String, Type[?])]
-      fieldTypes.reverseIterator.foreach { case (label, tpe) =>
-        if (seen.add(label)) deduped.prepend((label, tpe))
-      }
-
-      copy(fieldTypes = deduped.toSeq)
-    }
+    def deduped: Schema =
+      copy(fieldTypes = fieldTypes.deduped.iterator.toSeq)
 
     def asType: Type[?] = asType(Type.of[%])
 

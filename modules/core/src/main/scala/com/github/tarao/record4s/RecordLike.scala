@@ -10,13 +10,22 @@ trait RecordLike[R] {
 
   def iterableOf(r: R): Iterable[(String, Any)]
 
-  inline def tidiedIterableOf(r: R): Iterable[(String, Any)] = {
+  inline def orderedIterableOf(r: R): Iterable[(String, Any)] =
+    tidiedIterableOf(r, true)
+
+  inline def tidiedIterableOf(r: R): Iterable[(String, Any)] =
+    tidiedIterableOf(r, false)
+
+  inline def tidiedIterableOf(
+    r: R,
+    ordered: Boolean,
+  ): Iterable[(String, Any)] = {
     val labels = elemLabels
     val it = iterableOf(r)
 
-    if (labels.size != it.size) {
-      val labelSet = labels.toSet
-      it.filter { case (label, _) => labelSet.contains(label) }
+    if (ordered || labels.size != it.size) {
+      val m = it.toMap
+      labels.map(l => (l, m(l)))
     } else {
       it
     }
