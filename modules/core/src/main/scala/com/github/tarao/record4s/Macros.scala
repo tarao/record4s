@@ -4,18 +4,17 @@ object Macros {
   import scala.quoted.*
   import InternalMacros.{internal, withInternal, withTyping}
 
-  /** Macro implementation of `%.apply` */
-  def applyImpl[R <: `%`: Type](
+  def genericApplyImpl[R: Type](
     record: Expr[R],
     method: Expr[String],
     args: Expr[Seq[(String, Any)]],
+  )(
+    newRecord: [Out] => Type[Out] => Expr[Seq[(String, Any)]] => Expr[Any],
   )(using Quotes): Expr[Any] = withInternal {
     import quotes.reflect.*
     import internal.*
 
     requireApply(record, method) {
-      val rec = '{ ${ record }.__iterable }
-
       // We have no way to write this without transparent inline macro.  Literal string
       // types are subject to widening and they become `String`s at the type level.  A
       // `transparent inline given` also doesn't work since it can only depend on
@@ -41,11 +40,31 @@ object Macros {
         case '[tpe] =>
           evidenceOf[typing.Concat[R, tpe]] match {
             case '{ ${ _ }: typing.Concat[R, tpe] { type Out = returnType } } =>
-              newMapRecord[returnType]('{
-                ${ rec }.toMap.concat(${ Expr.ofSeq(fields) })
-              })
+              newRecord[returnType](Type.of[returnType])(Expr.ofSeq(fields))
           }
       }
+    }
+  }
+
+  /** Macro implementation of `%.apply` */
+  def applyImpl[R <: `%`: Type](
+    record: Expr[R],
+    method: Expr[String],
+    args: Expr[Seq[(String, Any)]],
+  )(using Quotes): Expr[Any] = withInternal {
+    import internal.*
+
+    val rec = '{ ${ record }.__iterable }
+
+    genericApplyImpl(record, method, args) {
+      [Out] =>
+        (tpe: Type[Out]) =>
+          (fields: Expr[Seq[(String, Any)]]) => {
+            given Type[Out] = tpe
+            newMapRecord[Out]('{
+              ${ rec }.toMap.concat(${ fields })
+            })
+        }
     }
   }
 

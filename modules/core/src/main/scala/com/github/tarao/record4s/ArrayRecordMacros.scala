@@ -39,57 +39,24 @@ object ArrayRecordMacros {
     method: Expr[String],
     args: Expr[Seq[(String, Any)]],
   )(using Quotes): Expr[Any] = withInternal {
-    import quotes.reflect.*
-    import internal.*
+    val rec = '{ ${ record }.__fields }
 
-    requireApply(record, method) {
-      val rec = '{ ${ record }.__fields }
-
-      val fields = args match {
-        case Varargs(args) => args
-        case _ =>
-          errorAndAbort("Expected explicit varargs sequence", Some(args))
-      }
-      val fieldTypes = fieldTypesOf(fields)
-
-      val fieldTypesTuple =
-        typeReprOfTupleFromSeq(fieldTypes.map { case (label, '[tpe]) =>
-          ConstantType(StringConstant(label)).asType match {
-            case '[label] => TypeRepr.of[(label, tpe)]
-          }
-        }).asType
-
-      fieldTypesTuple match {
-        case '[tpe] =>
-          evidenceOf[typing.Concat[R, tpe]] match {
-            case '{ ${ _ }: typing.Concat[R, tpe] { type Out = returnType } } =>
-              '{
-                new VectorRecord[returnType](
-                  ${ rec }
-                    .toVector
-                    .concat(${ Expr.ofSeq(fields) })
-                    .deduped
-                    .iterator
-                    .toVector,
-                ): ArrayRecord[returnType]
-              }
-          }
-      }
-    }
-  }
-
-  private def typeReprOfTupleFromSeq(using Quotes)(
-    typeReprs: Seq[quotes.reflect.TypeRepr],
-  ): quotes.reflect.TypeRepr = {
-    import quotes.reflect.*
-
-    typeReprs.foldRight(TypeRepr.of[EmptyTuple]) { case (tpr, base) =>
-      (base.asType, tpr.asType) match {
-        case ('[head *: tail], '[tpe]) =>
-          TypeRepr.of[tpe *: head *: tail]
-        case ('[EmptyTuple], '[tpe]) =>
-          TypeRepr.of[tpe *: EmptyTuple]
-      }
+    Macros.genericApplyImpl(record, method, args) {
+      [Out] =>
+        (tpe: Type[Out]) =>
+          (fields: Expr[Seq[(String, Any)]]) => {
+            given Type[Out] = tpe
+            '{
+              new VectorRecord[Out](
+                ${ rec }
+                  .toVector
+                  .concat(${ fields })
+                  .deduped
+                  .iterator
+                  .toVector,
+              ): ArrayRecord[Out]
+            }
+        }
     }
   }
 }
