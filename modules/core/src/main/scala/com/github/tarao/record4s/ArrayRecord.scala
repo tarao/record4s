@@ -135,8 +135,6 @@ object ArrayRecord extends ArrayRecord.Extensible[%] {
           .toVector,
       )
 
-    def to[To](using conv: Converter[ArrayRecord[R], To]): To = conv(record)
-
     inline def toTuple(using
       r: RecordLike[ArrayRecord[R]],
       conv: Converter[ArrayRecord[R], r.ElemTypes],
@@ -151,8 +149,9 @@ object ArrayRecord extends ArrayRecord.Extensible[%] {
     def toRecord: R = new MapRecord(record.__fields.toMap).asInstanceOf[R]
   }
 
-  // Putting `apply` in the extension breaks `ArrayRecord.applyDynamicNamed`.
-  implicit class Apply[R <: %](private val record: ArrayRecord[R])
+  // - Putting `apply` in the extension breaks `ArrayRecord.applyDynamicNamed`.
+  // - Defining `to` in the extension breaks JMH.
+  implicit class OpsCompat[R <: %](private val record: ArrayRecord[R])
       extends AnyVal {
     inline def apply[S <: Tuple, RR <: %](s: Selector[S])(using
       typing.Select.Aux[R, S, RR],
@@ -197,6 +196,8 @@ object ArrayRecord extends ArrayRecord.Extensible[%] {
           .toVector,
       )
     }
+
+    def to[To](using conv: Converter[ArrayRecord[R], To]): To = conv(record)
   }
 
   given canEqualReflexive[R <: %]: CanEqual[ArrayRecord[R], ArrayRecord[R]] =
