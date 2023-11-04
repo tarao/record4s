@@ -189,9 +189,9 @@ class RecordSpec extends helper.UnitSpec {
     describe("Record.lookup") {
       it("should return a value by a string key name") {
         val r = %(name = "tarao", age = 3)
-        Record.lookup(r, "name") shouldBe a[String]
+        Record.lookup(r, "name") shouldStaticallyBe a[String]
         Record.lookup(r, "name") shouldBe "tarao"
-        Record.lookup(r, "age") shouldBe an[Int]
+        Record.lookup(r, "age") shouldStaticallyBe an[Int]
         Record.lookup(r, "age") shouldBe 3
       }
 
@@ -208,9 +208,9 @@ class RecordSpec extends helper.UnitSpec {
 
       it("should allow shadowed field to be extracted") {
         val r = %(toString = 10)
-        r.toString shouldBe a[String]
+        r.toString shouldStaticallyBe a[String]
         r.toString shouldBe "%(toString = 10)"
-        Record.lookup(r, "toString") shouldBe an[Int]
+        Record.lookup(r, "toString") shouldStaticallyBe an[Int]
         Record.lookup(r, "toString") shouldBe 10
       }
     }
@@ -356,12 +356,12 @@ class RecordSpec extends helper.UnitSpec {
         "val t0: Tag[MyType] = r0" shouldNot typeCheck
 
         val r1 = r0.tag[MyType]
-        r1 shouldBe a[Tag[MyType]]
+        r1 shouldStaticallyBe a[Tag[MyType]]
         val t1: Tag[MyType] = r1
 
         val r2 = r1.tag[AnotherType]
-        r2 shouldBe a[Tag[MyType]]
-        r2 shouldBe a[Tag[AnotherType]]
+        r2 shouldStaticallyBe a[Tag[MyType]]
+        r2 shouldStaticallyBe a[Tag[AnotherType]]
         val t2: Tag[MyType] = r2
         val t3: Tag[AnotherType] = r2
       }
@@ -391,24 +391,24 @@ class RecordSpec extends helper.UnitSpec {
         val r1 = %(name = "tarao", age = 3).tag[MyType]
 
         val r2 = r1 ++ %(email = "tarao@example.com")
-        r2 shouldBe a[Tag[MyType]]
+        r2 shouldStaticallyBe a[Tag[MyType]]
         val t2: Tag[MyType] = r2
 
         val r3 = r1 + (email = "tarao@example.com")
-        r3 shouldBe a[Tag[MyType]]
+        r3 shouldStaticallyBe a[Tag[MyType]]
         val t3: Tag[MyType] = r3
 
         val r4 = r1.tag[AnotherType]
 
         val r5 = r4 ++ %(email = "tarao@example.com")
-        r5 shouldBe a[Tag[MyType]]
-        r5 shouldBe a[Tag[AnotherType]]
+        r5 shouldStaticallyBe a[Tag[MyType]]
+        r5 shouldStaticallyBe a[Tag[AnotherType]]
         val t4: Tag[MyType] = r5
         val t5: Tag[AnotherType] = r5
 
         val r6 = r4 + (email1 = "tarao@example.com") + (occupation = "engineer")
-        r6 shouldBe a[Tag[MyType]]
-        r6 shouldBe a[Tag[AnotherType]]
+        r6 shouldStaticallyBe a[Tag[MyType]]
+        r6 shouldStaticallyBe a[Tag[AnotherType]]
         val t6: Tag[MyType] = r6
         val t7: Tag[AnotherType] = r6
       }
@@ -423,8 +423,8 @@ class RecordSpec extends helper.UnitSpec {
         val r2 = %(age = 3).tag[YourType]
 
         val r3 = r1 ++ r2
-        r3 shouldBe a[Tag[MyType]]
-        r3 shouldBe a[Tag[YourType]]
+        r3 shouldStaticallyBe a[Tag[MyType]]
+        r3 shouldStaticallyBe a[Tag[YourType]]
         val t3: Tag[MyType] = r3
         val t4: Tag[YourType] = r3
 
@@ -432,10 +432,10 @@ class RecordSpec extends helper.UnitSpec {
         val r5 = r2.tag[YetAnotherType]
 
         val r6 = r4 ++ r5
-        r6 shouldBe a[Tag[MyType]]
-        r6 shouldBe a[Tag[AnotherType]]
-        r6 shouldBe a[Tag[YourType]]
-        r6 shouldBe a[Tag[YetAnotherType]]
+        r6 shouldStaticallyBe a[Tag[MyType]]
+        r6 shouldStaticallyBe a[Tag[AnotherType]]
+        r6 shouldStaticallyBe a[Tag[YourType]]
+        r6 shouldStaticallyBe a[Tag[YetAnotherType]]
         val t6: Tag[MyType] = r6
         val t7: Tag[AnotherType] = r6
         val t8: Tag[YourType] = r6
@@ -449,24 +449,24 @@ class RecordSpec extends helper.UnitSpec {
         val r1 = %(name = "tarao", age = 3).tag[MyType]
 
         val r2 = r1.as
-        r2 shouldBe a[Tag[MyType]]
+        r2 shouldStaticallyBe a[Tag[MyType]]
         val t2: Tag[MyType] = r2
 
         val r3 = r1.as[% { val name: String } & Tag[MyType]]
-        r3 shouldBe a[Tag[MyType]]
+        r3 shouldStaticallyBe a[Tag[MyType]]
         val t3: Tag[MyType] = r3
 
         val r4 = r1.tag[AnotherType]
 
         val r5 = r4.as
-        r5 shouldBe a[Tag[MyType]]
-        r5 shouldBe a[Tag[AnotherType]]
+        r5 shouldStaticallyBe a[Tag[MyType]]
+        r5 shouldStaticallyBe a[Tag[AnotherType]]
         val t4: Tag[MyType] = r5
         val t5: Tag[AnotherType] = r5
 
         val r6 = r4.as[% { val name: String } & Tag[MyType] & Tag[AnotherType]]
-        r6 shouldBe a[Tag[MyType]]
-        r6 shouldBe a[Tag[AnotherType]]
+        r6 shouldStaticallyBe a[Tag[MyType]]
+        r6 shouldStaticallyBe a[Tag[AnotherType]]
         val t6: Tag[MyType] = r6
         val t7: Tag[AnotherType] = r6
       }
@@ -483,13 +483,13 @@ class RecordSpec extends helper.UnitSpec {
       it("should extract values of records") {
         val r1 = %(name = "tarao", age = 3)
         val t1 = r1.values
-        t1 shouldBe a[(String, Int)]
+        t1 shouldStaticallyBe a[(String, Int)]
         t1._1 shouldBe "tarao"
         t1._2 shouldBe 3
 
         val r2: % { val age: Int } = r1
         val t2 = r2.values
-        t2 shouldBe a[Int *: EmptyTuple]
+        t2 shouldStaticallyBe a[Int *: EmptyTuple]
         t2._1 shouldBe 3
       }
 
@@ -497,7 +497,7 @@ class RecordSpec extends helper.UnitSpec {
         val r1 = %(name = "tarao", age = 3)
         val r2: % { val age: Int; val name: String } = r1
         val t2 = r2.values
-        t2 shouldBe a[(Int, String)]
+        t2 shouldStaticallyBe a[(Int, String)]
         t2._1 shouldBe 3
         t2._2 shouldBe "tarao"
       }
@@ -545,18 +545,18 @@ class RecordSpec extends helper.UnitSpec {
         case class Empty()
         val r0 = %()
         val e = r0.to[Empty]
-        e shouldBe an[Empty]
+        e shouldStaticallyBe an[Empty]
 
         case class Cell(value: Int)
         val r1 = %(value = 10)
         val c = r1.to[Cell]
-        c shouldBe a[Cell]
+        c shouldStaticallyBe a[Cell]
         c.value shouldBe 10
 
         case class Person(name: String, age: Int)
         val r2 = %(name = "tarao", age = 3)
         val p = r2.to[Person]
-        p shouldBe a[Person]
+        p shouldStaticallyBe a[Person]
         p.name shouldBe "tarao"
         p.age shouldBe 3
       }
@@ -601,7 +601,7 @@ class RecordSpec extends helper.UnitSpec {
       it("should convert records to tuples") {
         val r1 = %(name = "tarao", age = 3)
         val t1 = r1.toTuple
-        t1 shouldBe a[("name", String) *: ("age", Int) *: EmptyTuple]
+        t1 shouldStaticallyBe a[("name", String) *: ("age", Int) *: EmptyTuple]
         t1._1._1 shouldBe "name"
         t1._1._2 shouldBe "tarao"
         t1._2._1 shouldBe "age"
@@ -609,13 +609,13 @@ class RecordSpec extends helper.UnitSpec {
 
         val r2: % { val age: Int } = r1
         val t2 = r2.toTuple
-        t2 shouldBe a[("age", Int) *: EmptyTuple]
+        t2 shouldStaticallyBe a[("age", Int) *: EmptyTuple]
         t2._1._1 shouldBe "age"
         t2._1._2 shouldBe 3
 
         val r3: % { val age: Int; val name: String } = r1
         val t3 = r3.toTuple
-        t3 shouldBe a[("age", Int) *: ("name", String) *: EmptyTuple]
+        t3 shouldStaticallyBe a[("age", Int) *: ("name", String) *: EmptyTuple]
         t3._1._1 shouldBe "age"
         t3._1._2 shouldBe 3
         t3._2._1 shouldBe "name"

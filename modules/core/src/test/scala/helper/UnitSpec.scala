@@ -9,6 +9,7 @@ import org.scalatest.matchers
 abstract class UnitSpec
     extends AnyFunSpec
     with matchers.should.Matchers
+    with StaticTypeMatcher
     with OptionValues
     with Inside
     with Inspectors

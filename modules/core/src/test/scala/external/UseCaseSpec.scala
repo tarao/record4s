@@ -12,7 +12,9 @@ class UseCaseSpec extends helper.UnitSpec {
 
       val r0 = %(name = "tarao", age = 3)
       val r1 = addEmail(r0, "tarao@example.com")
-      r1 shouldBe a[% { val name: String; val age: Int; val email: String }]
+      r1 shouldStaticallyBe a[
+        % { val name: String; val age: Int; val email: String },
+      ]
       r1.name shouldBe "tarao"
       r1.age shouldBe 3
       r1.email shouldBe "tarao@example.com"
@@ -25,7 +27,9 @@ class UseCaseSpec extends helper.UnitSpec {
 
       val r0 = %(name = "tarao", age = 3)
       val r1 = addEmail(r0, "tarao@example.com")
-      r1 shouldBe a[% { val name: String; val age: Int; val email: String }]
+      r1 shouldStaticallyBe a[
+        % { val name: String; val age: Int; val email: String },
+      ]
       r1.name shouldBe "tarao"
       r1.age shouldBe 3
       r1.email shouldBe "tarao@example.com"
@@ -38,7 +42,7 @@ class UseCaseSpec extends helper.UnitSpec {
 
       val r0 = %(name = "tarao", age = 3, email = "tarao@example.com")
       val r1 = addEmail(r0, %(user = "tarao", domain = "example.com"))
-      r1 shouldBe a[
+      r1 shouldStaticallyBe a[
         % {
           val name: String; val age: Int;
           val email: % { val user: String; val domain: String }
@@ -68,14 +72,18 @@ class UseCaseSpec extends helper.UnitSpec {
 
       val r0 = %(name = "tarao fuguta", age = 3).tag[Person]
       val r1 = addEmail(r0, "tarao@example.com")
-      r1 shouldBe a[% { val name: String; val age: Int; val email: String }]
+      r1 shouldStaticallyBe a[
+        % { val name: String; val age: Int; val email: String },
+      ]
       r1.name shouldBe "tarao fuguta"
       r1.firstName shouldBe "tarao"
       r1.age shouldBe 3
       r1.email shouldBe "tarao@example.com"
 
       val r2 = r0.withEmail("tarao@example.com")
-      r2 shouldBe a[% { val name: String; val age: Int; val email: String }]
+      r2 shouldStaticallyBe a[
+        % { val name: String; val age: Int; val email: String },
+      ]
       r2.name shouldBe "tarao fuguta"
       r2.firstName shouldBe "tarao"
       r2.age shouldBe 3
@@ -91,7 +99,7 @@ class UseCaseSpec extends helper.UnitSpec {
       "r1.name" shouldNot typeCheck
       "r1.age" shouldNot typeCheck
       r1.email shouldBe "tarao@example.com"
-      r1 shouldBe a[% { val email: String }]
+      r1 shouldStaticallyBe a[% { val email: String }]
 
       def addEmail2[R <: % { val name: String }](record: R, email: String) =
         record ++ %(email = email)
@@ -99,7 +107,7 @@ class UseCaseSpec extends helper.UnitSpec {
       "r2.name" shouldNot typeCheck
       "r2.age" shouldNot typeCheck
       r2.email shouldBe "tarao@example.com"
-      r2 shouldBe a[% { val email: String }]
+      r2 shouldStaticallyBe a[% { val email: String }]
     }
   }
 
@@ -114,7 +122,9 @@ class UseCaseSpec extends helper.UnitSpec {
 
       val r0 = %(name = "tarao", age = 3)
       val r1 = addEmail(r0, "tarao@example.com")
-      r1 shouldBe a[% { val name: String; val age: Int; val email: String }]
+      r1 shouldStaticallyBe a[
+        % { val name: String; val age: Int; val email: String },
+      ]
       r1.name shouldBe "tarao"
       r1.age shouldBe 3
       r1.email shouldBe "tarao@example.com"
@@ -127,7 +137,9 @@ class UseCaseSpec extends helper.UnitSpec {
 
       val r0 = %(name = "tarao", age = 3)
       val r1 = addEmail(r0, "tarao@example.com")
-      r1 shouldBe a[% { val name: String; val age: Int; val email: String }]
+      r1 shouldStaticallyBe a[
+        % { val name: String; val age: Int; val email: String },
+      ]
       r1.name shouldBe "tarao"
       r1.age shouldBe 3
       r1.email shouldBe "tarao@example.com"
@@ -140,7 +152,7 @@ class UseCaseSpec extends helper.UnitSpec {
 
       val r0 = %(name = "tarao", age = 3, email = "tarao@example.com")
       val r1 = addEmail(r0, %(user = "tarao", domain = "example.com"))
-      r1 shouldBe a[
+      r1 shouldStaticallyBe a[
         % {
           val name: String; val age: Int;
           val email: % { val user: String; val domain: String }
@@ -170,14 +182,18 @@ class UseCaseSpec extends helper.UnitSpec {
 
       val r0 = %(name = "tarao fuguta", age = 3).tag[Person]
       val r1 = addEmail(r0, "tarao@example.com")
-      r1 shouldBe a[% { val name: String; val age: Int; val email: String }]
+      r1 shouldStaticallyBe a[
+        % { val name: String; val age: Int; val email: String },
+      ]
       r1.name shouldBe "tarao fuguta"
       r1.firstName shouldBe "tarao"
       r1.age shouldBe 3
       r1.email shouldBe "tarao@example.com"
 
       val r2 = r0.withEmail("tarao@example.com")
-      r2 shouldBe a[% { val name: String; val age: Int; val email: String }]
+      r2 shouldStaticallyBe a[
+        % { val name: String; val age: Int; val email: String },
+      ]
       r2.name shouldBe "tarao fuguta"
       r2.firstName shouldBe "tarao"
       r2.age shouldBe 3
@@ -193,7 +209,7 @@ class UseCaseSpec extends helper.UnitSpec {
       "r1.name" shouldNot typeCheck
       "r1.age" shouldNot typeCheck
       r1.email shouldBe "tarao@example.com"
-      r1 shouldBe a[% { val email: String }]
+      r1 shouldStaticallyBe a[% { val email: String }]
 
       def addEmail2[R <: % { val name: String }](record: R, email: String) =
         record + (email = email)
@@ -201,7 +217,7 @@ class UseCaseSpec extends helper.UnitSpec {
       "r2.name" shouldNot typeCheck
       "r2.age" shouldNot typeCheck
       r2.email shouldBe "tarao@example.com"
-      r2 shouldBe a[% { val email: String }]
+      r2 shouldStaticallyBe a[% { val email: String }]
     }
   }
 
