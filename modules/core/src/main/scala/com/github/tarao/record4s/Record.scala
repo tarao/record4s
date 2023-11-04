@@ -20,9 +20,6 @@ object Record {
     *
     * @example
     *   ```
-    *   //{
-    *   import com.github.tarao.record4s.%
-    *   //}
     *   val r = %(value = 3, toString = 10)
     *
     *   r.value
@@ -174,6 +171,7 @@ object Record {
       *   ```
       *   val r1 = %(name = "tarao", age = 3, email = "tarao@example.com")
       *   val r2 = r1(unselect.email)
+      *   // val r2: com.github.tarao.record4s.%{val name: String; val age: Int} = %(name = tarao, age = 3)
       *   ```
       *
       * @tparam U
@@ -341,6 +339,12 @@ abstract class % extends Record with Selectable {
   def selectDynamic(name: String): Any =
     __lookup(scala.reflect.NameTransformer.decode(name))
 
+  /** Stringify the record.
+    *
+    * The order of key-value pairs may differ from the order of static field
+    * types. It also shows statically hidden fields if the static type of the
+    * record was narrowed by upcast.
+    */
   override def toString(): String =
     __iterable
       .iterator

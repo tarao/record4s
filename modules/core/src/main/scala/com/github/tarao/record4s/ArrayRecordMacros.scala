@@ -6,6 +6,7 @@ object ArrayRecordMacros {
   import scala.quoted.*
   import InternalMacros.{internal, withInternal}
 
+  /** Macro implementation of `ArrayRecord.lookup` */
   def selectImpl[R: Type](
     record: Expr[ArrayRecord[R]],
     labelExpr: Expr[String],
@@ -34,6 +35,7 @@ object ArrayRecordMacros {
     }
   }
 
+  /** Macro implementation of `ArrayRecord.apply` */
   def applyImpl[R: Type](
     record: Expr[ArrayRecord[R]],
     method: Expr[String],
@@ -69,6 +71,7 @@ object ArrayRecordMacros {
     }
   }
 
+  /** Macro implementation of `ArrayRecord.upcast` */
   def upcastImpl[From: Type, To: Type](
     record: Expr[ArrayRecord[From]],
   )(using Quotes): Expr[Any] = withInternal {

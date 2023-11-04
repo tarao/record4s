@@ -725,7 +725,6 @@ class RecordSpec extends helper.UnitSpec {
 
       it("can express Record with fields") {
         val r = %(foo = 42, bar = "yay!")
-        // TODO: Should we sort fields?
         r.toString() shouldBe "%(foo = 42, bar = yay!)"
       }
 
