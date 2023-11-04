@@ -60,10 +60,9 @@ object Macros {
       [Out] =>
         (tpe: Type[Out]) =>
           (fields: Expr[Seq[(String, Any)]]) => {
-            given Type[Out] = tpe
             newMapRecord[Out]('{
               ${ rec }.toMap.concat(${ fields })
-            })
+            })(using tpe)
         }
     }
   }
@@ -91,14 +90,16 @@ object Macros {
         (labels, types)
       }
 
-    (elemLabels, elemTypes) match {
-      case ('[elemLabels], '[elemTypes]) =>
+    (elemLabels, elemTypes, schema.tagsAsType, schema.asTupleType) match {
+      case ('[elemLabels], '[elemTypes], '[tagsType], '[tupleType]) =>
         '{
           (new Record.RecordLikeRecord[R]).asInstanceOf[
             RecordLike[R] {
               type FieldTypes = R
               type ElemLabels = elemLabels
               type ElemTypes = elemTypes
+              type Tags = tagsType
+              type TupledFieldTypes = tupleType
             },
           ]
         }

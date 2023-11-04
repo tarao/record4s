@@ -74,13 +74,29 @@ private[record4s] class InternalMacros(using
         .foldLeft(baseRepr) { case (base, (label, '[tpe])) =>
           Refinement(base, label, TypeRepr.of[tpe])
         }
+      tagsWith(record).asType
+    }
 
+    def asTupleType: Type[?] = {
+      val record = fieldTypes.foldRight(TypeRepr.of[EmptyTuple]) {
+        case ((label, '[tpe]), rest) =>
+          (ConstantType(StringConstant(label)).asType, rest.asType) match {
+            case ('[labelType], '[head *: tail]) =>
+              TypeRepr.of[(labelType, tpe) *: head *: tail]
+            case ('[labelType], '[EmptyTuple]) =>
+              TypeRepr.of[(labelType, tpe) *: EmptyTuple]
+          }
+      }
+      tagsWith(record).asType
+    }
+
+    def tagsAsType: Type[?] = tagsWith(TypeRepr.of[Any]).asType
+
+    private def tagsWith(tpr: TypeRepr): TypeRepr =
       tags
-        .foldLeft(record) { case (base, '[tag]) =>
+        .foldLeft(tpr) { case (base, '[tag]) =>
           AndType(base, TypeRepr.of[Tag[tag]])
         }
-        .asType
-    }
   }
 
   object Schema {
@@ -231,8 +247,9 @@ private[record4s] class InternalMacros(using
 
   def schemaOf[R: Type]: Schema = {
     def isTuple[T: Type]: Boolean = Type.of[T] match {
-      case '[_ *: _] => true
-      case _         => false
+      case '[_ *: _]     => true
+      case '[EmptyTuple] => true
+      case _             => false
     }
 
     if (TypeRepr.of[R] <:< TypeRepr.of[%])

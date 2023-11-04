@@ -35,7 +35,7 @@ object Converter {
 
   inline given [R <: %, T <: NonEmptyTuple](using
     r: RecordLike[R],
-    ev: Tuple.Zip[r.ElemLabels, r.ElemTypes] =:= T,
+    ev: r.TupledFieldTypes =:= T,
   ): Converter[R, T] = new Converter {
     def apply(record: R): T = ev(record.toTuple)
   }

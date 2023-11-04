@@ -48,7 +48,7 @@ abstract class ProductRecord extends Record with Product {
 object ProductRecord {
   class MirrorOfProductRecord[
     ElemLabels <: Tuple,
-    ElemTypes,
+    ElemTypes <: Tuple,
     P <: ProductRecord,
   ](elemLabels: Seq[String])
       extends Mirror.Product {
@@ -59,16 +59,16 @@ object ProductRecord {
     type MirroredElemLabels = ElemLabels
 
     def fromProduct(p: Product): P =
-      new VectorRecord[%](elemLabels.zip(p.productIterator).toVector)
+      new VectorRecord(elemLabels.zip(p.productIterator).toVector)
         .asInstanceOf[P]
   }
 
-  inline given [R <: %](using
+  inline given [R](using
     r: RecordLike[ArrayRecord[R]],
   ): MirrorOfProductRecord[r.ElemLabels, r.ElemTypes, ArrayRecord[R]] =
     new MirrorOfProductRecord(RecordLike.seqOfLabels[r.ElemLabels])
 
-  given [Elems, R <: %, P <: Product](using
+  given [Elems, R, P <: Product](using
     from: Mirror.ProductOf[ArrayRecord[R]],
     to: Mirror.ProductOf[P],
     ev: from.MirroredElemTypes <:< to.MirroredElemTypes,
@@ -85,31 +85,37 @@ abstract class ArrayRecord[R] extends ProductRecord with Dynamic {
     ${ ArrayRecordMacros.selectImpl('this, 'name) }
 }
 
-object ArrayRecord extends ArrayRecord.Extensible[%] {
-  protected def record: ArrayRecord[%] = empty
+object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
+  protected def record: ArrayRecord[EmptyTuple] = empty
 
-  val empty: ArrayRecord[%] = newArrayRecord[%](Vector.empty)
+  val empty: ArrayRecord[EmptyTuple] = newArrayRecord[EmptyTuple](Vector.empty)
 
   import typing.withPotentialTypingError
 
-  transparent inline def lookup[R <: %](record: ArrayRecord[R], label: String) =
+  transparent inline def lookup[R](
+    record: ArrayRecord[R],
+    label: String,
+  ) =
     ${ ArrayRecordMacros.selectImpl('record, 'label) }
 
-  inline def from[T, RR <: %](x: T)(using
-    RecordLike[T],
-    typing.Aux[T, RR],
-  ): ArrayRecord[RR] = withPotentialTypingError {
+  inline def from[T: RecordLike, RR <: %](x: T)(using
+    ev: typing.Concat.Aux[EmptyTuple, T, RR],
+    rr: RecordLike[RR],
+  ): ArrayRecord[rr.TupledFieldTypes] = withPotentialTypingError {
     empty ++ x
   }
 
-  extension [R <: %](record: ArrayRecord[R]) {
+  extension [R](record: ArrayRecord[R]) {
     def + : Extensible[R] = new Extensible.Appender(record)
 
     inline def ++[R2: RecordLike, RR <: %](
       other: R2,
-    )(using typing.Concat.Aux[R, R2, RR]): ArrayRecord[RR] =
+    )(using
+      ev: typing.Concat.Aux[R, R2, RR],
+      rr: RecordLike[RR],
+    ): ArrayRecord[rr.TupledFieldTypes] =
       withPotentialTypingError {
-        newArrayRecord[RR](
+        newArrayRecord[rr.TupledFieldTypes](
           record
             .__fields
             .toVector
@@ -124,16 +130,12 @@ object ArrayRecord extends ArrayRecord.Extensible[%] {
       record.asInstanceOf[ArrayRecord[R & Tag[T]]]
 
     def values(using
-      r: RecordLike[R],
+      r: RecordLike[ArrayRecord[R]],
       conv: Converter[ArrayRecord[R], r.ElemTypes],
     ): r.ElemTypes = record.to[r.ElemTypes]
 
-    inline def upcast[R2 >: R <: `%`: RecordLike]: ArrayRecord[R2] =
-      newArrayRecord[R2](
-        summon[RecordLike[ArrayRecord[R2]]]
-          .orderedIterableOf(record.asInstanceOf[ArrayRecord[R2]])
-          .toVector,
-      )
+    transparent inline def upcast[R2] =
+      ${ ArrayRecordMacros.upcastImpl[R, R2]('record) }
 
     inline def toTuple(using
       r: RecordLike[ArrayRecord[R]],
@@ -146,20 +148,24 @@ object ArrayRecord extends ArrayRecord.Extensible[%] {
         }
         .asInstanceOf[Tuple.Zip[r.ElemLabels, r.ElemTypes]]
 
-    def toRecord: R = new MapRecord(record.__fields.toMap).asInstanceOf[R]
+    inline def toRecord[RR <: %](using typing.Aux[ArrayRecord[R], RR]): RR =
+      withPotentialTypingError {
+        Record.from(record)
+      }
   }
 
   // - Putting `apply` in the extension breaks `ArrayRecord.applyDynamicNamed`.
   // - Defining `to` in the extension breaks JMH.
-  implicit class OpsCompat[R <: %](private val record: ArrayRecord[R])
+  implicit class OpsCompat[R](private val record: ArrayRecord[R])
       extends AnyVal {
     inline def apply[S <: Tuple, RR <: %](s: Selector[S])(using
-      typing.Select.Aux[R, S, RR],
-      RecordLike[ArrayRecord[R]],
-    ): ArrayRecord[RR] = withPotentialTypingError {
+      r: RecordLike[ArrayRecord[R]],
+      ev: typing.Select.Aux[R, S, RR],
+      rr: RecordLike[RR],
+    ): ArrayRecord[rr.TupledFieldTypes] = withPotentialTypingError {
       val sel = selection[S]
       val m = summon[RecordLike[ArrayRecord[R]]].iterableOf(record).toMap
-      newArrayRecord[RR](
+      newArrayRecord[rr.TupledFieldTypes](
         sel
           .map((label, newLabel) => (newLabel, m(label)))
           .deduped
@@ -186,44 +192,38 @@ object ArrayRecord extends ArrayRecord.Extensible[%] {
     }
 
     inline def apply[U <: Tuple, RR <: %](u: Unselector[U])(using
-      typing.Unselect.Aux[R, U, RR],
-      RecordLike[ArrayRecord[RR]],
-      R <:< RR,
-    ): ArrayRecord[RR] = withPotentialTypingError {
-      newArrayRecord[RR](
-        summon[RecordLike[ArrayRecord[RR]]]
-          .orderedIterableOf(record.asInstanceOf[ArrayRecord[RR]])
-          .toVector,
-      )
-    }
+      ev: typing.Unselect.Aux[R, U, RR],
+      rr: RecordLike[RR],
+      ar: RecordLike[ArrayRecord[Tuple.Zip[rr.ElemLabels, rr.ElemTypes]]],
+    ): ArrayRecord[Tuple.Zip[rr.ElemLabels, rr.ElemTypes]] =
+      withPotentialTypingError {
+        type ft = Tuple.Zip[rr.ElemLabels, rr.ElemTypes]
+        newArrayRecord[ft](
+          ar
+            .orderedIterableOf(record.asInstanceOf[ArrayRecord[ft]])
+            .toVector,
+        )
+      }
 
     def to[To](using conv: Converter[ArrayRecord[R], To]): To = conv(record)
   }
 
-  given canEqualReflexive[R <: %]: CanEqual[ArrayRecord[R], ArrayRecord[R]] =
+  given canEqualReflexive[R]: CanEqual[ArrayRecord[R], ArrayRecord[R]] =
     CanEqual.derived
 
-  final class RecordLikeArrayRecord[R <: %] extends RecordLike[ArrayRecord[R]] {
+  final class RecordLikeArrayRecord[R] extends RecordLike[ArrayRecord[R]] {
     def iterableOf(r: ArrayRecord[R]): Iterable[(String, Any)] = r.__fields
   }
 
-  transparent inline given recordLike[R <: %](using
-    ev: RecordLike[R],
-  ): RecordLike[ArrayRecord[R]] =
-    (new RecordLikeArrayRecord).asInstanceOf[
-      RecordLikeArrayRecord[R] {
-        type FieldTypes = ev.FieldTypes
-        type ElemLabels = ev.ElemLabels
-        type ElemTypes = ev.ElemTypes
-      },
-    ]
+  transparent inline given recordLike[R]: RecordLike[ArrayRecord[R]] =
+    ${ ArrayRecordMacros.derivedRecordLikeImpl }
 
-  private def newArrayRecord[R <: %](
+  private def newArrayRecord[R](
     fields: IndexedSeq[(String, Any)],
   ): ArrayRecord[R] =
-    new VectorRecord[R](fields.toVector)
+    new VectorRecord(fields.toVector).asInstanceOf[ArrayRecord[R]]
 
-  trait Extensible[R <: %] extends Any with Dynamic {
+  trait Extensible[R] extends Any with Dynamic {
     protected def record: ArrayRecord[R]
 
     transparent inline def applyDynamic(method: String)(
@@ -238,14 +238,14 @@ object ArrayRecord extends ArrayRecord.Extensible[%] {
   }
 
   object Extensible {
-    class Appender[R <: %](override protected val record: ArrayRecord[R])
+    class Appender[R](override protected val record: ArrayRecord[R])
         extends AnyVal
         with Extensible[R]
   }
 }
 
-final class VectorRecord[R](fields: IndexedSeq[(String, Any)])
-    extends ArrayRecord[R] {
+final class VectorRecord(fields: IndexedSeq[(String, Any)])
+    extends ArrayRecord[EmptyTuple] {
   override private[record4s] val __fields: Vector[(String, Any)] =
     fields.toVector
 }

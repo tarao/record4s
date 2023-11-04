@@ -1,7 +1,9 @@
 package com.github.tarao.record4s
 
+import scala.compiletime.summonInline
+
 class ArrayRecordSpec extends helper.UnitSpec {
-  describe("Record") {
+  describe("ArrayRecord") {
     describe("Construction") {
       it("can create an empty record") {
         val r = ArrayRecord()
@@ -100,42 +102,34 @@ class ArrayRecordSpec extends helper.UnitSpec {
     }
 
     describe("Type of ArrayRecord") {
-      it("should be a simple type for an empty record") {
-        val r = ArrayRecord.empty
-        helper.showTypeOf(r) shouldBe "ArrayRecord[%]"
+      it("should represent field types as tuple types") {
+        val r1 = ArrayRecord.empty
+        r1 shouldStaticallyBe an[ArrayRecord[EmptyTuple]]
+
+        val r2 = ArrayRecord(name = "tarao")
+        r2 shouldStaticallyBe an[ArrayRecord[("name", String) *: EmptyTuple]]
       }
 
-      it("should be refinement type") {
-        val r = ArrayRecord(name = "tarao")
-        helper.showTypeOf(r) shouldBe """ArrayRecord[% {
-                                        |  val name: String
-                                        |}]""".stripMargin
-      }
-
-      it("should be combined refinement type of added fields") {
+      it("should have combined tuple types of added fields") {
         val r1 = ArrayRecord(name = "tarao")
         val r2 = r1 + (age = 3) + (email = "tarao@example.com")
-        helper.showTypeOf(r2) shouldBe """ArrayRecord[% {
-                                         |  val name: String
-                                         |  val age: Int
-                                         |  val email: String
-                                         |}]""".stripMargin
+        r2 shouldStaticallyBe an[ArrayRecord[
+          (("name", String), ("age", Int), ("email", String)),
+        ]]
       }
 
-      it("should be combined refinement type of concatenated records") {
+      it("should have combined tuple types of concatenated records") {
         val r1 = ArrayRecord(name = "tarao")
         val r2 = ArrayRecord(age = 3, email = "tarao@example.com")
-        helper.showTypeOf(r1 ++ r2) shouldBe """ArrayRecord[% {
-                                               |  val name: String
-                                               |  val age: Int
-                                               |  val email: String
-                                               |}]""".stripMargin
+
+        (r1 ++ r2) shouldStaticallyBe an[ArrayRecord[
+          (("name", String), ("age", Int), ("email", String)),
+        ]]
+
         val r3 = r1 ++ r2
-        helper.showTypeOf(r3) shouldBe """ArrayRecord[% {
-                                         |  val name: String
-                                         |  val age: Int
-                                         |  val email: String
-                                         |}]""".stripMargin
+        r3 shouldStaticallyBe an[ArrayRecord[
+          (("name", String), ("age", Int), ("email", String)),
+        ]]
       }
 
       it("should take the last field type of the same name") {
@@ -144,52 +138,47 @@ class ArrayRecordSpec extends helper.UnitSpec {
         val r3 = r2 + (name = "ikura") + (email =
           ArrayRecord(user = "ikura", domain = "example.com"),
         )
-        helper.showTypeOf(r3) shouldBe """ArrayRecord[% {
-                                         |  val age: Int
-                                         |  val name: String
-                                         |  val email: ArrayRecord[% {
-                                         |    val user: String
-                                         |    val domain: String
-                                         |  }]
-                                         |}]""".stripMargin
+        r3 shouldStaticallyBe an[ArrayRecord[
+          (
+            ("age", Int),
+            ("name", String),
+            ("email", ArrayRecord[(("user", String), ("domain", String))]),
+          ),
+        ]]
 
         val r4 =
           ArrayRecord(name = "tarao", age = 3, email = "tarao@example.com")
         val r5 = ArrayRecord(name = "ikura") + (email =
           ArrayRecord(user = "ikura", domain = "example.com"),
         )
-        helper.showTypeOf(r4 ++ r5) shouldBe """ArrayRecord[% {
-                                               |  val age: Int
-                                               |  val name: String
-                                               |  val email: ArrayRecord[% {
-                                               |    val user: String
-                                               |    val domain: String
-                                               |  }]
-                                               |}]""".stripMargin
+        (r4 ++ r5) shouldStaticallyBe an[ArrayRecord[
+          (
+            ("age", Int),
+            ("name", String),
+            ("email", ArrayRecord[(("user", String), ("domain", String))]),
+          ),
+        ]]
       }
 
       it("should have flattened field types after ++ or +") {
         val r1 = ArrayRecord(name = "tarao")
         val r2 = ArrayRecord(age = 3)
         val r3 = ArrayRecord(email = "tarao@example.com")
-        helper.showTypeOf((r1 ++ r2) ++ r3) shouldBe """ArrayRecord[% {
-                                                       |  val name: String
-                                                       |  val age: Int
-                                                       |  val email: String
-                                                       |}]""".stripMargin
+        ((r1 ++ r2) ++ r3) shouldStaticallyBe an[ArrayRecord[
+          (("name", String), ("age", Int), ("email", String)),
+        ]]
+
         val r4 = (r1 ++ r2) + (email = "tarao@example.com")
-        helper.showTypeOf(r4) shouldBe """ArrayRecord[% {
-                                         |  val name: String
-                                         |  val age: Int
-                                         |  val email: String
-                                         |}]""".stripMargin
+        r4 shouldStaticallyBe an[ArrayRecord[
+          (("name", String), ("age", Int), ("email", String)),
+        ]]
       }
     }
 
     describe("As a Product") {
       it("should be a Product") {
         val r1 = ArrayRecord(name = "tarao", age = 3)
-        r1 shouldBe a[Product]
+        r1 shouldStaticallyBe a[Product]
         r1.productArity shouldBe 2
         r1.productElement(0) shouldBe "tarao"
         r1.productElement(1) shouldBe 3
@@ -199,7 +188,8 @@ class ArrayRecordSpec extends helper.UnitSpec {
 
       it("can be converted from a non-array record") {
         val r1 = ArrayRecord.from(%(name = "tarao", age = 3))
-        r1 shouldBe an[ArrayRecord[% { val name: String; val age: Int }]]
+        r1 shouldStaticallyBe an[ArrayRecord[(("name", String), ("age", Int))]]
+
         r1.name shouldBe "tarao"
         r1.age shouldBe 3
       }
@@ -209,10 +199,7 @@ class ArrayRecordSpec extends helper.UnitSpec {
 
         type ElemLabels = "name" *: "age" *: EmptyTuple
         type ElemTypes = String *: Int *: EmptyTuple
-        type PersonFields = % {
-          val name: String
-          val age: Int
-        }
+        type PersonFields = (("name", String), ("age", Int))
         type PersonRecord = ArrayRecord[PersonFields]
 
         case class Person(name: String, age: Int)
@@ -225,34 +212,37 @@ class ArrayRecordSpec extends helper.UnitSpec {
         summon[m1.MirroredElemLabels =:= ("name", "age")]
 
         val p1 = m1.fromProduct(("tarao", 3))
-        p1 shouldBe an[ArrayRecord[PersonFields]]
-        p1 shouldBe a[Product]
+        p1 shouldStaticallyBe an[ArrayRecord[PersonFields]]
+        p1 shouldStaticallyBe a[Product]
         p1.productElement(0) shouldBe "tarao"
         p1.productElement(1) shouldBe 3
 
         val p2 = m1.fromProduct(Person("tarao", 3))
-        p2 shouldBe an[ArrayRecord[PersonFields]]
-        p2 shouldBe a[Product]
+        p2 shouldStaticallyBe an[ArrayRecord[PersonFields]]
+        p2 shouldStaticallyBe a[Product]
         p2.productElement(0) shouldBe "tarao"
         p2.productElement(1) shouldBe 3
 
         val p3 = m1.fromProductTyped(("tarao", 3))
-        p3 shouldBe an[ArrayRecord[PersonFields]]
-        p3 shouldBe a[Product]
+        p3 shouldStaticallyBe an[ArrayRecord[PersonFields]]
+        p3 shouldStaticallyBe a[Product]
         p3.productElement(0) shouldBe "tarao"
         p3.productElement(1) shouldBe 3
 
         val p4 = m1.fromProductTyped(Person("tarao", 3))
-        p4 shouldBe an[ArrayRecord[PersonFields]]
-        p4 shouldBe a[Product]
+        p4 shouldStaticallyBe an[ArrayRecord[PersonFields]]
+        p4 shouldStaticallyBe a[Product]
         p4.productElement(0) shouldBe "tarao"
         p4.productElement(1) shouldBe 3
 
         """m1.fromProductTyped((3, "tarao"))""" shouldNot typeCheck
         """m1.fromProductTyped(NonPerson("tarao"))""" shouldNot typeCheck
 
-        val m2 = summon[Mirror.ProductOf[ArrayRecord[PersonFields & Tag[Person]]]]
-        summon[m2.MirroredMonoType =:= (ArrayRecord[PersonFields & Tag[Person]])]
+        val m2 =
+          summon[Mirror.ProductOf[ArrayRecord[PersonFields & Tag[Person]]]]
+        summon[
+          m2.MirroredMonoType =:= (ArrayRecord[PersonFields & Tag[Person]]),
+        ]
         summon[m2.MirroredType =:= (ArrayRecord[PersonFields & Tag[Person]])]
         summon[m2.MirroredElemTypes =:= (String, Int)]
         summon[m2.MirroredElemLabels =:= ("name", "age")]
@@ -261,26 +251,26 @@ class ArrayRecordSpec extends helper.UnitSpec {
         """m2.fromProductTyped(NonPerson("tarao"))""" shouldNot typeCheck
 
         val p5 = m2.fromProduct(("tarao", 3))
-        p5 shouldBe an[ArrayRecord[PersonFields & Tag[Person]]]
-        p5 shouldBe a[Product]
+        p5 shouldStaticallyBe an[ArrayRecord[PersonFields & Tag[Person]]]
+        p5 shouldStaticallyBe a[Product]
         p5.productElement(0) shouldBe "tarao"
         p5.productElement(1) shouldBe 3
 
         val p6 = m2.fromProduct(Person("tarao", 3))
-        p6 shouldBe an[ArrayRecord[PersonFields & Tag[Person]]]
-        p6 shouldBe a[Product]
+        p6 shouldStaticallyBe an[ArrayRecord[PersonFields & Tag[Person]]]
+        p6 shouldStaticallyBe a[Product]
         p6.productElement(0) shouldBe "tarao"
         p6.productElement(1) shouldBe 3
 
         val p7 = m2.fromProductTyped(("tarao", 3))
-        p7 shouldBe an[ArrayRecord[PersonFields & Tag[Person]]]
-        p7 shouldBe a[Product]
+        p7 shouldStaticallyBe an[ArrayRecord[PersonFields & Tag[Person]]]
+        p7 shouldStaticallyBe a[Product]
         p7.productElement(0) shouldBe "tarao"
         p7.productElement(1) shouldBe 3
 
         val p8 = m2.fromProductTyped(Person("tarao", 3))
-        p8 shouldBe an[ArrayRecord[PersonFields & Tag[Person]]]
-        p8 shouldBe a[Product]
+        p8 shouldStaticallyBe an[ArrayRecord[PersonFields & Tag[Person]]]
+        p8 shouldStaticallyBe a[Product]
         p8.productElement(0) shouldBe "tarao"
         p8.productElement(1) shouldBe 3
       }
@@ -289,9 +279,9 @@ class ArrayRecordSpec extends helper.UnitSpec {
     describe("ArrayRecord.lookup") {
       it("should return a value by a string key name") {
         val r = ArrayRecord(name = "tarao", age = 3)
-        ArrayRecord.lookup(r, "name") shouldBe a[String]
+        ArrayRecord.lookup(r, "name") shouldStaticallyBe a[String]
         ArrayRecord.lookup(r, "name") shouldBe "tarao"
-        ArrayRecord.lookup(r, "age") shouldBe an[Int]
+        ArrayRecord.lookup(r, "age") shouldStaticallyBe an[Int]
         ArrayRecord.lookup(r, "age") shouldBe 3
       }
 
@@ -308,9 +298,9 @@ class ArrayRecordSpec extends helper.UnitSpec {
 
       it("should allow shadowed field to be extracted") {
         val r = ArrayRecord(toString = 10)
-        r.toString shouldBe a[String]
+        r.toString shouldStaticallyBe a[String]
         r.toString shouldBe "ArrayRecord(toString = 10)"
-        ArrayRecord.lookup(r, "toString") shouldBe an[Int]
+        ArrayRecord.lookup(r, "toString") shouldStaticallyBe an[Int]
         ArrayRecord.lookup(r, "toString") shouldBe 10
       }
     }
@@ -348,11 +338,9 @@ class ArrayRecordSpec extends helper.UnitSpec {
           ArrayRecord(name = "tarao", age = 3, email = "tarao@example.com")
         val r2 = %(name = "ikura", email = "ikura@example.com")
         val r3 = r1 ++ r2
-        helper.showTypeOf(r3) shouldBe """ArrayRecord[% {
-                                         |  val age: Int
-                                         |  val name: String
-                                         |  val email: String
-                                         |}]""".stripMargin
+        r3 shouldStaticallyBe an[ArrayRecord[
+          (("age", Int), ("name", String), ("email", String)),
+        ]]
         r3.name shouldBe "ikura"
         r3.age shouldBe 3
         r3.email shouldBe "ikura@example.com"
@@ -388,16 +376,10 @@ class ArrayRecordSpec extends helper.UnitSpec {
           ArrayRecord(name = "tarao", age = 3, email = "tarao@example.com")
 
         val r2 = r1(select.name.age)
-        helper.showTypeOf(r2) shouldBe """ArrayRecord[% {
-                                         |  val name: String
-                                         |  val age: Int
-                                         |}]""".stripMargin
+        r2 shouldStaticallyBe an[ArrayRecord[(("name", String), ("age", Int))]]
 
         val r3 = r1(select.age.name)
-        helper.showTypeOf(r3) shouldBe """ArrayRecord[% {
-                                         |  val age: Int
-                                         |  val name: String
-                                         |}]""".stripMargin
+        r3 shouldStaticallyBe an[ArrayRecord[(("age", Int), ("name", String))]]
       }
 
       it("should allow to rename fields") {
@@ -413,11 +395,9 @@ class ArrayRecordSpec extends helper.UnitSpec {
         r3.nickname shouldBe "tarao"
         r3.age shouldBe 3
         r3.name shouldBe "tarao"
-        helper.showTypeOf(r3) shouldBe """ArrayRecord[% {
-                                         |  val nickname: String
-                                         |  val age: Int
-                                         |  val name: String
-                                         |}]""".stripMargin
+        r3 shouldStaticallyBe an[ArrayRecord[
+          (("nickname", String), ("age", Int), ("name", String)),
+        ]]
       }
 
       it("should reject giving a new name by non-literal string") {
@@ -481,20 +461,23 @@ class ArrayRecordSpec extends helper.UnitSpec {
         "val t0: Tag[MyType] = r0" shouldNot typeCheck
 
         val r1 = r0.tag[MyType]
-        r1 shouldBe an[ArrayRecord[
-          % { val name: String; val age: Int } & Tag[MyType],
+        r1 shouldStaticallyBe an[ArrayRecord[
+          (("name", String), ("age", Int)) & Tag[MyType],
         ]]
 
         val r2 = r1.tag[AnotherType]
-        r2 shouldBe an[ArrayRecord[
-          % { val name: String; val age: Int } & Tag[MyType] & Tag[AnotherType],
+        r2 shouldStaticallyBe an[ArrayRecord[
+          (("name", String), ("age", Int)) & Tag[MyType] & Tag[AnotherType],
         ]]
       }
 
       it("should be a target of extension method defined in a tagged type") {
         trait Person
         object Person {
-          extension (p: ArrayRecord[% { val name: String } & Tag[Person]]) {
+          type PersonRecord =
+            ArrayRecord[(("name", String) *: EmptyTuple) & Tag[Person]]
+
+          extension (p: PersonRecord) {
             def firstName: String = p.name.split(" ").head
           }
         }
@@ -516,31 +499,31 @@ class ArrayRecordSpec extends helper.UnitSpec {
         val r1 = ArrayRecord(name = "tarao", age = 3).tag[MyType]
 
         val r2 = r1 ++ ArrayRecord(email = "tarao@example.com")
-        r2 shouldBe an[ArrayRecord[
-          % { val name: String; val age: Int; val email: String } & Tag[MyType],
+        r2 shouldStaticallyBe an[ArrayRecord[
+          (("name", String), ("age", Int), ("email", String)) & Tag[MyType],
         ]]
 
         val r3 = r1 + (email = "tarao@example.com")
-        r3 shouldBe an[ArrayRecord[
-          % { val name: String; val age: Int; val email: String } & Tag[MyType],
+        r3 shouldStaticallyBe an[ArrayRecord[
+          (("name", String), ("age", Int), ("email", String)) & Tag[MyType],
         ]]
 
         val r4 = r1.tag[AnotherType]
 
         val r5 = r4 ++ ArrayRecord(email = "tarao@example.com")
-        r5 shouldBe an[ArrayRecord[
-          % { val name: String; val age: Int; val email: String } &
-            Tag[MyType] & Tag[AnotherType],
+        r5 shouldStaticallyBe an[ArrayRecord[
+          (("name", String), ("age", Int), ("email", String)) & Tag[MyType] &
+            Tag[AnotherType],
         ]]
 
-        val r6 = r4 + (email1 = "tarao@example.com") + (occupation = "engineer")
-        r6 shouldBe a[Tag[MyType]]
-        r6 shouldBe a[Tag[AnotherType]]
-        r6 shouldBe an[ArrayRecord[
-          % {
-            val name: String; val age: Int; val email: String;
-            val occupation: String
-          } & Tag[MyType] & Tag[AnotherType],
+        val r6 = r4 + (email = "tarao@example.com") + (occupation = "engineer")
+        r6 shouldStaticallyBe an[ArrayRecord[
+          (
+            ("name", String),
+            ("age", Int),
+            ("email", String),
+            ("occupation", String),
+          ) & Tag[MyType] & Tag[AnotherType],
         ]]
       }
 
@@ -554,18 +537,20 @@ class ArrayRecordSpec extends helper.UnitSpec {
         val r2 = ArrayRecord(age = 3).tag[YourType]
 
         val r3 = r1 ++ r2
-        r3 shouldBe an[ArrayRecord[
-          % { val name: String; val age: Int } & Tag[MyType] & Tag[YourType],
+        r3 shouldStaticallyBe an[ArrayRecord[
+          (("name", String), ("age", Int)) & Tag[MyType] & Tag[YourType],
         ]]
 
         val r4 = r1.tag[AnotherType]
         val r5 = r2.tag[YetAnotherType]
 
         val r6 = r4 ++ r5
-        r6 shouldBe an[ArrayRecord[
-          % { val name: String; val age: Int } & Tag[MyType] &
-            Tag[AnotherType] & Tag[YourType] & Tag[YetAnotherType],
+        r6 shouldStaticallyBe an[ArrayRecord[
+          (("name", String), ("age", Int)) & Tag[MyType] & Tag[AnotherType] &
+            Tag[YourType] & Tag[YetAnotherType],
         ]]
+        r6.name shouldBe "tarao"
+        r6.age shouldBe 3
       }
 
       it("should preserve tags after upcast") {
@@ -574,25 +559,31 @@ class ArrayRecordSpec extends helper.UnitSpec {
 
         val r1 = ArrayRecord(name = "tarao", age = 3).tag[MyType]
 
-        val r2 = r1.upcast
-        r2 shouldBe an[ArrayRecord[
-          % { val name: String; val age: Int } & Tag[MyType],
+        val r2 = r1.upcast[(("name", String), ("age", Int)) & Tag[MyType]]
+        r2 shouldStaticallyBe an[ArrayRecord[
+          (("name", String), ("age", Int)) & Tag[MyType],
         ]]
 
-        val r3 = r1.upcast[% { val name: String } & Tag[MyType]]
-        r3 shouldBe an[ArrayRecord[% { val name: String } & Tag[MyType]]]
+        val r3 = r1.upcast[(("name", String) *: EmptyTuple) & Tag[MyType]]
+        r3 shouldStaticallyBe an[ArrayRecord[
+          (("name", String) *: EmptyTuple) & Tag[MyType],
+        ]]
 
         val r4 = r1.tag[AnotherType]
 
-        val r5 = r4.upcast
-        r5 shouldBe an[ArrayRecord[
-          % { val name: String; val age: Int } & Tag[MyType] & Tag[AnotherType],
+        val r5 = r4.upcast[
+          (("name", String), ("age", Int)) & Tag[MyType] & Tag[AnotherType],
+        ]
+        r5 shouldStaticallyBe an[ArrayRecord[
+          (("name", String), ("age", Int)) & Tag[MyType] & Tag[AnotherType],
         ]]
 
         val r6 =
-          r4.upcast[% { val name: String } & Tag[MyType] & Tag[AnotherType]]
-        r6 shouldBe an[ArrayRecord[
-          % { val name: String } & Tag[MyType] & Tag[AnotherType],
+          r4.upcast[
+            (("name", String) *: EmptyTuple) & Tag[MyType] & Tag[AnotherType],
+          ]
+        r6 shouldStaticallyBe an[ArrayRecord[
+          (("name", String) *: EmptyTuple) & Tag[MyType] & Tag[AnotherType],
         ]]
       }
 
@@ -608,56 +599,57 @@ class ArrayRecordSpec extends helper.UnitSpec {
       it("should extract values of records") {
         val r1 = ArrayRecord(name = "tarao", age = 3)
         val t1 = r1.values
-        t1 shouldBe a[(String, Int)]
+        t1 shouldStaticallyBe a[(String, Int)]
         t1._1 shouldBe "tarao"
         t1._2 shouldBe 3
 
-        val r2 = r1.upcast[% { val age: Int }]
+        val r2 = r1.upcast[("age", Int) *: EmptyTuple]
         val t2 = r2.values
-        t2 shouldBe a[Int *: EmptyTuple]
+        t2 shouldStaticallyBe a[Int *: EmptyTuple]
         t2._1 shouldBe 3
       }
 
       it("should preserve the order of static type of fields") {
         val r1 = ArrayRecord(name = "tarao", age = 3)
-        val r2 = r1.upcast[% { val age: Int; val name: String }]
+        val r2 = r1.upcast[(("age", Int), ("name", String))]
         val t2 = r2.values
-        t2 shouldBe a[(Int, String)]
+        t2 shouldStaticallyBe a[(Int, String)]
         t2._1 shouldBe 3
         t2._2 shouldBe "tarao"
       }
     }
 
     describe(".upcast[]") {
-      it("should return the same type if no type is specified") {
-        val r = ArrayRecord(name = "tarao", age = 3)
-        helper.showTypeOf(r.upcast) shouldBe """ArrayRecord[% {
-                                               |  val name: String
-                                               |  val age: Int
-                                               |}]""".stripMargin
-      }
-
       it("should allow upcast") {
         val r1 = ArrayRecord(name = "tarao", age = 3)
-        val r2 = r1.upcast[% { val name: String }]
-        helper.showTypeOf(r2) shouldBe """ArrayRecord[% {
-                                         |  val name: String
-                                         |}]""".stripMargin
+
+        val r2 = r1.upcast[("name", String) *: EmptyTuple]
+        r2 shouldStaticallyBe an[ArrayRecord[("name", String) *: EmptyTuple]]
+        r2.name shouldBe "tarao"
+
+        val r3 = r1.upcast[("age", Int) *: EmptyTuple]
+        r3 shouldStaticallyBe an[ArrayRecord[("age", Int) *: EmptyTuple]]
+        r3.age shouldBe 3
+
+        val r4 = r1.upcast[(("age", Int), ("name", String))]
+        r4 shouldStaticallyBe an[ArrayRecord[(("age", Int), ("name", String))]]
+        r4.name shouldBe "tarao"
+        r4.age shouldBe 3
       }
 
       it("should reject downcast") {
         val r1 = ArrayRecord(name = "tarao")
-        "val r2 = r1.upcast[% { val name: String; val age: Int }]" shouldNot typeCheck
+        """val r2 = r1.upcast[(("name", String), ("age", Int))]""" shouldNot typeCheck
       }
 
       it("should reject unrelated types") {
         val r1 = ArrayRecord(name = "tarao", age = 3)
-        "val r2 = r1.upcast[% { val name: String; val email: String }]" shouldNot typeCheck
+        """val r2 = r1.upcast[(("name", String), ("email", String))]""" shouldNot typeCheck
       }
 
       it("should strip away statically invisible fields") {
         val r1 = ArrayRecord(name = "tarao", age = 3)
-        val r2 = r1.upcast[% { val name: String }]
+        val r2 = r1.upcast[("name", String) *: EmptyTuple]
 
         r2.toString() shouldBe "ArrayRecord(name = tarao)"
       }
@@ -668,18 +660,18 @@ class ArrayRecordSpec extends helper.UnitSpec {
         case class Empty()
         val r0 = ArrayRecord()
         val e = r0.to[Empty]
-        e shouldBe an[Empty]
+        e shouldStaticallyBe an[Empty]
 
         case class Cell(value: Int)
         val r1 = ArrayRecord(value = 10)
         val c = r1.to[Cell]
-        c shouldBe a[Cell]
+        c shouldStaticallyBe a[Cell]
         c.value shouldBe 10
 
         case class Person(name: String, age: Int)
         val r2 = ArrayRecord(name = "tarao", age = 3)
         val p = r2.to[Person]
-        p shouldBe a[Person]
+        p shouldStaticallyBe a[Person]
         p.name shouldBe "tarao"
         p.age shouldBe 3
       }
@@ -705,7 +697,7 @@ class ArrayRecordSpec extends helper.UnitSpec {
         case class KeyValue(key: String, value: Int)
         val r1 = ArrayRecord(name = "tarao", age = 3)
         val kv = r1.to[KeyValue]
-        kv shouldBe a[KeyValue]
+        kv shouldStaticallyBe a[KeyValue]
         kv.key shouldBe "tarao"
         kv.value shouldBe 3
       }
@@ -715,21 +707,21 @@ class ArrayRecordSpec extends helper.UnitSpec {
       it("should convert records to tuples") {
         val r1 = ArrayRecord(name = "tarao", age = 3)
         val t1 = r1.toTuple
-        t1 shouldBe a[("name", String) *: ("age", Int) *: EmptyTuple]
+        t1 shouldStaticallyBe a[("name", String) *: ("age", Int) *: EmptyTuple]
         t1._1._1 shouldBe "name"
         t1._1._2 shouldBe "tarao"
         t1._2._1 shouldBe "age"
         t1._2._2 shouldBe 3
 
-        val r2 = r1.upcast[% { val age: Int }]
+        val r2 = r1.upcast[("age", Int) *: EmptyTuple]
         val t2 = r2.toTuple
-        t2 shouldBe a[("age", Int) *: EmptyTuple]
+        t2 shouldStaticallyBe a[("age", Int) *: EmptyTuple]
         t2._1._1 shouldBe "age"
         t2._1._2 shouldBe 3
 
-        val r3 = r1.upcast[% { val age: Int; val name: String }]
+        val r3 = r1.upcast[(("age", Int), ("name", String))]
         val t3 = r3.toTuple
-        t3 shouldBe a[("age", Int) *: ("name", String) *: EmptyTuple]
+        t3 shouldStaticallyBe a[("age", Int) *: ("name", String) *: EmptyTuple]
         t3._1._1 shouldBe "age"
         t3._1._2 shouldBe 3
         t3._2._1 shouldBe "name"
@@ -741,14 +733,16 @@ class ArrayRecordSpec extends helper.UnitSpec {
       it("should convert to a non-array record") {
         val r1 = ArrayRecord(name = "tarao", age = 3)
         val r2 = r1.toRecord
-        r2 shouldBe a[% { val name: String; val age: Int }]
+        r2 shouldStaticallyBe a[% { val name: String; val age: Int }]
         r2.name shouldBe "tarao"
         r2.age shouldBe 3
 
         trait MyType
         val r3 = r1.tag[MyType]
         val r4 = r3.toRecord
-        r4 shouldBe a[% { val name: String; val age: Int } & Tag[MyType]]
+        r4 shouldStaticallyBe a[
+          % { val name: String; val age: Int } & Tag[MyType],
+        ]
         r4.name shouldBe "tarao"
         r4.age shouldBe 3
       }
@@ -763,27 +757,20 @@ class ArrayRecordSpec extends helper.UnitSpec {
         r1.name shouldBe "tarao"
         r1.age shouldBe 3
         r1.toString() shouldBe "ArrayRecord(name = tarao, age = 3)"
-        helper.showTypeOf(r1) shouldBe """ArrayRecord[% {
-                                         |  val name: String
-                                         |  val age: Int
-                                         |}]""".stripMargin
+        r1 shouldStaticallyBe an[ArrayRecord[(("name", String), ("age", Int))]]
 
         val t1: ("foo", Int) *: EmptyTuple = ("foo", 1) *: EmptyTuple
         val r2 = ArrayRecord.from(t1)
         r2.foo shouldBe 1
         r2.toString() shouldBe "ArrayRecord(foo = 1)"
-        helper.showTypeOf(r2) shouldBe """ArrayRecord[% {
-                                         |  val foo: Int
-                                         |}]""".stripMargin
+        r2 shouldStaticallyBe an[ArrayRecord[("foo", Int) *: EmptyTuple]]
 
         val t2: ("foo", Int) *: Int *: EmptyTuple =
           ("foo", 1) *: 3 *: EmptyTuple
         val r3 = ArrayRecord.from(t2)
         r3.foo shouldBe 1
         r3.toString() shouldBe "ArrayRecord(foo = 1)"
-        helper.showTypeOf(r2) shouldBe """ArrayRecord[% {
-                                         |  val foo: Int
-                                         |}]""".stripMargin
+        r3 shouldStaticallyBe an[ArrayRecord[("foo", Int) *: EmptyTuple]]
       }
 
       it("should allow Products to be concatenated to a record") {

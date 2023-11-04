@@ -8,6 +8,8 @@ trait RecordLike[R] {
   type FieldTypes
   type ElemLabels <: Tuple
   type ElemTypes <: Tuple
+  type Tags = Any
+  type TupledFieldTypes = Tuple.Zip[ElemLabels, ElemTypes]
 
   def iterableOf(r: R): Iterable[(String, Any)]
 

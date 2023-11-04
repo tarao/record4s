@@ -127,15 +127,17 @@ class TypeErrorSpec extends helper.UnitSpec {
 
       it("should detect wrong usage") {
         """
-          def addEmail[R <: %, RR <: %](record: ArrayRecord[R], email: String)(using
-            typing.Concat.Aux[R, Nothing, RR],
-          ): ArrayRecord[RR] = record ++ ArrayRecord(email = email)
+          def addEmail[R, RR <: %](record: ArrayRecord[R], email: String)(using
+            ev: typing.Concat.Aux[R, Nothing, RR],
+            rr: RecordLike[RR],
+          ): ArrayRecord[rr.TupledFieldTypes] = record ++ ArrayRecord(email = email)
         """ shouldNot typeCheck
 
         """
-          def addEmail[R <: %, RR <: %](record: ArrayRecord[R], email: String)(using
-            typing.Concat.Aux[R, % { val name: String }, RR],
-          ): ArrayRecord[RR] = record ++ ArrayRecord(email = email)
+          def addEmail[R, RR <: %](record: ArrayRecord[R], email: String)(using
+            ev: typing.Concat.Aux[R, ArrayRecord[("name", String) *: EmptyTuple], RR],
+            rr: RecordLike[RR],
+          ): ArrayRecord[rr.TupledFieldTypes] = record ++ ArrayRecord(email = email)
         """ shouldNot typeCheck
       }
     }
