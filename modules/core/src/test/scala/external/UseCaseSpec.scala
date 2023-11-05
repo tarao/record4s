@@ -221,46 +221,6 @@ class UseCaseSpec extends helper.UnitSpec {
     }
   }
 
-  describe("Pattern matching") {
-    import com.github.tarao.record4s.{%, ArrayRecord, select}
-
-    it("should be possible to match records by `select` and `values`") {
-      val r = %(name = "tarao", age = 3, email = "tarao@example.com")
-
-      r match {
-        case select.name.age(name, age) =>
-          name shouldBe "tarao"
-          age shouldBe 3
-      }
-
-      val pattern = "(.*)@(.*)".r
-      r match {
-        case select.name.email(name, pattern(user, domain)) =>
-          name shouldBe "tarao"
-          user shouldBe "tarao"
-          domain shouldBe "example.com"
-        case _ =>
-          fail()
-      }
-
-      val ar = ArrayRecord(name = "tarao", age = 3, email = "tarao@example.com")
-      r match {
-        case select.age.name(age, name) =>
-          name shouldBe "tarao"
-          age shouldBe 3
-      }
-
-      case class Person(name: String, age: Int)
-      val p = Person("tarao", 3)
-      p match {
-        case select.age(age) =>
-          age shouldBe 3
-        case _ =>
-          fail()
-      }
-    }
-  }
-
   describe("Generic array record extension with ++") {
     import com.github.tarao.record4s.{ArrayRecord, ProductRecord, Tag}
     import com.github.tarao.record4s.typing.ArrayRecord.Concat
@@ -512,6 +472,46 @@ class UseCaseSpec extends helper.UnitSpec {
         def addEmail[R](record: ArrayRecord[R], email: String) =
           record + (email = email)
       """ shouldNot typeCheck
+    }
+  }
+
+  describe("Pattern matching") {
+    import com.github.tarao.record4s.{%, ArrayRecord, select}
+
+    it("should be possible to match records by `select` and `values`") {
+      val r = %(name = "tarao", age = 3, email = "tarao@example.com")
+
+      r match {
+        case select.name.age(name, age) =>
+          name shouldBe "tarao"
+          age shouldBe 3
+      }
+
+      val pattern = "(.*)@(.*)".r
+      r match {
+        case select.name.email(name, pattern(user, domain)) =>
+          name shouldBe "tarao"
+          user shouldBe "tarao"
+          domain shouldBe "example.com"
+        case _ =>
+          fail()
+      }
+
+      val ar = ArrayRecord(name = "tarao", age = 3, email = "tarao@example.com")
+      r match {
+        case select.age.name(age, name) =>
+          name shouldBe "tarao"
+          age shouldBe 3
+      }
+
+      case class Person(name: String, age: Int)
+      val p = Person("tarao", 3)
+      p match {
+        case select.age(age) =>
+          age shouldBe 3
+        case _ =>
+          fail()
+      }
     }
   }
 }
