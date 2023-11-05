@@ -46,7 +46,7 @@ object ArrayRecordMacros {
 
     requireApply(record, method) {
       val rec = '{ ${ record }.__fields }
-      val (fields, tpe) = Macros.extractFieldsFrom(args)
+      val (fields, tpe) = extractFieldsFrom(args)
       val vec = '{
         ${ rec }
           .toVector

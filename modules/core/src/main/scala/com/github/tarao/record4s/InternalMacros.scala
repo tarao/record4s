@@ -302,6 +302,40 @@ private[record4s] class InternalMacros(using
     fields: Seq[Expr[(String, Any)]],
   ): Seq[(String, Type[?])] = fields.map(fieldTypeOf(_))
 
+  def extractFieldsFrom(
+    varargs: Expr[Seq[(String, Any)]],
+  ): (Expr[Seq[(String, Any)]], Type[?]) = {
+    // We have no way to write this without transparent inline macro.  Literal string
+    // types are subject to widening and they become `String`s at the type level.  A
+    // `transparent inline given` also doesn't work since it can only depend on type-level
+    // information.
+    //
+    // See the discussion here for the details about attempts to suppress widening:
+    // https://contributors.scala-lang.org/t/pre-sip-exact-type-annotation/5835/22
+    val fields = varargs match {
+      case Varargs(args) => args
+      case _ =>
+        errorAndAbort("Expected explicit varargs sequence", Some(varargs))
+    }
+    val fieldTypes = fieldTypesOf(fields)
+
+    val tupledFieldTypes =
+      fieldTypes.foldRight(Type.of[EmptyTuple]: Type[?]) {
+        case ((label, '[tpe]), base) =>
+          val pair = ConstantType(StringConstant(label)).asType match {
+            case '[label] => Type.of[(label, tpe)]
+          }
+          (pair, base) match {
+            case ('[tpe], '[head *: tail]) =>
+              Type.of[tpe *: head *: tail]
+            case ('[tpe], '[EmptyTuple]) =>
+              Type.of[tpe *: EmptyTuple]
+          }
+      }
+
+    (Expr.ofSeq(fields), tupledFieldTypes)
+  }
+
   def fieldSelectionsOf[S: Type](
     schema: Schema,
   ): Seq[(String, String, Type[?])] = {

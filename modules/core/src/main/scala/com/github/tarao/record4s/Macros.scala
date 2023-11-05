@@ -6,36 +6,6 @@ object Macros {
   import scala.quoted.*
   import InternalMacros.{internal, withInternal, withTyping}
 
-  def extractFieldsFrom(
-    varargs: Expr[Seq[(String, Any)]],
-  )(using Quotes): (Expr[Seq[(String, Any)]], Type[?]) = withInternal {
-    import quotes.reflect.*
-    import internal.*
-
-    // We have no way to write this without transparent inline macro.  Literal string
-    // types are subject to widening and they become `String`s at the type level.  A
-    // `transparent inline given` also doesn't work since it can only depend on type-level
-    // information.
-    //
-    // See the discussion here for the details about attempts to suppress widening:
-    // https://contributors.scala-lang.org/t/pre-sip-exact-type-annotation/5835/22
-    val fields = varargs match {
-      case Varargs(args) => args
-      case _ =>
-        errorAndAbort("Expected explicit varargs sequence", Some(varargs))
-    }
-    val fieldTypes = fieldTypesOf(fields)
-
-    val fieldTypesTuple =
-      typeReprOfTupleFromSeq(fieldTypes.map { case (label, '[tpe]) =>
-        ConstantType(StringConstant(label)).asType match {
-          case '[label] => TypeRepr.of[(label, tpe)]
-        }
-      }).asType
-
-    (Expr.ofSeq(fields), fieldTypesTuple)
-  }
-
   /** Macro implementation of `%.apply` */
   def applyImpl[R <: `%`: Type](
     record: Expr[R],
@@ -230,19 +200,4 @@ object Macros {
     Expr(Type.show[T])
 
   inline def typeNameOf[T]: String = ${ typeNameOfImpl[T] }
-
-  private def typeReprOfTupleFromSeq(using Quotes)(
-    typeReprs: Seq[quotes.reflect.TypeRepr],
-  ): quotes.reflect.TypeRepr = {
-    import quotes.reflect.*
-
-    typeReprs.foldRight(TypeRepr.of[EmptyTuple]) { case (tpr, base) =>
-      (base.asType, tpr.asType) match {
-        case ('[head *: tail], '[tpe]) =>
-          TypeRepr.of[tpe *: head *: tail]
-        case ('[EmptyTuple], '[tpe]) =>
-          TypeRepr.of[tpe *: EmptyTuple]
-      }
-    }
-  }
 }
