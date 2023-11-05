@@ -7,6 +7,7 @@ trait Converter[From, To] {
 }
 
 object Converter {
+
   /** Converter instance from a record to a product
     *
     * Target product type `P` must provide `Mirror.Of[P]`.
@@ -22,7 +23,7 @@ object Converter {
   inline given [R <: %, P <: Product](using
     m: Mirror.ProductOf[P],
     r1: RecordLike[P],
-    s: typing.Select[R, r1.ElemLabels],
+    s: typing.Record.Select[R, r1.ElemLabels],
     r2: RecordLike[s.Out],
     ev: r2.ElemTypes <:< m.MirroredElemTypes,
   ): Converter[R, P] =

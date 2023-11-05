@@ -3,7 +3,7 @@ package external
 class UseCaseSpec extends helper.UnitSpec {
   describe("Generic record extension with ++") {
     import com.github.tarao.record4s.{%, Tag}
-    import com.github.tarao.record4s.typing.Concat
+    import com.github.tarao.record4s.typing.Record.Concat
 
     it("can be done by using Concat") {
       def addEmail[R <: %](record: R, email: String)(using
@@ -113,7 +113,7 @@ class UseCaseSpec extends helper.UnitSpec {
 
   describe("Generic record extension with +") {
     import com.github.tarao.record4s.{%, Tag}
-    import com.github.tarao.record4s.typing.Append
+    import com.github.tarao.record4s.typing.Record.Append
 
     it("can be done by using Append") {
       def addEmail[R <: %](record: R, email: String)(using
@@ -255,14 +255,13 @@ class UseCaseSpec extends helper.UnitSpec {
   }
 
   describe("Generic array record extension with ++") {
-    import com.github.tarao.record4s.{%, ArrayRecord, RecordLike, Tag}
-    import com.github.tarao.record4s.typing.Concat
+    import com.github.tarao.record4s.{ArrayRecord, ProductRecord, Tag}
+    import com.github.tarao.record4s.typing.ArrayRecord.Concat
 
     it("can be done by using Concat") {
       def addEmail[R](record: ArrayRecord[R], email: String)(using
         concat: Concat[R, ArrayRecord[("email", String) *: EmptyTuple]],
-        r: RecordLike[concat.Out],
-      ): ArrayRecord[r.TupledFieldTypes] = record ++ ArrayRecord(email = email)
+      ): concat.Out = record ++ ArrayRecord(email = email)
 
       val r0 = ArrayRecord(name = "tarao", age = 3)
       val r1 = addEmail(r0, "tarao@example.com")
@@ -275,10 +274,12 @@ class UseCaseSpec extends helper.UnitSpec {
     }
 
     it("can be done by using Concat.Aux") {
-      def addEmail[R, RR <: %](record: ArrayRecord[R], email: String)(using
-        concat: Concat.Aux[R, ArrayRecord[("email", String) *: EmptyTuple], RR],
-        r: RecordLike[RR],
-      ): ArrayRecord[r.TupledFieldTypes] = record ++ ArrayRecord(email = email)
+      def addEmail[R, RR <: ProductRecord](
+        record: ArrayRecord[R],
+        email: String,
+      )(using
+        Concat.Aux[R, ArrayRecord[("email", String) *: EmptyTuple], RR],
+      ): RR = record ++ ArrayRecord(email = email)
 
       val r0 = ArrayRecord(name = "tarao", age = 3)
       val r1 = addEmail(r0, "tarao@example.com")
@@ -291,10 +292,9 @@ class UseCaseSpec extends helper.UnitSpec {
     }
 
     it("can replace existing field") {
-      def addEmail[R, T, RR <: %](record: ArrayRecord[R], email: T)(using
-        concat: Concat.Aux[R, ArrayRecord[("email", T) *: EmptyTuple], RR],
-        r: RecordLike[RR],
-      ): ArrayRecord[r.TupledFieldTypes] = record ++ ArrayRecord(email = email)
+      def addEmail[R, T, RR <: ProductRecord](record: ArrayRecord[R], email: T)(
+        using Concat.Aux[R, ArrayRecord[("email", T) *: EmptyTuple], RR],
+      ): RR = record ++ ArrayRecord(email = email)
 
       val r0 = ArrayRecord(name = "tarao", age = 3, email = "tarao@example.com")
       val r1 = addEmail(r0, ArrayRecord(user = "tarao", domain = "example.com"))
@@ -312,10 +312,9 @@ class UseCaseSpec extends helper.UnitSpec {
     }
 
     it("can replace existing field with reordering") {
-      def rename[R, T, RR <: %](record: ArrayRecord[R], value: T)(using
-        concat: Concat.Aux[R, ArrayRecord[("name", T) *: EmptyTuple], RR],
-        r: RecordLike[RR],
-      ): ArrayRecord[r.TupledFieldTypes] = record ++ ArrayRecord(name = value)
+      def rename[R, T, RR <: ProductRecord](record: ArrayRecord[R], value: T)(
+        using Concat.Aux[R, ArrayRecord[("name", T) *: EmptyTuple], RR],
+      ): RR = record ++ ArrayRecord(name = value)
 
       val r0 = ArrayRecord(name = "tarao", age = 3, email = "tarao@example.com")
       val r1 = rename(r0, "ikura")
@@ -340,21 +339,19 @@ class UseCaseSpec extends helper.UnitSpec {
         extension [T <: Tuple](p: PersonRecord[T]) {
           def firstName: String = p.name.split(" ").head
 
-          def withEmail[RR <: %](email: String)(using
-            concat: Concat.Aux[
+          def withEmail[RR <: ProductRecord](email: String)(using
+            Concat.Aux[
               (("name", String) *: T) & Tag[Person],
               ArrayRecord[("email", String) *: EmptyTuple],
               RR,
             ],
-            r: RecordLike[RR],
-          ): ArrayRecord[r.TupledFieldTypes] = p ++ ArrayRecord(email = email)
+          ): RR = p ++ ArrayRecord(email = email)
         }
       }
 
-      def addEmail[R, T, RR <: %](record: ArrayRecord[R], email: T)(using
-        concat: Concat.Aux[R, ArrayRecord[("email", T) *: EmptyTuple], RR],
-        r: RecordLike[RR],
-      ): ArrayRecord[r.TupledFieldTypes] = record ++ ArrayRecord(email = email)
+      def addEmail[R, T, RR <: ProductRecord](record: ArrayRecord[R], email: T)(
+        using Concat.Aux[R, ArrayRecord[("email", T) *: EmptyTuple], RR],
+      ): RR = record ++ ArrayRecord(email = email)
 
       val r0 = ArrayRecord(name = "tarao fuguta", age = 3).tag[Person]
       val r1 = addEmail(r0, "tarao@example.com")
@@ -380,6 +377,133 @@ class UseCaseSpec extends helper.UnitSpec {
       """
         def addEmail[R](record: ArrayRecord[R], email: String) =
           record ++ ArrayRecord(email = email)
+      """ shouldNot typeCheck
+    }
+  }
+
+  describe("Generic array record extension with +") {
+    import com.github.tarao.record4s.{ArrayRecord, ProductRecord, Tag}
+    import com.github.tarao.record4s.typing.ArrayRecord.Append
+
+    it("can be done by using Append") {
+      def addEmail[R](record: ArrayRecord[R], email: String)(using
+        append: Append[R, ("email", String) *: EmptyTuple],
+      ): append.Out = record + (email = email)
+
+      val r0 = ArrayRecord(name = "tarao", age = 3)
+      val r1 = addEmail(r0, "tarao@example.com")
+      r1 shouldStaticallyBe a[ArrayRecord[
+        (("name", String), ("age", Int), ("email", String)),
+      ]]
+      r1.name shouldBe "tarao"
+      r1.age shouldBe 3
+      r1.email shouldBe "tarao@example.com"
+    }
+
+    it("can be done by using Append.Aux") {
+      def addEmail[R, RR <: ProductRecord](
+        record: ArrayRecord[R],
+        email: String,
+      )(using
+        Append.Aux[R, ("email", String) *: EmptyTuple, RR],
+      ): RR = record + (email = email)
+
+      val r0 = ArrayRecord(name = "tarao", age = 3)
+      val r1 = addEmail(r0, "tarao@example.com")
+      r1 shouldStaticallyBe a[ArrayRecord[
+        (("name", String), ("age", Int), ("email", String)),
+      ]]
+      r1.name shouldBe "tarao"
+      r1.age shouldBe 3
+      r1.email shouldBe "tarao@example.com"
+    }
+
+    it("can replace existing field") {
+      def addEmail[R, T, RR <: ProductRecord](record: ArrayRecord[R], email: T)(
+        using Append.Aux[R, ("email", T) *: EmptyTuple, RR],
+      ): RR = record + (email = email)
+
+      val r0 = ArrayRecord(name = "tarao", age = 3, email = "tarao@example.com")
+      val r1 = addEmail(r0, ArrayRecord(user = "tarao", domain = "example.com"))
+      r1 shouldStaticallyBe a[ArrayRecord[
+        (
+          ("name", String),
+          ("age", Int),
+          ("email", ArrayRecord[(("user", String), ("domain", String))]),
+        ),
+      ]]
+      r1.name shouldBe "tarao"
+      r1.age shouldBe 3
+      r1.email.user shouldBe "tarao"
+      r1.email.domain shouldBe "example.com"
+    }
+
+    it("can replace existing field with reordering") {
+      def rename[R, T, RR <: ProductRecord](record: ArrayRecord[R], value: T)(
+        using Append.Aux[R, ("name", T) *: EmptyTuple, RR],
+      ): RR = record + (name = value)
+
+      val r0 = ArrayRecord(name = "tarao", age = 3, email = "tarao@example.com")
+      val r1 = rename(r0, "ikura")
+      r1 shouldStaticallyBe an[ArrayRecord[
+        (
+          ("age", Int),
+          ("email", String),
+          ("name", String),
+        ),
+      ]]
+      r1.name shouldBe "ikura"
+      r1.age shouldBe 3
+      r1.email shouldBe "tarao@example.com"
+    }
+
+    it("preserves a tag") {
+      trait Person
+      type PersonRecord[T <: Tuple] =
+        ArrayRecord[(("name", String) *: T) & Tag[Person]]
+
+      object Person {
+        extension [T <: Tuple](p: PersonRecord[T]) {
+          def firstName: String = p.name.split(" ").head
+
+          def withEmail[RR <: ProductRecord](email: String)(using
+            Append.Aux[
+              (("name", String) *: T) & Tag[Person],
+              ("email", String) *: EmptyTuple,
+              RR,
+            ],
+          ): RR = p + (email = email)
+        }
+      }
+
+      def addEmail[R, T, RR <: ProductRecord](record: ArrayRecord[R], email: T)(
+        using Append.Aux[R, ("email", T) *: EmptyTuple, RR],
+      ): RR = record + (email = email)
+
+      val r0 = ArrayRecord(name = "tarao fuguta", age = 3).tag[Person]
+      val r1 = addEmail(r0, "tarao@example.com")
+      r1 shouldStaticallyBe an[ArrayRecord[
+        (("name", String), ("age", Int), ("email", String)) & Tag[Person],
+      ]]
+      r1.name shouldBe "tarao fuguta"
+      r1.firstName shouldBe "tarao"
+      r1.age shouldBe 3
+      r1.email shouldBe "tarao@example.com"
+
+      val r2 = r0.withEmail("tarao@example.com")
+      r2 shouldStaticallyBe an[ArrayRecord[
+        (("name", String), ("age", Int), ("email", String)) & Tag[Person],
+      ]]
+      r2.name shouldBe "tarao fuguta"
+      r2.firstName shouldBe "tarao"
+      r2.age shouldBe 3
+      r2.email shouldBe "tarao@example.com"
+    }
+
+    it("should reject concatenation without concrete field types") {
+      """
+        def addEmail[R](record: ArrayRecord[R], email: String) =
+          record + (email = email)
       """ shouldNot typeCheck
     }
   }

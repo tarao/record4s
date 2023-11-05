@@ -1,10 +1,11 @@
 package com.github.tarao.record4s
 
+import typing.ArrayRecord.Concat
 import util.SeqOps.deduped
 
 object ArrayRecordMacros {
   import scala.quoted.*
-  import InternalMacros.{internal, withInternal}
+  import InternalMacros.{internal, withInternal, withTyping}
 
   /** Macro implementation of `ArrayRecord.lookup` */
   def selectImpl[R: Type](
@@ -43,31 +44,26 @@ object ArrayRecordMacros {
   )(using Quotes): Expr[Any] = withInternal {
     import internal.*
 
-    val rec = '{ ${ record }.__fields }
-    val schema = schemaOf[R]
+    requireApply(record, method) {
+      val rec = '{ ${ record }.__fields }
+      val (fields, tpe) = Macros.extractFieldsFrom(args)
 
-    Macros.genericApplyImpl(record, method, args) {
-      [Out] =>
-        (tpe: Type[Out]) =>
-          (fields: Expr[Seq[(String, Any)]]) => {
-            val newSchema = schemaOfRecord[Out](using tpe).copy(
-              // `Out` somehow drops tags in `R`
-              tags = schema.tags,
-            )
-            newSchema.asTupleType match {
-              case '[recType] =>
-                '{
-                  new VectorRecord(
-                    ${ rec }
-                      .toVector
-                      .concat(${ fields })
-                      .deduped
-                      .iterator
-                      .toVector,
-                  ).asInstanceOf[ArrayRecord[recType]]
-                }
-            }
-        }
+      tpe match {
+        case '[tpe] =>
+          evidenceOf[Concat[R, tpe]] match {
+            case '{ ${ _ }: Concat[R, tpe] { type Out = returnType } } =>
+              '{
+                new VectorRecord(
+                  ${ rec }
+                    .toVector
+                    .concat(${ fields })
+                    .deduped
+                    .iterator
+                    .toVector,
+                ).asInstanceOf[returnType]
+              }
+          }
+      }
     }
   }
 
@@ -80,13 +76,13 @@ object ArrayRecordMacros {
 
     // This can be written without macro but that will drop tags.
 
-    val t1 = evidenceOf[typing.Concat[%, From]]
-    val t2 = evidenceOf[typing.Concat[%, To]]
+    val t1 = evidenceOf[typing.Record.Concat[%, From]]
+    val t2 = evidenceOf[typing.Record.Concat[%, To]]
 
     (t1, t2) match {
       case (
-          '{ ${ _ }: typing.Concat[%, From] { type Out = r1 } },
-          '{ ${ _ }: typing.Concat[%, To] { type Out = r2 } },
+          '{ ${ _ }: typing.Record.Concat[%, From] { type Out = r1 } },
+          '{ ${ _ }: typing.Record.Concat[%, To] { type Out = r2 } },
         ) =>
         val tpr1 = TypeRepr.of[r1]
         val tpr2 = TypeRepr.of[r2]
@@ -147,6 +143,44 @@ object ArrayRecordMacros {
               type TupledFieldTypes = tupleType
             },
           ]
+        }
+    }
+  }
+
+  def derivedTypingConcatImpl[R1: Type, R2: Type](using
+    Quotes,
+  ): Expr[Concat[R1, R2]] = withTyping {
+    import internal.*
+
+    val result = catching {
+      val schema1 = schemaOf[R1]
+      val schema2 = schemaOf[R2]
+
+      (schema1 ++ schema2).deduped.asTupleType
+    }
+
+    result match {
+      case TypingResult('[Nothing], '[err]) =>
+        '{
+          Concat
+            .instance
+            .asInstanceOf[
+              Concat[R1, R2] {
+                type Out = Nothing
+                type Msg = err
+              },
+            ]
+        }
+      case TypingResult('[tpe], '[err]) =>
+        '{
+          Concat
+            .instance
+            .asInstanceOf[
+              Concat[R1, R2] {
+                type Out = ArrayRecord[tpe]
+                type Msg = err
+              },
+            ]
         }
     }
   }

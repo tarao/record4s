@@ -1,5 +1,7 @@
 package com.github.tarao.record4s
 
+import typing.Record.{Aux, Concat, Lookup, Select, Unselect}
+
 /** Base trait for record types.
   *
   * This trait is a placeholder to avoid trouble with defining methods on
@@ -41,7 +43,7 @@ object Record {
     *   the value of the field named by `label`
     */
   inline def lookup[R <: %, L <: String & Singleton, Out](record: R, label: L)(
-    using typing.Lookup.Aux[R, L, Out],
+    using Lookup.Aux[R, L, Out],
   ): Out = withPotentialTypingError {
     record.__lookup(label).asInstanceOf[Out]
   }
@@ -63,12 +65,10 @@ object Record {
     * @return
     *   a record
     */
-  inline def from[T, RR <: %](x: T)(using
-    RecordLike[T],
-    typing.Aux[T, RR],
-  ): RR = withPotentialTypingError {
-    empty ++ x
-  }
+  inline def from[T: RecordLike, RR <: %](x: T)(using Aux[T, RR]): RR =
+    withPotentialTypingError {
+      empty ++ x
+    }
 
   extension [R <: %](record: R) {
 
@@ -110,7 +110,7 @@ object Record {
       */
     inline def ++[R2: RecordLike, RR <: %](
       other: R2,
-    )(using typing.Concat.Aux[R, R2, RR]): RR = withPotentialTypingError {
+    )(using Concat.Aux[R, R2, RR]): RR = withPotentialTypingError {
       newMapRecord[RR](
         record
           .__iterable
@@ -140,7 +140,7 @@ object Record {
       *   a new record with the selected fields
       */
     inline def apply[S <: Tuple, RR <: %](s: Selector[S])(using
-      typing.Select.Aux[R, S, RR],
+      Select.Aux[R, S, RR],
     ): RR = withPotentialTypingError {
       newMapRecord[RR](toSelectedIterable[S])
     }
@@ -184,7 +184,7 @@ object Record {
       *   a new record without the unselected fields
       */
     inline def apply[U <: Tuple, RR <: %](u: Unselector[U])(using
-      typing.Unselect.Aux[R, U, RR],
+      Unselect.Aux[R, U, RR],
       RecordLike[RR],
       R <:< RR,
     ): RR = withPotentialTypingError {

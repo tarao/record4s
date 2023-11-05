@@ -2,6 +2,8 @@ package com.github.tarao.record4s
 
 import scala.deriving.Mirror
 import scala.language.dynamics
+import typing.ArrayRecord.{Aux, Concat}
+import typing.Record.{Select, Unselect}
 import util.SeqOps.deduped
 
 /** Base record class compatible with Product. */
@@ -116,7 +118,8 @@ object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
   protected def record: ArrayRecord[EmptyTuple] = empty
 
   /** An empty record */
-  val empty: ArrayRecord[EmptyTuple] = newArrayRecord[EmptyTuple](Vector.empty)
+  val empty: ArrayRecord[EmptyTuple] =
+    newArrayRecord[ArrayRecord[EmptyTuple]](Vector.empty)
 
   import typing.withPotentialTypingError
 
@@ -170,10 +173,9 @@ object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
     * @return
     *   a record
     */
-  inline def from[T: RecordLike, RR <: %](x: T)(using
-    ev: typing.Concat.Aux[EmptyTuple, T, RR],
-    rr: RecordLike[RR],
-  ): ArrayRecord[rr.TupledFieldTypes] = withPotentialTypingError {
+  inline def from[T: RecordLike, RR <: ProductRecord](x: T)(using
+    Aux[T, RR],
+  ): RR = withPotentialTypingError {
     empty ++ x
   }
 
@@ -215,14 +217,11 @@ object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
       * @return
       *   a new record which has the both fields from this record and `other`
       */
-    inline def ++[R2: RecordLike, RR <: %](
+    inline def ++[R2: RecordLike, RR <: ProductRecord](
       other: R2,
-    )(using
-      ev: typing.Concat.Aux[R, R2, RR],
-      rr: RecordLike[RR],
-    ): ArrayRecord[rr.TupledFieldTypes] =
+    )(using Concat.Aux[R, R2, RR]): RR =
       withPotentialTypingError {
-        newArrayRecord[rr.TupledFieldTypes](
+        newArrayRecord[RR](
           record
             .__fields
             .toVector
@@ -327,7 +326,9 @@ object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
       * @return
       *   a record of type `%`
       */
-    inline def toRecord[RR <: %](using typing.Aux[ArrayRecord[R], RR]): RR =
+    inline def toRecord[RR <: %](using
+      typing.Record.Aux[ArrayRecord[R], RR],
+    ): RR =
       withPotentialTypingError {
         Record.from(record)
       }
@@ -360,12 +361,12 @@ object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
       */
     inline def apply[S <: Tuple, RR <: %](s: Selector[S])(using
       r: RecordLike[ArrayRecord[R]],
-      ev: typing.Select.Aux[R, S, RR],
+      ev: Select.Aux[R, S, RR],
       rr: RecordLike[RR],
     ): ArrayRecord[rr.TupledFieldTypes] = withPotentialTypingError {
       val sel = selection[S]
       val m = summon[RecordLike[ArrayRecord[R]]].iterableOf(record).toMap
-      newArrayRecord[rr.TupledFieldTypes](
+      newArrayRecord[ArrayRecord[rr.TupledFieldTypes]](
         sel
           .map((label, newLabel) => (newLabel, m(label)))
           .deduped
@@ -410,13 +411,13 @@ object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
       *   a new record without the unselected fields
       */
     inline def apply[U <: Tuple, RR <: %](u: Unselector[U])(using
-      ev: typing.Unselect.Aux[R, U, RR],
+      ev: Unselect.Aux[R, U, RR],
       rr: RecordLike[RR],
       ar: RecordLike[ArrayRecord[Tuple.Zip[rr.ElemLabels, rr.ElemTypes]]],
     ): ArrayRecord[Tuple.Zip[rr.ElemLabels, rr.ElemTypes]] =
       withPotentialTypingError {
         type ft = Tuple.Zip[rr.ElemLabels, rr.ElemTypes]
-        newArrayRecord[ft](
+        newArrayRecord[ArrayRecord[ft]](
           ar
             .orderedIterableOf(record.asInstanceOf[ArrayRecord[ft]])
             .toVector,
@@ -453,8 +454,8 @@ object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
 
   private def newArrayRecord[R](
     fields: IndexedSeq[(String, Any)],
-  ): ArrayRecord[R] =
-    new VectorRecord(fields.toVector).asInstanceOf[ArrayRecord[R]]
+  ): R =
+    new VectorRecord(fields.toVector).asInstanceOf[R]
 
   trait Extensible[R] extends Any with Dynamic {
     protected def record: ArrayRecord[R]

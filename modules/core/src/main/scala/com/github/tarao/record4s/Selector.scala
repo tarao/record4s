@@ -2,6 +2,7 @@ package com.github.tarao.record4s
 
 import scala.compiletime.requireConst
 import scala.language.dynamics
+import typing.Record.Select
 
 final class Selector[T <: Tuple](val labels: Seq[String] = Seq.empty)
     extends Dynamic {
@@ -42,7 +43,7 @@ object Selector {
     // This should be `inline def` with `typing.potentialTypingError` but it seems that
     // inlining doesn't work in `unapply`.
     def unapply[R: RecordLike](record: R)(using
-      t: typing.Select[R, T],
+      t: Select[R, T],
       r: RecordLike[t.Out],
     ): r.ElemTypes = {
       val m = summon[RecordLike[R]].iterableOf(record).toMap
