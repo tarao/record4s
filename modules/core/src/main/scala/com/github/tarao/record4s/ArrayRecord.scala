@@ -115,13 +115,14 @@ abstract class ArrayRecord[R] extends ProductRecord with Dynamic {
 }
 
 object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
+  import scala.compiletime.{erasedValue, summonInline}
+  import typing.withPotentialTypingError
+
   protected def record: ArrayRecord[EmptyTuple] = empty
 
   /** An empty record */
   val empty: ArrayRecord[EmptyTuple] =
     newArrayRecord[ArrayRecord[EmptyTuple]](Vector.empty)
-
-  import typing.withPotentialTypingError
 
   /** Get the field value of specified label.
     *
@@ -219,17 +220,23 @@ object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
       */
     inline def ++[R2: RecordLike, RR <: ProductRecord](
       other: R2,
-    )(using Concat.Aux[R, R2, RR]): RR =
+    )(using concat: Concat[R, R2]): concat.Out =
       withPotentialTypingError {
-        newArrayRecord[RR](
-          record
-            .__fields
-            .toVector
-            .concat(summon[RecordLike[R2]].orderedIterableOf(other))
-            .deduped
-            .iterator
-            .toVector,
-        )
+        val vec = record
+          .__fields
+          .toVector
+          .concat(summon[RecordLike[R2]].orderedIterableOf(other))
+        inline erasedValue[concat.NeedDedup] match {
+          case _: false =>
+            newArrayRecord[concat.Out](vec)
+          case _ =>
+            newArrayRecord[concat.Out](
+              vec
+                .deduped
+                .iterator
+                .toVector,
+            )
+        }
       }
 
     /** Give a type tag to this record.
@@ -289,6 +296,17 @@ object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
       */
     transparent inline def upcast[R2] =
       ${ ArrayRecordMacros.upcastImpl[R, R2]('record) }
+
+    private[record4s] inline def shrinkTo[R2](using
+      r: RecordLike[ArrayRecord[R2]],
+    ): ArrayRecord[R2] =
+      newArrayRecord[ArrayRecord[R2]](
+        // This is quite hacky: `forceOrderedIterableOf` makes a Map from
+        // `record.__fields` and collect values according to `R2`.  It is unsafe to do
+        // `record.asInstanceOf[ArrayRecord[R2]]` in most cases but it's OK here because
+        // `forceOrderedIterableOf` doesn't depend on the static type of the argument.
+        r.forceOrderedIterableOf(record.asInstanceOf[ArrayRecord[R2]]).toVector,
+      )
 
     /** Convert this record to a `Tuple`.
       *
@@ -376,8 +394,6 @@ object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
     }
 
     private inline def selection[S <: Tuple]: Seq[(String, String)] = {
-      import scala.compiletime.{erasedValue, summonInline}
-
       inline erasedValue[S] match {
         case _: ((label, newLabel) *: tail) =>
           val st1 = summonInline[label <:< String]
@@ -413,15 +429,9 @@ object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
     inline def apply[U <: Tuple, RR <: %](u: Unselector[U])(using
       ev: Unselect.Aux[R, U, RR],
       rr: RecordLike[RR],
-      ar: RecordLike[ArrayRecord[Tuple.Zip[rr.ElemLabels, rr.ElemTypes]]],
     ): ArrayRecord[Tuple.Zip[rr.ElemLabels, rr.ElemTypes]] =
       withPotentialTypingError {
-        type ft = Tuple.Zip[rr.ElemLabels, rr.ElemTypes]
-        newArrayRecord[ArrayRecord[ft]](
-          ar
-            .orderedIterableOf(record.asInstanceOf[ArrayRecord[ft]])
-            .toVector,
-        )
+        record.shrinkTo[Tuple.Zip[rr.ElemLabels, rr.ElemTypes]]
       }
 
     /** Convert this record to a `To`.

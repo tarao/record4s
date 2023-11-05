@@ -7,6 +7,7 @@ object ArrayRecord {
   }
 
   final class Concat[R1, R2] private extends MaybeError {
+    type NeedDedup <: Boolean
     type Out <: ProductRecord
   }
 

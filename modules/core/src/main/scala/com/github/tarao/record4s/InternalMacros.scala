@@ -42,6 +42,8 @@ private[record4s] class InternalMacros(using
     fieldTypes: Seq[(String, Type[?])],
     tags: Seq[Type[?]],
   ) {
+    def size: Int = fieldTypes.size
+
     def ++(other: Schema): Schema = copy(
       fieldTypes = fieldTypes ++ other.fieldTypes,
       tags       = tags ++ other.tags,

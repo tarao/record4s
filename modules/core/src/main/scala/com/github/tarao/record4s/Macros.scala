@@ -93,6 +93,7 @@ object Macros {
               type ElemTypes = elemTypes
               type Tags = tagsType
               type TupledFieldTypes = tupleType
+              type Ordered = false
             },
           ]
         }

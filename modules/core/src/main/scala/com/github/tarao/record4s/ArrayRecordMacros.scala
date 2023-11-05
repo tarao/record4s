@@ -47,20 +47,31 @@ object ArrayRecordMacros {
     requireApply(record, method) {
       val rec = '{ ${ record }.__fields }
       val (fields, tpe) = Macros.extractFieldsFrom(args)
+      val vec = '{
+        ${ rec }
+          .toVector
+          .concat(${ fields })
+      }
 
       tpe match {
         case '[tpe] =>
-          evidenceOf[Concat[R, tpe]] match {
+          val concat = evidenceOf[Concat[R, tpe]]
+          concat match {
             case '{ ${ _ }: Concat[R, tpe] { type Out = returnType } } =>
-              '{
-                new VectorRecord(
-                  ${ rec }
-                    .toVector
-                    .concat(${ fields })
-                    .deduped
-                    .iterator
-                    .toVector,
-                ).asInstanceOf[returnType]
+              concat match {
+                // We have to do `match` independently because `NeedDedup` is
+                // not necessarily supplied
+                case '{ ${ _ }: Concat[R, tpe] { type NeedDedup = false } } =>
+                  '{ new VectorRecord(${ vec }).asInstanceOf[returnType] }
+                case _ =>
+                  '{
+                    new VectorRecord(
+                      ${ vec }
+                        .deduped
+                        .iterator
+                        .toVector,
+                    ).asInstanceOf[returnType]
+                  }
               }
           }
       }
@@ -95,15 +106,7 @@ object ArrayRecordMacros {
         val schema = schemaOf[To]
         schema.asTupleType match {
           case '[recType] =>
-            val recordLike = evidenceOf[RecordLike[ArrayRecord[recType]]]
-            '{
-              new VectorRecord(
-                ${ recordLike }
-                  .orderedIterableOf(${ record }
-                    .asInstanceOf[ArrayRecord[recType]])
-                  .toVector,
-              ).asInstanceOf[ArrayRecord[recType]]
-            }
+            '{ ${ record }.shrinkTo[recType] }
         }
     }
   }
@@ -141,6 +144,7 @@ object ArrayRecordMacros {
               type ElemTypes = elemTypes
               type Tags = tagsType
               type TupledFieldTypes = tupleType
+              type Ordered = true
             },
           ]
         }
@@ -152,15 +156,23 @@ object ArrayRecordMacros {
   ): Expr[Concat[R1, R2]] = withTyping {
     import internal.*
 
+    var deduped = false
+
     val result = catching {
       val schema1 = schemaOf[R1]
       val schema2 = schemaOf[R2]
 
+      val newSchema = (schema1 ++ schema2).deduped
+      if (schema1.size + schema2.size != newSchema.size)
+        deduped = true
       (schema1 ++ schema2).deduped.asTupleType
     }
 
-    result match {
-      case TypingResult('[Nothing], '[err]) =>
+    val needDedupType =
+      if (deduped) Type.of[true] else Type.of[false]
+
+    (result, needDedupType) match {
+      case (TypingResult('[Nothing], '[err]), _) =>
         '{
           Concat
             .instance
@@ -171,12 +183,13 @@ object ArrayRecordMacros {
               },
             ]
         }
-      case TypingResult('[tpe], '[err]) =>
+      case (TypingResult('[tpe], '[err]), '[needDedup]) =>
         '{
           Concat
             .instance
             .asInstanceOf[
               Concat[R1, R2] {
+                type NeedDedup = needDedup
                 type Out = ArrayRecord[tpe]
                 type Msg = err
               },
