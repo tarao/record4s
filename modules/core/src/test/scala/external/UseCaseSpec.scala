@@ -222,7 +222,7 @@ class UseCaseSpec extends helper.UnitSpec {
   }
 
   describe("Pattern matching") {
-    import com.github.tarao.record4s.{%, select}
+    import com.github.tarao.record4s.{%, ArrayRecord, select}
 
     it("should be possible to match records by `select` and `values`") {
       val r = %(name = "tarao", age = 3, email = "tarao@example.com")
@@ -241,6 +241,13 @@ class UseCaseSpec extends helper.UnitSpec {
           domain shouldBe "example.com"
         case _ =>
           fail()
+      }
+
+      val ar = ArrayRecord(name = "tarao", age = 3, email = "tarao@example.com")
+      r match {
+        case select.age.name(age, name) =>
+          name shouldBe "tarao"
+          age shouldBe 3
       }
 
       case class Person(name: String, age: Int)
