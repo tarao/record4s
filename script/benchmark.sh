@@ -82,11 +82,12 @@ to_json_rows() {
 
 run_feature() {
     FEATURE="$1"
-    run "benchmark_3"    "record4s"     "${FEATURE}"
-    run "benchmark_3"    "caseclass"    "${FEATURE}"
-    run "benchmark_3"    "map"          "${FEATURE}"
-    run "benchmark_2_13" "shapeless"    "${FEATURE}"
-    run "benchmark_2_11" "scalarecords" "${FEATURE}"
+    run "benchmark_3"    "record4s"             "${FEATURE}"
+    run "benchmark_3"    "record4s_arrayrecord" "${FEATURE}"
+    run "benchmark_3"    "caseclass"            "${FEATURE}"
+    run "benchmark_3"    "map"                  "${FEATURE}"
+    run "benchmark_2_13" "shapeless"            "${FEATURE}"
+    run "benchmark_2_11" "scalarecords"         "${FEATURE}"
 
     CHART_INPUT="${OUT_DIR}/${FEATURE}.json"
     CHART_OUTPUT="${OUT_DIR}/${FEATURE}.svg"

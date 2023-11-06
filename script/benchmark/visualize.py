@@ -9,11 +9,12 @@ data_file = sys.argv[2]
 output = sys.argv[3]
 
 target_names = {
-    'record4s':     'record4s',
-    'caseclass':    'case class',
-    'map':          'Map',
-    'shapeless':    'shapeless',
-    'scalarecords': 'scala-records',
+    'record4s':             'record4s %',
+    'record4s_arrayrecord': 'record4s ArrayRecord',
+    'caseclass':            'Scala 3 case class',
+    'map':                  'Scala 3 Map',
+    'shapeless':            'shapeless Record',
+    'scalarecords':         'scala-records Rec',
 }
 
 plot_config = {

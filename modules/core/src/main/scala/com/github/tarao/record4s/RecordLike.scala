@@ -2,21 +2,42 @@ package com.github.tarao.record4s
 
 import scala.compiletime.{constValueOpt, erasedValue, error, summonInline}
 import scala.deriving.Mirror
+import scala.util.NotGiven
 
 trait RecordLike[R] {
   type FieldTypes
   type ElemLabels <: Tuple
   type ElemTypes <: Tuple
+  type Tags = Any
+  type TupledFieldTypes = Tuple.Zip[ElemLabels, ElemTypes]
+  type Ordered <: Boolean
 
   def iterableOf(r: R): Iterable[(String, Any)]
 
-  inline def tidiedIterableOf(r: R): Iterable[(String, Any)] = {
+  inline def forceOrderedIterableOf(r: R): Iterable[(String, Any)] =
+    tidiedIterableOf(r, true)
+
+  inline def orderedIterableOf(r: R): Iterable[(String, Any)] =
+    inline erasedValue[Ordered] match {
+      case _: true =>
+        tidiedIterableOf(r, false)
+      case _ =>
+        tidiedIterableOf(r, true)
+    }
+
+  inline def tidiedIterableOf(r: R): Iterable[(String, Any)] =
+    tidiedIterableOf(r, false)
+
+  inline def tidiedIterableOf(
+    r: R,
+    reorder: Boolean,
+  ): Iterable[(String, Any)] = {
     val labels = elemLabels
     val it = iterableOf(r)
 
-    if (labels.size != it.size) {
-      val labelSet = labels.toSet
-      it.filter { case (label, _) => labelSet.contains(label) }
+    if (reorder || labels.size != it.size) {
+      val m = it.toMap
+      labels.map(l => (l, m(l)))
     } else {
       it
     }
@@ -50,6 +71,7 @@ object RecordLike {
     type FieldTypes = Tuple.Zip[ElemLabels0, ElemTypes0]
     type ElemLabels = ElemLabels0
     type ElemTypes = ElemTypes0
+    type Ordered = true
 
     def iterableOf(p: P): Iterable[(String, Any)] =
       p.productElementNames.zip(p.productIterator).toSeq
@@ -57,6 +79,7 @@ object RecordLike {
 
   given ofProduct[P <: Product](using
     m: Mirror.Of[P],
+    nonRecord: NotGiven[P <:< Record],
   ): OfProduct[P, m.MirroredElemLabels, m.MirroredElemTypes] =
     new OfProduct
 
@@ -76,6 +99,7 @@ object RecordLike {
     type FieldTypes = T
     type ElemLabels = LabelsOf[T]
     type ElemTypes = TypesOf[T]
+    type Ordered = true
 
     def iterableOf(tp: T): Iterable[(String, Any)] =
       tp.productIterator

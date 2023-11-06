@@ -1,6 +1,7 @@
 package com.github.tarao.record4s
 
 import scala.annotation.tailrec
+import util.SeqOps.deduped
 
 private[record4s] class InternalMacros(using
   scala.quoted.Quotes,
@@ -41,6 +42,8 @@ private[record4s] class InternalMacros(using
     fieldTypes: Seq[(String, Type[?])],
     tags: Seq[Type[?]],
   ) {
+    def size: Int = fieldTypes.size
+
     def ++(other: Schema): Schema = copy(
       fieldTypes = fieldTypes ++ other.fieldTypes,
       tags       = tags ++ other.tags,
@@ -50,15 +53,8 @@ private[record4s] class InternalMacros(using
       fieldTypes = fieldTypes ++ other,
     )
 
-    def deduped: Schema = {
-      val seen = collection.mutable.HashSet[String]()
-      val deduped = collection.mutable.ListBuffer.empty[(String, Type[?])]
-      fieldTypes.reverseIterator.foreach { case (label, tpe) =>
-        if (seen.add(label)) deduped.prepend((label, tpe))
-      }
-
-      copy(fieldTypes = deduped.toSeq)
-    }
+    def deduped: Schema =
+      copy(fieldTypes = fieldTypes.deduped.iterator.toSeq)
 
     def asType: Type[?] = asType(Type.of[%])
 
@@ -80,13 +76,29 @@ private[record4s] class InternalMacros(using
         .foldLeft(baseRepr) { case (base, (label, '[tpe])) =>
           Refinement(base, label, TypeRepr.of[tpe])
         }
+      tagsWith(record).asType
+    }
 
+    def asTupleType: Type[?] = {
+      val record = fieldTypes.foldRight(TypeRepr.of[EmptyTuple]) {
+        case ((label, '[tpe]), rest) =>
+          (ConstantType(StringConstant(label)).asType, rest.asType) match {
+            case ('[labelType], '[head *: tail]) =>
+              TypeRepr.of[(labelType, tpe) *: head *: tail]
+            case ('[labelType], '[EmptyTuple]) =>
+              TypeRepr.of[(labelType, tpe) *: EmptyTuple]
+          }
+      }
+      tagsWith(record).asType
+    }
+
+    def tagsAsType: Type[?] = tagsWith(TypeRepr.of[Any]).asType
+
+    private def tagsWith(tpr: TypeRepr): TypeRepr =
       tags
-        .foldLeft(record) { case (base, '[tag]) =>
+        .foldLeft(tpr) { case (base, '[tag]) =>
           AndType(base, TypeRepr.of[Tag[tag]])
         }
-        .asType
-    }
   }
 
   object Schema {
@@ -237,8 +249,9 @@ private[record4s] class InternalMacros(using
 
   def schemaOf[R: Type]: Schema = {
     def isTuple[T: Type]: Boolean = Type.of[T] match {
-      case '[_ *: _] => true
-      case _         => false
+      case '[_ *: _]     => true
+      case '[EmptyTuple] => true
+      case _             => false
     }
 
     if (TypeRepr.of[R] <:< TypeRepr.of[%])
@@ -288,6 +301,40 @@ private[record4s] class InternalMacros(using
   def fieldTypesOf(
     fields: Seq[Expr[(String, Any)]],
   ): Seq[(String, Type[?])] = fields.map(fieldTypeOf(_))
+
+  def extractFieldsFrom(
+    varargs: Expr[Seq[(String, Any)]],
+  ): (Expr[Seq[(String, Any)]], Type[?]) = {
+    // We have no way to write this without transparent inline macro.  Literal string
+    // types are subject to widening and they become `String`s at the type level.  A
+    // `transparent inline given` also doesn't work since it can only depend on type-level
+    // information.
+    //
+    // See the discussion here for the details about attempts to suppress widening:
+    // https://contributors.scala-lang.org/t/pre-sip-exact-type-annotation/5835/22
+    val fields = varargs match {
+      case Varargs(args) => args
+      case _ =>
+        errorAndAbort("Expected explicit varargs sequence", Some(varargs))
+    }
+    val fieldTypes = fieldTypesOf(fields)
+
+    val tupledFieldTypes =
+      fieldTypes.foldRight(Type.of[EmptyTuple]: Type[?]) {
+        case ((label, '[tpe]), base) =>
+          val pair = ConstantType(StringConstant(label)).asType match {
+            case '[label] => Type.of[(label, tpe)]
+          }
+          (pair, base) match {
+            case ('[tpe], '[head *: tail]) =>
+              Type.of[tpe *: head *: tail]
+            case ('[tpe], '[EmptyTuple]) =>
+              Type.of[tpe *: EmptyTuple]
+          }
+      }
+
+    (Expr.ofSeq(fields), tupledFieldTypes)
+  }
 
   def fieldSelectionsOf[S: Type](
     schema: Schema,

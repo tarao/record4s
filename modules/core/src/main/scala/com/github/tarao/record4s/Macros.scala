@@ -1,5 +1,7 @@
 package com.github.tarao.record4s
 
+import typing.Record.{Concat, Lookup, Select, Unselect}
+
 object Macros {
   import scala.quoted.*
   import InternalMacros.{internal, withInternal, withTyping}
@@ -10,39 +12,18 @@ object Macros {
     method: Expr[String],
     args: Expr[Seq[(String, Any)]],
   )(using Quotes): Expr[Any] = withInternal {
-    import quotes.reflect.*
     import internal.*
 
     requireApply(record, method) {
       val rec = '{ ${ record }.__iterable }
+      val (fields, tpe) = extractFieldsFrom(args)
 
-      // We have no way to write this without transparent inline macro.  Literal string
-      // types are subject to widening and they become `String`s at the type level.  A
-      // `transparent inline given` also doesn't work since it can only depend on
-      // type-level information.
-      //
-      // See the discussion here for the details about attempts to suppress widening:
-      // https://contributors.scala-lang.org/t/pre-sip-exact-type-annotation/5835/22
-      val fields = args match {
-        case Varargs(args) => args
-        case _ =>
-          errorAndAbort("Expected explicit varargs sequence", Some(args))
-      }
-      val fieldTypes = fieldTypesOf(fields)
-
-      val fieldTypesTuple =
-        typeReprOfTupleFromSeq(fieldTypes.map { case (label, '[tpe]) =>
-          ConstantType(StringConstant(label)).asType match {
-            case '[label] => TypeRepr.of[(label, tpe)]
-          }
-        }).asType
-
-      fieldTypesTuple match {
+      tpe match {
         case '[tpe] =>
-          evidenceOf[typing.Concat[R, tpe]] match {
-            case '{ ${ _ }: typing.Concat[R, tpe] { type Out = returnType } } =>
+          evidenceOf[Concat[R, tpe]] match {
+            case '{ ${ _ }: Concat[R, tpe] { type Out = returnType } } =>
               newMapRecord[returnType]('{
-                ${ rec }.toMap.concat(${ Expr.ofSeq(fields) })
+                ${ rec }.toMap.concat(${ fields })
               })
           }
       }
@@ -72,51 +53,26 @@ object Macros {
         (labels, types)
       }
 
-    (elemLabels, elemTypes) match {
-      case ('[elemLabels], '[elemTypes]) =>
+    (elemLabels, elemTypes, schema.tagsAsType, schema.asTupleType) match {
+      case ('[elemLabels], '[elemTypes], '[tagsType], '[tupleType]) =>
         '{
           (new Record.RecordLikeRecord[R]).asInstanceOf[
             RecordLike[R] {
               type FieldTypes = R
               type ElemLabels = elemLabels
               type ElemTypes = elemTypes
+              type Tags = tagsType
+              type TupledFieldTypes = tupleType
+              type Ordered = false
             },
           ]
         }
     }
   }
 
-  def derivedProductProxyOfRecordImpl[R <: `%`: Type](using
-    Quotes,
-  ): Expr[ProductProxy.OfRecord[R]] = withInternal {
-    import internal.*
-
-    val schema = schemaOf[R]
-    val recordLike = evidenceOf[RecordLike[R]]
-
-    recordLike match {
-      case '{
-          ${ _ }: RecordLike[R] {
-            type ElemTypes = elemTypes
-            type ElemLabels = elemLabels
-          }
-        } =>
-        schema.asType(Type.of[ProductProxy[elemLabels, elemTypes]]) match {
-          case '[tpe] =>
-            '{
-              (new ProductProxy.OfRecord).asInstanceOf[
-                ProductProxy.OfRecord[R] {
-                  type Out = tpe
-                },
-              ]
-            }
-        }
-    }
-  }
-
   def derivedTypingConcatImpl[R1: Type, R2: Type](using
     Quotes,
-  ): Expr[typing.Concat[R1, R2]] = withTyping {
+  ): Expr[Concat[R1, R2]] = withTyping {
     import internal.*
 
     val result = catching {
@@ -129,11 +85,10 @@ object Macros {
     result match {
       case TypingResult('[tpe], '[err]) =>
         '{
-          typing
-            .Concat
+          Concat
             .instance
             .asInstanceOf[
-              typing.Concat[R1, R2] {
+              Concat[R1, R2] {
                 type Out = tpe
                 type Msg = err
               },
@@ -144,11 +99,11 @@ object Macros {
 
   def derivedTypingLookupImpl[R: Type, Label: Type](using
     Quotes,
-  ): Expr[typing.Lookup[R, Label]] = withTyping {
+  ): Expr[Lookup[R, Label]] = withInternal {
     import quotes.reflect.*
     import internal.*
 
-    val result = catching {
+    val result =
       TypeRepr.of[Label] match {
         case ConstantType(StringConstant(label)) =>
           val schema = schemaOfRecord[R]
@@ -165,18 +120,15 @@ object Macros {
                |""".stripMargin,
           )
       }
-    }
 
     result match {
-      case TypingResult('[tpe], '[err]) =>
+      case '[tpe] =>
         '{
-          typing
-            .Lookup
+          Lookup
             .instance
             .asInstanceOf[
-              typing.Lookup[R, Label] {
+              Lookup[R, Label] {
                 type Out = tpe
-                type Msg = err
               },
             ]
         }
@@ -185,7 +137,7 @@ object Macros {
 
   def derivedTypingSelectImpl[R: Type, S: Type](using
     Quotes,
-  ): Expr[typing.Select[R, S]] = withTyping {
+  ): Expr[Select[R, S]] = withTyping {
     import internal.*
 
     val result = catching {
@@ -202,11 +154,10 @@ object Macros {
     result match {
       case TypingResult('[tpe], '[err]) =>
         '{
-          typing
-            .Select
+          Select
             .instance
             .asInstanceOf[
-              typing.Select[R, S] {
+              Select[R, S] {
                 type Out = tpe
                 type Msg = err
               },
@@ -217,7 +168,7 @@ object Macros {
 
   def derivedTypingUnselectImpl[R: Type, U <: Tuple: Type](using
     Quotes,
-  ): Expr[typing.Unselect[R, U]] = withTyping {
+  ): Expr[Unselect[R, U]] = withTyping {
     import internal.*
 
     val result = catching {
@@ -231,11 +182,10 @@ object Macros {
     result match {
       case TypingResult('[tpe], '[err]) =>
         '{
-          typing
-            .Unselect
+          Unselect
             .instance
             .asInstanceOf[
-              typing.Unselect[R, U] {
+              Unselect[R, U] {
                 type Out = tpe
                 type Msg = err
               },
@@ -248,19 +198,4 @@ object Macros {
     Expr(Type.show[T])
 
   inline def typeNameOf[T]: String = ${ typeNameOfImpl[T] }
-
-  private def typeReprOfTupleFromSeq(using Quotes)(
-    typeReprs: Seq[quotes.reflect.TypeRepr],
-  ): quotes.reflect.TypeRepr = {
-    import quotes.reflect.*
-
-    typeReprs.foldRight(TypeRepr.of[EmptyTuple]) { case (tpr, base) =>
-      (base.asType, tpr.asType) match {
-        case ('[head *: tail], '[tpe]) =>
-          TypeRepr.of[tpe *: head *: tail]
-        case ('[EmptyTuple], '[tpe]) =>
-          TypeRepr.of[tpe *: EmptyTuple]
-      }
-    }
-  }
 }
