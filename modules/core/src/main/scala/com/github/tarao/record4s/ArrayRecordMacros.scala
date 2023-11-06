@@ -1,38 +1,28 @@
 package com.github.tarao.record4s
 
-import typing.ArrayRecord.Concat
+import typing.ArrayRecord.{Concat, Lookup}
 import util.SeqOps.deduped
 
 object ArrayRecordMacros {
   import scala.quoted.*
   import InternalMacros.{internal, withInternal, withTyping}
 
-  /** Macro implementation of `ArrayRecord.lookup` */
-  def selectImpl[R: Type](
+  /** Macro implementation of `ArrayRecord.selectDynamic` */
+  def selectImpl[R: Type, L <: String & Singleton: Type](
     record: Expr[ArrayRecord[R]],
-    labelExpr: Expr[String],
+    labelExpr: Expr[L],
   )(using Quotes): Expr[Any] = withInternal {
-    import quotes.reflect.*
     import internal.*
 
-    val label = labelExpr.asTerm match {
-      case Inlined(_, _, Literal(StringConstant(label))) =>
-        label
-      case _ =>
-        errorAndAbort("Field label must be a literal string", Some(labelExpr))
-    }
-
-    val schema = schemaOf[R]
-    schema.fieldTypes.zipWithIndex.find { case ((key, _), _) =>
-      key == label
-    } match {
-      case Some((_, '[tpe]), index) =>
-        '{ ${ record }.__fields(${ Expr(index) })._2.asInstanceOf[tpe] }
-      case _ =>
-        errorAndAbort(
-          s"Value '${label}' is not a member of ArrayRecord[${Type.show[R]}]",
-          Some(labelExpr),
-        )
+    evidenceOf[Lookup[R, L]] match {
+      case '{
+          type index <: Int;
+          ${ ev }: Lookup[R, L] {
+            type Index = `index`
+            type Out = out
+          }
+        } =>
+        '{ ArrayRecord.lookup(${ record }, ${ labelExpr })(using ${ ev }) }
     }
   }
 
@@ -192,6 +182,49 @@ object ArrayRecordMacros {
                 type NeedDedup = needDedup
                 type Out = ArrayRecord[tpe]
                 type Msg = err
+              },
+            ]
+        }
+    }
+  }
+
+  def derivedTypingLookupImpl[R: Type, Label: Type](using
+    Quotes,
+  ): Expr[Lookup[R, Label]] = withInternal {
+    import quotes.reflect.*
+    import internal.*
+
+    val label =
+      TypeRepr.of[Label] match {
+        case ConstantType(StringConstant(label)) =>
+          label
+        case _ =>
+          errorAndAbort(
+            s"""Invalid type of key.
+               |Found:    ${Type.show[Label]}
+               |Required: (a literal string)
+               |""".stripMargin,
+          )
+      }
+
+    val schema = schemaOfRecord[R]
+    val ((_, tpe), index) =
+      schema.fieldTypes.zipWithIndex.find(_._1._1 == label).getOrElse {
+        errorAndAbort(
+          s"Value '${label}' is not a member of ${Type.show[R]}",
+        )
+      }
+    val indexType = ConstantType(IntConstant(index)).asType
+
+    (tpe, indexType) match {
+      case ('[tpe], '[index]) =>
+        '{
+          Lookup
+            .instance
+            .asInstanceOf[
+              Lookup[R, Label] {
+                type Out = tpe
+                type Index = index
               },
             ]
         }

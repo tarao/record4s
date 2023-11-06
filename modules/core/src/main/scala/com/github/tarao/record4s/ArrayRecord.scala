@@ -2,7 +2,7 @@ package com.github.tarao.record4s
 
 import scala.deriving.Mirror
 import scala.language.dynamics
-import typing.ArrayRecord.{Aux, Concat}
+import typing.ArrayRecord.{Aux, Concat, Lookup}
 import typing.Record.{Select, Unselect}
 import util.SeqOps.deduped
 
@@ -110,12 +110,12 @@ object ProductRecord {
 abstract class ArrayRecord[R] extends ProductRecord with Dynamic {
   override def productPrefix: String = "ArrayRecord"
 
-  transparent inline def selectDynamic(name: String) =
+  transparent inline def selectDynamic[L <: String & Singleton](name: L) =
     ${ ArrayRecordMacros.selectImpl('this, 'name) }
 }
 
 object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
-  import scala.compiletime.{erasedValue, summonInline}
+  import scala.compiletime.{constValue, erasedValue, summonInline}
   import typing.withPotentialTypingError
 
   protected def record: ArrayRecord[EmptyTuple] = empty
@@ -151,11 +151,11 @@ object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
     * @return
     *   the value of the field named by `label`
     */
-  transparent inline def lookup[R](
+  inline def lookup[R, L <: String & Singleton, Index <: Int, Out](
     record: ArrayRecord[R],
-    label: String,
-  ) =
-    ${ ArrayRecordMacros.selectImpl('record, 'label) }
+    label: L,
+  )(using Lookup.Aux[R, L, Index, Out]): Out =
+    record.__fields(constValue[Index])._2.asInstanceOf[Out]
 
   /** Construct a record from something else.
     *

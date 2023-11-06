@@ -237,6 +237,22 @@ class UseCaseSpec extends helper.UnitSpec {
     }
   }
 
+  describe("Generic array record lookup") {
+    import com.github.tarao.record4s.ArrayRecord
+    import com.github.tarao.record4s.typing.ArrayRecord.Lookup
+
+    it("can be done by using Lookup") {
+      inline def getEmail[R](record: ArrayRecord[R])(using
+        hasEmail: Lookup[R, "email"],
+      ): hasEmail.Out = ArrayRecord.lookup(record, "email")
+
+      val r0 = ArrayRecord(name = "tarao", age = 3)
+      val r1 = r0 + (email = "tarao@example.com")
+      getEmail(r1) shouldBe "tarao@example.com"
+      "getEmail(r0)" shouldNot typeCheck
+    }
+  }
+
   describe("Generic array record extension with ++") {
     import com.github.tarao.record4s.{ArrayRecord, ProductRecord, Tag}
     import com.github.tarao.record4s.typing.ArrayRecord.Concat

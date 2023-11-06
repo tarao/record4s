@@ -146,7 +146,7 @@ class TypeErrorSpec extends helper.UnitSpec {
         val errs = typeCheckErrors("""ArrayRecord.lookup(r, "email")""")
         errs should not be empty
         errs.head.kind shouldBe ErrorKind.Typer
-        errs.head.message should startWith("Value 'email' is not a member of")
+        errs.head.message should startWith("""Value '("email" : String)' is not a member of""")
       }
 
       it("should detect invalid key type") {
@@ -155,7 +155,7 @@ class TypeErrorSpec extends helper.UnitSpec {
         val errs = typeCheckErrors("""ArrayRecord.lookup(r, key)""")
         errs should not be empty
         errs.head.kind shouldBe ErrorKind.Typer
-        errs.head.message should startWith("Field label must be a literal string")
+        errs.head.message should startWith("""Value '(key : String)' is not a member of""")
       }
     }
 
