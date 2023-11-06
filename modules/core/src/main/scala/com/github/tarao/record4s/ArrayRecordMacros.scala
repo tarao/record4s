@@ -1,8 +1,10 @@
 package com.github.tarao.record4s
 
+import scala.annotation.nowarn
 import typing.ArrayRecord.{Concat, Lookup}
 import util.SeqOps.deduped
 
+@nowarn("msg=unused local")
 object ArrayRecordMacros {
   import scala.quoted.*
   import InternalMacros.{internal, withInternal, withTyping}

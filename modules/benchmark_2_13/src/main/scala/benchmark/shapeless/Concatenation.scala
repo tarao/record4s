@@ -2,7 +2,6 @@ package benchmark.shapeless
 
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations._
-import scala.annotation.nowarn
 
 import shapeless.record._
 
