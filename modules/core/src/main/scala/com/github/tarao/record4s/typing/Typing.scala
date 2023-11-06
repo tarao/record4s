@@ -16,7 +16,7 @@ trait MaybeError {
 }
 
 private inline def showTypingError(using err: typing.MaybeError): Unit = {
-  import scala.compiletime.{erasedValue, constValue, error}
+  import scala.compiletime.{constValue, erasedValue, error}
 
   inline erasedValue[err.Out] match {
     case _: Nothing => error(constValue[err.Msg])

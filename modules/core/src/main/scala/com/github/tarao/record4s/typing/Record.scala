@@ -1,6 +1,8 @@
 package com.github.tarao.record4s
 package typing
 
+import scala.annotation.implicitNotFound
+
 object Record {
   type Aux[R, Out0 <: %] = Concat[%, R] { type Out = Out0 }
 
@@ -23,7 +25,8 @@ object Record {
     type Aux[R1, R2 <: Tuple, Out0 <: %] = Concat[R1, R2] { type Out = Out0 }
   }
 
-  final class Lookup[R, Label] private extends MaybeError {
+  @implicitNotFound("Value '${Label}' is not a member of ${R}")
+  final class Lookup[R, Label] private () {
     type Out
   }
 

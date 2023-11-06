@@ -99,11 +99,11 @@ object Macros {
 
   def derivedTypingLookupImpl[R: Type, Label: Type](using
     Quotes,
-  ): Expr[Lookup[R, Label]] = withTyping {
+  ): Expr[Lookup[R, Label]] = withInternal {
     import quotes.reflect.*
     import internal.*
 
-    val result = catching {
+    val result =
       TypeRepr.of[Label] match {
         case ConstantType(StringConstant(label)) =>
           val schema = schemaOfRecord[R]
@@ -120,17 +120,15 @@ object Macros {
                |""".stripMargin,
           )
       }
-    }
 
     result match {
-      case TypingResult('[tpe], '[err]) =>
+      case '[tpe] =>
         '{
           Lookup
             .instance
             .asInstanceOf[
               Lookup[R, Label] {
                 type Out = tpe
-                type Msg = err
               },
             ]
         }

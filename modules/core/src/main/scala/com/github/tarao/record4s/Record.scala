@@ -42,11 +42,10 @@ object Record {
     * @return
     *   the value of the field named by `label`
     */
-  inline def lookup[R <: %, L <: String & Singleton, Out](record: R, label: L)(
+  def lookup[R <: %, L <: String & Singleton, Out](record: R, label: L)(
     using Lookup.Aux[R, L, Out],
-  ): Out = withPotentialTypingError {
+  ): Out =
     record.__lookup(label).asInstanceOf[Out]
-  }
 
   /** Construct a record from something else.
     *

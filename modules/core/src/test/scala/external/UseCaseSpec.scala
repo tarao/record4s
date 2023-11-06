@@ -1,6 +1,22 @@
 package external
 
 class UseCaseSpec extends helper.UnitSpec {
+  describe("Generic record lookup") {
+    import com.github.tarao.record4s.{%, Record}
+    import com.github.tarao.record4s.typing.Record.Lookup
+
+    it("can be done by using Lookup") {
+      def getEmail[R <: %](record: R)(using
+        hasEmail: Lookup[R, "email"],
+      ): hasEmail.Out = Record.lookup(record, "email")
+
+      val r0 = %(name = "tarao", age = 3)
+      val r1 = r0 + (email = "tarao@example.com")
+      getEmail(r1) shouldBe "tarao@example.com"
+      "getEmail(r0)" shouldNot typeCheck
+    }
+  }
+
   describe("Generic record extension with ++") {
     import com.github.tarao.record4s.{%, Tag}
     import com.github.tarao.record4s.typing.Record.Concat
