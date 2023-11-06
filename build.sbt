@@ -49,25 +49,28 @@ lazy val commonSettings = Def.settings(
   """
 )
 
-lazy val root = (project in file("."))
+lazy val root = tlCrossRootProject
   .aggregate(core)
   .settings(commonSettings)
   .settings(
-    console := (core / Compile / console).value,
-    Test / console := (core / Test / console).value,
+    console := (core.jvm / Compile / console).value,
+    Test / console := (core.jvm / Test / console).value,
     ThisBuild / Test / parallelExecution := false
   )
 
-lazy val core = (project in file("modules/core"))
+lazy val core = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Pure)
+  .withoutSuffixFor(JVMPlatform)
+  .in(file("modules/core"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest" % "3.2.17" % Test,
+      "org.scalatest" %%% "scalatest" % "3.2.17" % Test,
     )
   )
 
 lazy val benchmark_3 = (project in file("modules/benchmark_3"))
-  .dependsOn(core)
+  .dependsOn(core.jvm)
   .settings(commonSettings)
   .enablePlugins(JmhPlugin)
   .enablePlugins(NoPublishPlugin)
