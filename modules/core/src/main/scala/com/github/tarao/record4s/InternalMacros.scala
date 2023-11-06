@@ -336,6 +336,23 @@ private[record4s] class InternalMacros(using
     (Expr.ofSeq(fields), tupledFieldTypes)
   }
 
+  def requireApply[C, T](context: Expr[C], method: Expr[String])(
+    block: => T,
+  ): T = {
+    method.asTerm match {
+      case Inlined(_, _, Literal(StringConstant(name))) if name == "apply" =>
+        block
+      case Inlined(_, _, Literal(StringConstant(name))) =>
+        errorAndAbort(
+          s"'${name}' is not a member of ${context.asTerm.tpe.widen.show} constructor",
+        )
+      case _ =>
+        errorAndAbort(
+          s"Invalid method invocation on ${context.asTerm.tpe.widen.show} constructor",
+        )
+    }
+  }
+
   def fieldSelectionsOf[S: Type](
     schema: Schema,
   ): Seq[(String, String, Type[?])] = {
@@ -398,26 +415,6 @@ private[record4s] class InternalMacros(using
     val unselected = unselectedLabelsOf[U](Set.empty)
 
     schema.fieldTypes.filterNot((label, _) => unselected.contains(label))
-  }
-
-  def newMapRecord[R: Type](record: Expr[Iterable[(String, Any)]]): Expr[R] =
-    '{ new MapRecord(${ record }.toMap).asInstanceOf[R] }
-
-  def requireApply[C, T](context: Expr[C], method: Expr[String])(
-    block: => T,
-  ): T = {
-    method.asTerm match {
-      case Inlined(_, _, Literal(StringConstant(name))) if name == "apply" =>
-        block
-      case Inlined(_, _, Literal(StringConstant(name))) =>
-        errorAndAbort(
-          s"'${name}' is not a member of ${context.asTerm.tpe.widen.show} constructor",
-        )
-      case _ =>
-        errorAndAbort(
-          s"Invalid method invocation on ${context.asTerm.tpe.widen.show} constructor",
-        )
-    }
   }
 }
 

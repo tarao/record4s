@@ -22,9 +22,10 @@ object Macros {
         case '[tpe] =>
           evidenceOf[Concat[R, tpe]] match {
             case '{ ${ _ }: Concat[R, tpe] { type Out = returnType } } =>
-              newMapRecord[returnType]('{
-                ${ rec }.toMap.concat(${ fields })
-              })
+              '{
+                new MapRecord(${ rec }.toMap.concat(${ fields }))
+                  .asInstanceOf[returnType]
+              }
           }
       }
     }
