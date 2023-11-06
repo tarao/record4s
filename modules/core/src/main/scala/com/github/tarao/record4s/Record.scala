@@ -85,7 +85,10 @@ object Record {
       * @return
       *   an object to define new fields
       */
-    def + : Extensible[R] = new Extensible(record)
+    def updated: Extensible[R] = new Extensible(record)
+
+    /** Alias for `updated` */
+    inline def + : Extensible[R] = updated
 
     /** Concatenate this record and another record.
       *
@@ -107,7 +110,7 @@ object Record {
       * @return
       *   a new record which has the both fields from this record and `other`
       */
-    inline def ++[R2: RecordLike, RR <: %](
+    inline def concat[R2: RecordLike, RR <: %](
       other: R2,
     )(using Concat.Aux[R, R2, RR]): RR = withPotentialTypingError {
       newMapRecord[RR](
@@ -117,6 +120,11 @@ object Record {
           .concat(summon[RecordLike[R2]].tidiedIterableOf(other)),
       )
     }
+
+    /** Alias for `concat` */
+    inline def ++[R2: RecordLike, RR <: %](
+      other: R2,
+    )(using Concat.Aux[R, R2, RR]): RR = concat(other)
 
     /** Create a new record by selecting some fields of an existing record.
       *

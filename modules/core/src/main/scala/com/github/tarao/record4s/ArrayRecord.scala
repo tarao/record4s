@@ -196,7 +196,10 @@ object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
       * @return
       *   an object to define new fields
       */
-    def + : Extensible[R] = new Extensible.Appender(record)
+    def updated: Extensible[R] = new Extensible.Appender(record)
+
+    /** Alias for `updated` */
+    inline def + : Extensible[R] = updated
 
     /** Concatenate this record and another record.
       *
@@ -218,19 +221,19 @@ object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
       * @return
       *   a new record which has the both fields from this record and `other`
       */
-    inline def ++[R2: RecordLike, RR <: ProductRecord](
+    inline def concat[R2: RecordLike, RR <: ProductRecord](
       other: R2,
-    )(using concat: Concat[R, R2]): concat.Out =
+    )(using c: Concat[R, R2]): c.Out =
       withPotentialTypingError {
         val vec = record
           .__fields
           .toVector
           .concat(summon[RecordLike[R2]].orderedIterableOf(other))
-        inline erasedValue[concat.NeedDedup] match {
+        inline erasedValue[c.NeedDedup] match {
           case _: false =>
-            newArrayRecord[concat.Out](vec)
+            newArrayRecord[c.Out](vec)
           case _ =>
-            newArrayRecord[concat.Out](
+            newArrayRecord[c.Out](
               vec
                 .deduped
                 .iterator
@@ -238,6 +241,11 @@ object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
             )
         }
       }
+
+    /** Alias for `concat` */
+    inline def ++[R2: RecordLike, RR <: ProductRecord](
+      other: R2,
+    )(using c: Concat[R, R2]): c.Out = concat(other)
 
     /** Give a type tag to this record.
       *
