@@ -383,7 +383,7 @@ object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
       rr: RecordLike[RR],
     ): ArrayRecord[rr.TupledFieldTypes] = withPotentialTypingError {
       val sel = selection[S]
-      val m = summon[RecordLike[ArrayRecord[R]]].iterableOf(record).toMap
+      val m = r.iterableOf(record).toMap
       newArrayRecord[ArrayRecord[rr.TupledFieldTypes]](
         sel
           .map((label, newLabel) => (newLabel, m(label)))
