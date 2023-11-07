@@ -1,3 +1,24 @@
+/*
+ * Copyright (c) 2023 record4s authors
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package com.github.tarao.record4s
 
 import scala.compiletime.testing.{typeCheckErrors, Error, ErrorKind}
@@ -41,7 +62,9 @@ class TypeErrorSpec extends helper.UnitSpec {
         val errs = typeCheckErrors("""Record.lookup(r, "email")""")
         errs should not be empty
         errs.head.kind shouldBe ErrorKind.Typer
-        errs.head.message should startWith("""Value '("email" : String)' is not a member of""")
+        errs.head.message should startWith(
+          """Value '("email" : String)' is not a member of""",
+        )
       }
 
       it("should detect invalid key type") {
@@ -50,7 +73,9 @@ class TypeErrorSpec extends helper.UnitSpec {
         val errs = typeCheckErrors("""Record.lookup(r, key)""")
         errs should not be empty
         errs.head.kind shouldBe ErrorKind.Typer
-        errs.head.message should startWith("""Value '(key : String)' is not a member of""")
+        errs.head.message should startWith(
+          """Value '(key : String)' is not a member of""",
+        )
       }
     }
 
@@ -121,7 +146,9 @@ class TypeErrorSpec extends helper.UnitSpec {
 
         case class Cell($value: Int)
 
-        checkErrors(typeCheckErrors("""ArrayRecord(name = "tarao") ++ Cell(3)"""))
+        checkErrors(
+          typeCheckErrors("""ArrayRecord(name = "tarao") ++ Cell(3)"""),
+        )
         checkErrors(typeCheckErrors("""ArrayRecord.from(Cell(3))"""))
       }
 
@@ -146,7 +173,9 @@ class TypeErrorSpec extends helper.UnitSpec {
         val errs = typeCheckErrors("""ArrayRecord.lookup(r, "email")""")
         errs should not be empty
         errs.head.kind shouldBe ErrorKind.Typer
-        errs.head.message should startWith("""Value '("email" : String)' is not a member of""")
+        errs.head.message should startWith(
+          """Value '("email" : String)' is not a member of""",
+        )
       }
 
       it("should detect invalid key type") {
@@ -155,7 +184,9 @@ class TypeErrorSpec extends helper.UnitSpec {
         val errs = typeCheckErrors("""ArrayRecord.lookup(r, key)""")
         errs should not be empty
         errs.head.kind shouldBe ErrorKind.Typer
-        errs.head.message should startWith("""Value '(key : String)' is not a member of""")
+        errs.head.message should startWith(
+          """Value '(key : String)' is not a member of""",
+        )
       }
     }
 
@@ -200,7 +231,9 @@ class TypeErrorSpec extends helper.UnitSpec {
     describe("RecordLike") {
       it("should detect non-literal label type") {
         val errs =
-          typeCheckErrors("""ArrayRecord(name = "tarao") ++ (("age", 3) *: EmptyTuple)""")
+          typeCheckErrors(
+            """ArrayRecord(name = "tarao") ++ (("age", 3) *: EmptyTuple)""",
+          )
         errs should not be empty
         errs.head.kind shouldBe ErrorKind.Typer
         errs.head.message should startWith(
