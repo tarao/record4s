@@ -3,7 +3,7 @@ val projectName = "record4s"
 val rootPkg = s"$groupId.$projectName"
 
 ThisBuild / organization := groupId
-ThisBuild / organizationName := "tarao"
+ThisBuild / organizationName := "record4s authors"
 ThisBuild / startYear := Some(2023)
 ThisBuild / licenses := Seq(License.MIT)
 ThisBuild / developers := List(
