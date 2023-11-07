@@ -218,8 +218,12 @@ object Macros {
     }
   }
 
-  private def typeNameOfImpl[T: Type](using Quotes): Expr[String] =
-    Expr(Type.show[T])
+  private def typeNameOfImpl[T: Type](using Quotes): Expr[String] = {
+    import quotes.reflect.*
+
+    val typeName = TypeRepr.of[T].show(using Printer.TypeReprShortCode)
+    Expr(typeName)
+  }
 
   inline def typeNameOf[T]: String = ${ typeNameOfImpl[T] }
 }
