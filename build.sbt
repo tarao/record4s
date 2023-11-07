@@ -61,7 +61,7 @@ lazy val root = tlCrossRootProject
     ThisBuild / Test / parallelExecution := false,
   )
 
-lazy val core = crossProject(JVMPlatform, JSPlatform)
+lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   .crossType(CrossType.Pure)
   .withoutSuffixFor(JVMPlatform)
   .in(file("modules/core"))
