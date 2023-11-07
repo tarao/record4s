@@ -24,6 +24,11 @@ val Scala_2_11 = "2.11.12"
 
 ThisBuild / scalaVersion := Scala_3
 ThisBuild / crossScalaVersions := Seq(Scala_3)
+ThisBuild / githubWorkflowJavaVersions := Seq(
+  JavaSpec.temurin("8"),
+  JavaSpec.temurin("11"),
+  JavaSpec.temurin("17"),
+)
 
 lazy val compileSettings = Def.settings(
   // Default options are set by sbt-typelevel-settings
@@ -106,3 +111,5 @@ lazy val benchmark_2_11 = (project in file("modules/benchmark_2_11"))
       scalaOrganization.value % "scala-compiler" % scalaVersion.value,
     ),
   )
+
+ThisBuild / githubWorkflowPublishTargetBranches := Seq()
