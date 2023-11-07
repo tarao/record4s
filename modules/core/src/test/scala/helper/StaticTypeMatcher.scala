@@ -22,7 +22,10 @@
 package helper
 
 import scala.compiletime.summonInline
-import org.scalatest.matchers.dsl.{ResultOfATypeInvocation, ResultOfAnTypeInvocation}
+import org.scalatest.matchers.dsl.{
+  ResultOfATypeInvocation,
+  ResultOfAnTypeInvocation,
+}
 
 trait StaticTypeMatcher {
   extension [T1](anything: T1) {

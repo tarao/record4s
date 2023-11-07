@@ -62,7 +62,9 @@ class TypeErrorSpec extends helper.UnitSpec {
         val errs = typeCheckErrors("""Record.lookup(r, "email")""")
         errs should not be empty
         errs.head.kind shouldBe ErrorKind.Typer
-        errs.head.message should startWith("""Value '("email" : String)' is not a member of""")
+        errs.head.message should startWith(
+          """Value '("email" : String)' is not a member of""",
+        )
       }
 
       it("should detect invalid key type") {
@@ -71,7 +73,9 @@ class TypeErrorSpec extends helper.UnitSpec {
         val errs = typeCheckErrors("""Record.lookup(r, key)""")
         errs should not be empty
         errs.head.kind shouldBe ErrorKind.Typer
-        errs.head.message should startWith("""Value '(key : String)' is not a member of""")
+        errs.head.message should startWith(
+          """Value '(key : String)' is not a member of""",
+        )
       }
     }
 
@@ -142,7 +146,9 @@ class TypeErrorSpec extends helper.UnitSpec {
 
         case class Cell($value: Int)
 
-        checkErrors(typeCheckErrors("""ArrayRecord(name = "tarao") ++ Cell(3)"""))
+        checkErrors(
+          typeCheckErrors("""ArrayRecord(name = "tarao") ++ Cell(3)"""),
+        )
         checkErrors(typeCheckErrors("""ArrayRecord.from(Cell(3))"""))
       }
 
@@ -167,7 +173,9 @@ class TypeErrorSpec extends helper.UnitSpec {
         val errs = typeCheckErrors("""ArrayRecord.lookup(r, "email")""")
         errs should not be empty
         errs.head.kind shouldBe ErrorKind.Typer
-        errs.head.message should startWith("""Value '("email" : String)' is not a member of""")
+        errs.head.message should startWith(
+          """Value '("email" : String)' is not a member of""",
+        )
       }
 
       it("should detect invalid key type") {
@@ -176,7 +184,9 @@ class TypeErrorSpec extends helper.UnitSpec {
         val errs = typeCheckErrors("""ArrayRecord.lookup(r, key)""")
         errs should not be empty
         errs.head.kind shouldBe ErrorKind.Typer
-        errs.head.message should startWith("""Value '(key : String)' is not a member of""")
+        errs.head.message should startWith(
+          """Value '(key : String)' is not a member of""",
+        )
       }
     }
 
@@ -221,7 +231,9 @@ class TypeErrorSpec extends helper.UnitSpec {
     describe("RecordLike") {
       it("should detect non-literal label type") {
         val errs =
-          typeCheckErrors("""ArrayRecord(name = "tarao") ++ (("age", 3) *: EmptyTuple)""")
+          typeCheckErrors(
+            """ArrayRecord(name = "tarao") ++ (("age", 3) *: EmptyTuple)""",
+          )
         errs should not be empty
         errs.head.kind shouldBe ErrorKind.Typer
         errs.head.message should startWith(

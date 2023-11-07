@@ -63,8 +63,8 @@ object Record {
     * @return
     *   the value of the field named by `label`
     */
-  def lookup[R <: %, L <: String & Singleton, Out](record: R, label: L)(
-    using Lookup.Aux[R, L, Out],
+  def lookup[R <: %, L <: String & Singleton, Out](record: R, label: L)(using
+    Lookup.Aux[R, L, Out],
   ): Out =
     record.__lookup(label).asInstanceOf[Out]
 
