@@ -32,9 +32,7 @@ ThisBuild / githubWorkflowJavaVersions := Seq(
 
 lazy val compileSettings = Def.settings(
   // Default options are set by sbt-typelevel-settings
-  scalacOptions ++= Seq(
-    "-Xfatal-warnings",
-  ),
+  tlFatalWarnings := true,
   scalacOptions --= Seq(
     "-Ykind-projector:underscores", // https://github.com/lampepfl/dotty/issues/14952
   ),
