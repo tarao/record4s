@@ -30,6 +30,9 @@ ThisBuild / githubWorkflowJavaVersions := Seq(
   JavaSpec.temurin("17"),
 )
 
+val circeVersion = "0.14.6"
+val scalaTestVersion = "3.2.17"
+
 lazy val compileSettings = Def.settings(
   // Default options are set by sbt-typelevel-settings
   tlFatalWarnings := true,
@@ -53,7 +56,7 @@ lazy val commonSettings = Def.settings(
 )
 
 lazy val root = tlCrossRootProject
-  .aggregate(core)
+  .aggregate(core, circe)
   .settings(commonSettings)
   .settings(
     console        := (core.jvm / Compile / console).value,
@@ -68,7 +71,21 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % "3.2.17" % Test,
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
+    ),
+  )
+
+lazy val circe = crossProject(JVMPlatform, JSPlatform, NativePlatform)
+  .crossType(CrossType.Pure)
+  .dependsOn(core % "compile->compile;test->test")
+  .in(file("modules/circe"))
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "io.circe"      %%% "circe-core"    % circeVersion,
+      "io.circe"      %%% "circe-generic" % circeVersion     % Test,
+      "io.circe"      %%% "circe-parser"  % circeVersion     % Test,
+      "org.scalatest" %%% "scalatest"     % scalaTestVersion % Test,
     ),
   )
 

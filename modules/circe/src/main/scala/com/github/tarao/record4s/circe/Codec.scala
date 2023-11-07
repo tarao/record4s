@@ -19,19 +19,26 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package helper
+package com.github.tarao.record4s
+package circe
 
-import org.scalatest.Inside
-import org.scalatest.Inspectors
-import org.scalatest.OptionValues
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers
+import io.circe.{Decoder, Encoder, HCursor, Json}
 
-abstract class UnitSpec
-    extends AnyFunSpec
-    with matchers.should.Matchers
-    with StaticTypeMatcher
-    with OptionValues
-    with EitherValues
-    with Inside
-    with Inspectors
+object Codec {
+  inline given encoder[R <: %, RR <: ProductRecord](using
+    ar: typing.ArrayRecord.Aux[R, RR],
+    enc: Encoder[RR],
+  ): Encoder[R] = new Encoder[R] {
+    final def apply(record: R): Json = enc(ArrayRecord.from(record))
+  }
+
+  inline given decoder[R <: %](using
+    r: RecordLike[R],
+    dec: Decoder[ArrayRecord[r.TupledFieldTypes]],
+    c: typing.Record.Concat[%, ArrayRecord[r.TupledFieldTypes]],
+    ev: c.Out =:= R,
+  ): Decoder[R] = new Decoder[R] {
+    final def apply(c: HCursor): Decoder.Result[R] =
+      dec(c).map(ar => ev(ar.toRecord))
+  }
+}
