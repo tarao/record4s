@@ -1,8 +1,11 @@
-val groupId = "com.github.tarao"
-val projectName = "record4s"
-val rootPkg = s"$groupId.$projectName"
+import ProjectKeys._
+import Implicits._
 
-ThisBuild / organization     := groupId
+ThisBuild / projectName := "record4s"
+ThisBuild / groupId     := "com.github.tarao"
+ThisBuild / rootPkg     := "${groupId.value}.${projectName.value}"
+
+ThisBuild / organization     := groupId.value
 ThisBuild / organizationName := "record4s authors"
 ThisBuild / startYear        := Some(2023)
 ThisBuild / licenses         := Seq(License.MIT)
@@ -12,8 +15,7 @@ ThisBuild / developers := List(
 )
 
 lazy val metadataSettings = Def.settings(
-  name         := projectName,
-  organization := groupId,
+  organization := groupId.value,
   description  := "Extensible records for Scala",
   homepage     := Some(url("https://github.com/tarao/record4s")),
 )
@@ -29,6 +31,9 @@ ThisBuild / githubWorkflowJavaVersions := Seq(
   JavaSpec.temurin("11"),
   JavaSpec.temurin("17"),
 )
+
+val circeVersion = "0.14.6"
+val scalaTestVersion = "3.2.17"
 
 lazy val compileSettings = Def.settings(
   // Default options are set by sbt-typelevel-settings
@@ -48,12 +53,12 @@ lazy val commonSettings = Def.settings(
   metadataSettings,
   compileSettings,
   initialCommands := s"""
-    import $rootPkg.*
+    import ${rootPkg.value}.*
   """,
 )
 
 lazy val root = tlCrossRootProject
-  .aggregate(core)
+  .aggregate(core, circe)
   .settings(commonSettings)
   .settings(
     console        := (core.jvm / Compile / console).value,
@@ -64,11 +69,27 @@ lazy val root = tlCrossRootProject
 lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   .crossType(CrossType.Pure)
   .withoutSuffixFor(JVMPlatform)
-  .in(file("modules/core"))
+  .asModuleWithoutSuffix
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % "3.2.17" % Test,
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
+    ),
+  )
+
+lazy val circe = crossProject(JVMPlatform, JSPlatform, NativePlatform)
+  .crossType(CrossType.Pure)
+  .withoutSuffixFor(JVMPlatform)
+  .dependsOn(core % "compile->compile;test->test")
+  .asModule
+  .settings(commonSettings)
+  .settings(
+    description := "Circe integration for record4s",
+    libraryDependencies ++= Seq(
+      "io.circe"      %%% "circe-core"    % circeVersion,
+      "io.circe"      %%% "circe-generic" % circeVersion     % Test,
+      "io.circe"      %%% "circe-parser"  % circeVersion     % Test,
+      "org.scalatest" %%% "scalatest"     % scalaTestVersion % Test,
     ),
   )
 

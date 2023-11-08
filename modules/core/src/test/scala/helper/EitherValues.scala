@@ -21,17 +21,13 @@
 
 package helper
 
-import org.scalatest.Inside
-import org.scalatest.Inspectors
-import org.scalatest.OptionValues
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers
+trait EitherValues {
+  self: org.scalatest.Assertions =>
 
-abstract class UnitSpec
-    extends AnyFunSpec
-    with matchers.should.Matchers
-    with StaticTypeMatcher
-    with OptionValues
-    with EitherValues
-    with Inside
-    with Inspectors
+  object ShouldBeRight {
+    def unapply[A, B](x: Either[A, B]): Some[B] = x match {
+      case Right(value) => Some(value)
+      case _            => fail(s"$x was not Right")
+    }
+  }
+}
