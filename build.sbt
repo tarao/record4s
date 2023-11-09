@@ -9,17 +9,12 @@ ThisBuild / rootPkg     := "${groupId.value}.${projectName.value}"
 
 ThisBuild / organization     := groupId.value
 ThisBuild / organizationName := "record4s authors"
+ThisBuild / homepage         := Some(url("https://github.com/tarao/record4s"))
 ThisBuild / startYear        := Some(2023)
 ThisBuild / licenses         := Seq(License.MIT)
 ThisBuild / developers := List(
   tlGitHubDev("tarao", "INA Lintaro"),
   tlGitHubDev("windymelt", "Windymelt"),
-)
-
-lazy val metadataSettings = Def.settings(
-  organization := groupId.value,
-  description  := "Extensible records for Scala",
-  homepage     := Some(url("https://github.com/tarao/record4s")),
 )
 
 val Scala_3 = "3.3.1"
@@ -52,7 +47,6 @@ lazy val compileSettings = Def.settings(
 )
 
 lazy val commonSettings = Def.settings(
-  metadataSettings,
   compileSettings,
   initialCommands := s"""
     import ${rootPkg.value}.*
@@ -74,6 +68,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   .asModuleWithoutSuffix
   .settings(commonSettings)
   .settings(
+    description := "Extensible records for Scala",
     libraryDependencies ++= Seq(
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
     ),
