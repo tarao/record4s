@@ -12,7 +12,6 @@ object Implicits {
 
     private def asModule(noSuffix: Boolean): CrossProject = {
       val project = p.componentProjects(0)
-      val s = project.settings(0)
       p
         .settings(
           moduleName := {
