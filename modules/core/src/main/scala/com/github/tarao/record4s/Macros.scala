@@ -22,6 +22,7 @@
 package com.github.tarao.record4s
 
 import scala.annotation.nowarn
+
 import typing.Record.{Concat, Lookup, Select, Unselect}
 
 @nowarn("msg=unused local")

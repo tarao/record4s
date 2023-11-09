@@ -66,6 +66,6 @@ object ArrayRecord {
     }
 
     transparent inline given [R, L <: String]: Lookup[R, L] =
-      ${ ArrayRecordMacros.derivedTypingLookupImpl[R, L] }
+      ${ ArrayRecordMacros.derivedTypingLookupImpl }
   }
 }
