@@ -128,5 +128,7 @@ lazy val benchmark_2_11 = (project in file("modules/benchmark_2_11"))
     ),
   )
 
-ThisBuild / githubWorkflowTargetBranches        := Seq("master")
-ThisBuild / githubWorkflowPublishTargetBranches := Seq()
+ThisBuild / githubWorkflowTargetBranches := Seq("master")
+ThisBuild / githubWorkflowPublishTargetBranches := Seq(
+  RefPredicate.Equals(Ref.Branch("master")),
+)
