@@ -22,6 +22,7 @@
 package com.github.tarao.record4s
 
 import scala.annotation.tailrec
+
 import util.SeqOps.deduped
 
 private[record4s] class InternalMacros(using
@@ -315,7 +316,7 @@ private[record4s] class InternalMacros(using
         fieldTypeOf(labelExpr, valueExpr)
 
       case expr =>
-        errorAndAbort(s"Invalid field", Some(expr))
+        errorAndAbort("Invalid field", Some(expr))
     }
   }
 

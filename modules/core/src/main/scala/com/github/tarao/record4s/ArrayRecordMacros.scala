@@ -22,6 +22,7 @@
 package com.github.tarao.record4s
 
 import scala.annotation.nowarn
+
 import typing.ArrayRecord.{Concat, Lookup}
 import util.SeqOps.deduped
 

@@ -23,6 +23,7 @@ package com.github.tarao.record4s
 
 import scala.deriving.Mirror
 import scala.language.dynamics
+
 import typing.ArrayRecord.{Aux, Concat, Lookup}
 import typing.Record.{Select, Unselect}
 import util.SeqOps.deduped

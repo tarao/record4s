@@ -23,6 +23,7 @@ package com.github.tarao.record4s
 
 import scala.compiletime.requireConst
 import scala.language.dynamics
+
 import typing.Record.Select
 
 final class Selector[T <: Tuple](val labels: Seq[String] = Seq.empty)
