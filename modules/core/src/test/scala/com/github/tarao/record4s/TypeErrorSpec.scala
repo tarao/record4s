@@ -21,7 +21,7 @@
 
 package com.github.tarao.record4s
 
-import scala.compiletime.testing.{typeCheckErrors, Error, ErrorKind}
+import scala.compiletime.testing.{Error, ErrorKind, typeCheckErrors}
 
 class TypeErrorSpec extends helper.UnitSpec {
   describe("Typing %") {

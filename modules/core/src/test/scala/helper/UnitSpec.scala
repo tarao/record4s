@@ -22,7 +22,7 @@
 package helper
 
 import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.{matchers, Inside, Inspectors, OptionValues}
+import org.scalatest.{Inside, Inspectors, OptionValues, matchers}
 
 abstract class UnitSpec
     extends AnyFunSpec
