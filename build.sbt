@@ -127,3 +127,30 @@ lazy val benchmark_2_11 = (project in file("modules/benchmark_2_11"))
 
 ThisBuild / githubWorkflowTargetBranches := Seq("master")
 ThisBuild / tlCiReleaseBranches          := Seq() // publish only tags
+
+ThisBuild / githubWorkflowAddedJobs ++= Seq(
+  WorkflowJob(
+    id     = "coverage",
+    name   = "Generate coverage report",
+    javas  = List(githubWorkflowJavaVersions.value.last),
+    scalas = githubWorkflowScalaVersions.value.toList,
+    steps = List(WorkflowStep.Checkout) ++ WorkflowStep.SetupJava(
+      List(githubWorkflowJavaVersions.value.last),
+    ) ++ githubWorkflowGeneratedCacheSteps.value ++ List(
+      WorkflowStep.Sbt(List("coverage", "rootJVM/test", "coverageAggregate")),
+      WorkflowStep.Use(
+        UseRef.Public(
+          "codecov",
+          "codecov-action",
+          "v3",
+        ),
+        params = Map(
+          "flags" -> List("${{matrix.scala}}").mkString(","),
+        ),
+        env = Map(
+          "CODECOV_TOKEN" -> "${{secrets.CODECOV_TOKEN}}",
+        ),
+      ),
+    ),
+  ),
+)
