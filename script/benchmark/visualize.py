@@ -40,7 +40,7 @@ plot_config = {
         'xmin': 20,
         'ymin': 0,
         'xstep': 20,
-        'ystep': 1000,
+        'ystep': 2000,
     },
     'FieldAccess': {
         'xlabel': 'Field index',
