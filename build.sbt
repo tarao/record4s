@@ -11,7 +11,7 @@ ThisBuild / organization     := groupId.value
 ThisBuild / organizationName := "record4s authors"
 ThisBuild / homepage         := Some(url("https://github.com/tarao/record4s"))
 ThisBuild / startYear        := Some(2023)
-ThisBuild / licenses         := Seq(License.MIT)
+ThisBuild / licenses         := Seq(License.Apache2)
 ThisBuild / developers := List(
   tlGitHubDev("tarao", "INA Lintaro"),
   tlGitHubDev("windymelt", "Windymelt"),
