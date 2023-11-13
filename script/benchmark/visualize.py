@@ -29,10 +29,10 @@ plot_config = {
     'Update': {
         'xlabel': 'Record size',
         'ylabel': 'Update time [ns]',
-        'xmin': 20,
+        'xmin': 0,
         'ymin': 0,
-        'xstep': 20,
-        'ystep': 200,
+        'xstep': 50,
+        'ystep': 500,
     },
     'Concatenation': {
         'xlabel': 'Record size',
@@ -77,16 +77,16 @@ plot_config = {
     },
     'CompileCreationAndAccess': {
         'xlabel': 'Record size',
-        'ylabel': 'Compilation time (record creation and all field access) [s]',
+        'ylabel': "Compilation time [s]\n(record creation and all field access)",
         'xmin': 0,
         'ymin': 0,
         'xstep': 50,
-        'ystep': 2,
+        'ystep': 5,
         'estimator': 'mean',
     },
     'CompileCreationAndAccessRep': {
         'xlabel': 'Record size',
-        'ylabel': 'Compilation time (record creation and repeated field access) [s]',
+        'ylabel': "Compilation time [s]\n(record creation and repeated field access)",
         'xmin': 0,
         'ymin': 0,
         'xstep': 50,
@@ -99,7 +99,7 @@ plot_config = {
         'xmin': 0,
         'ymin': 0,
         'xstep': 50,
-        'ystep': 2,
+        'ystep': 1,
         'estimator': 'mean',
     },
     'CompileUpdateRep': {
@@ -108,7 +108,7 @@ plot_config = {
         'xmin': 0,
         'ymin': 0,
         'xstep': 5,
-        'ystep': 2,
+        'ystep': 1,
         'estimator': 'mean',
     },
     'CompileConcatenation': {
@@ -126,7 +126,7 @@ plot_config = {
         'xmin': 2,
         'ymin': 0,
         'xstep': 2,
-        'ystep': 1,
+        'ystep': 0.5,
     },
     'CompileFieldAccessSize': {
         'xlabel': 'Record size',
@@ -134,9 +134,15 @@ plot_config = {
         'xmin': 2,
         'ymin': 0,
         'xstep': 2,
-        'ystep': 1,
+        'ystep': 0.5,
     },
 }
+
+def ticks(min, max, step):
+    min = int(min * 10)
+    max = int(max * 10)
+    step = int(step * 10)
+    return list(map(lambda n: n / 10, range(min, int(max / step) * step + 1, step)))
 
 conf = plot_config[feature]
 
@@ -149,8 +155,8 @@ ymax = df[y].max()
 xmin, xstep = conf['xmin'], conf['xstep']
 ymin, ystep = conf['ymin'], conf['ystep']
 
-xticks = list(range(xmin, int(xmax / xstep) * xstep + 1, xstep))
-yticks = list(range(ymin, int(ymax / ystep) * ystep + 1, ystep))
+xticks = ticks(xmin, xmax, xstep)
+yticks = ticks(ymin, ymax, ystep)
 
 sns.set_theme()
 g = sns.relplot(
