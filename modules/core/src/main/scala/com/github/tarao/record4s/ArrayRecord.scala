@@ -245,17 +245,12 @@ object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
         val vec = record
           .__fields
           .toVector
-          .concat(summon[RecordLike[R2]].orderedIterableOf(other))
+        val otherIt = summon[RecordLike[R2]].orderedIterableOf(other)
         inline erasedValue[c.NeedDedup] match {
           case _: false =>
-            newArrayRecord[c.Out](vec)
+            newArrayRecord[c.Out](vec.concat(otherIt))
           case _ =>
-            newArrayRecord[c.Out](
-              vec
-                .deduped
-                .iterator
-                .toVector,
-            )
+            newArrayRecord[c.Out](unsafeConcat(vec, otherIt))
         }
       }
 
@@ -487,10 +482,28 @@ object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
   transparent inline given recordLike[R]: RecordLike[ArrayRecord[R]] =
     ${ ArrayRecordMacros.derivedRecordLikeImpl }
 
-  private def newArrayRecord[R](
+  private[record4s] def newArrayRecord[R](
     fields: IndexedSeq[(String, Any)],
   ): R =
     new VectorRecord(fields.toVector).asInstanceOf[R]
+
+  // the same as `(record ++ tidiedIterable).deduped` but use `Vector.updated` for
+  // optimization
+  private[record4s] def unsafeConcat(
+    record: Vector[(String, Any)],
+    tidiedIterable: Iterable[(String, Any)],
+  ): Vector[(String, Any)] = {
+    val m = tidiedIterable.toMap
+    val updates = record.zipWithIndex.filter { case ((key, _), _) =>
+      m.contains(key)
+    }
+    val dups = updates.map(_._1._1).toSet
+    updates
+      .foldLeft(record) { case (vec, ((key, _), index)) =>
+        vec.updated(index, (key, m(key)))
+      }
+      .concat(tidiedIterable.filterNot(f => dups.contains(f._1)))
+  }
 
   trait Extensible[R] extends Any with Dynamic {
     protected def record: ArrayRecord[R]

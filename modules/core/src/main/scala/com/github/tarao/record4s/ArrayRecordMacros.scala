@@ -18,8 +18,8 @@ package com.github.tarao.record4s
 
 import scala.annotation.nowarn
 
+import ArrayRecord.{newArrayRecord, unsafeConcat}
 import typing.ArrayRecord.{Concat, Lookup}
-import util.SeqOps.deduped
 
 @nowarn("msg=unused local")
 object ArrayRecordMacros {
@@ -56,11 +56,7 @@ object ArrayRecordMacros {
     requireApply(record, method) {
       val rec = '{ ${ record }.__fields }
       val (fields, tpe) = extractFieldsFrom(args)
-      val vec = '{
-        ${ rec }
-          .toVector
-          .concat(${ fields })
-      }
+      val vec = '{ ${ rec }.toVector }
 
       tpe match {
         case '[tpe] =>
@@ -71,15 +67,12 @@ object ArrayRecordMacros {
                 // We have to do `match` independently because `NeedDedup` is
                 // not necessarily supplied
                 case '{ ${ _ }: Concat[R, tpe] { type NeedDedup = false } } =>
-                  '{ new VectorRecord(${ vec }).asInstanceOf[returnType] }
+                  '{ newArrayRecord[returnType](${ vec }.concat(${ fields })) }
                 case _ =>
                   '{
-                    new VectorRecord(
-                      ${ vec }
-                        .deduped
-                        .iterator
-                        .toVector,
-                    ).asInstanceOf[returnType]
+                    newArrayRecord[returnType](
+                      unsafeConcat(${ vec }, ${ fields }),
+                    )
                   }
               }
           }
