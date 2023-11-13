@@ -162,8 +162,8 @@ class RecordSpec extends helper.UnitSpec {
           %(user = "ikura", domain = "example.com"),
         )
         helper.showTypeOf(r3) shouldBe """% {
-                                         |  val age: Int
                                          |  val name: String
+                                         |  val age: Int
                                          |  val email: % {
                                          |    val user: String
                                          |    val domain: String
@@ -175,8 +175,8 @@ class RecordSpec extends helper.UnitSpec {
           %(user = "ikura", domain = "example.com"),
         )
         helper.showTypeOf(r4 ++ r5) shouldBe """% {
-                                               |  val age: Int
                                                |  val name: String
+                                               |  val age: Int
                                                |  val email: % {
                                                |    val user: String
                                                |    val domain: String
