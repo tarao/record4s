@@ -307,42 +307,50 @@ class UseCaseSpec extends helper.UnitSpec {
     }
 
     it("can replace existing field") {
-      def addEmail[R, T, RR <: ProductRecord](record: ArrayRecord[R], email: T)(
-        using Concat.Aux[R, ArrayRecord[("email", T) *: EmptyTuple], RR],
-      ): RR = record ++ ArrayRecord(email = email)
+      locally {
+        def addEmail[R, T, RR <: ProductRecord](
+          record: ArrayRecord[R],
+          email: T,
+        )(using
+          Concat.Aux[R, ArrayRecord[("email", T) *: EmptyTuple], RR],
+        ): RR = record ++ ArrayRecord(email = email)
 
-      val r0 = ArrayRecord(name = "tarao", age = 3, email = "tarao@example.com")
-      val r1 = addEmail(r0, ArrayRecord(user = "tarao", domain = "example.com"))
-      r1 shouldStaticallyBe an[ArrayRecord[
-        (
-          ("name", String),
-          ("age", Int),
-          ("email", ArrayRecord[(("user", String), ("domain", String))]),
-        ),
-      ]]
-      r1.name shouldBe "tarao"
-      r1.age shouldBe 3
-      r1.email.user shouldBe "tarao"
-      r1.email.domain shouldBe "example.com"
-    }
+        val r0 =
+          ArrayRecord(name = "tarao", age = 3, email = "tarao@example.com")
+        val r1 =
+          addEmail(r0, ArrayRecord(user = "tarao", domain = "example.com"))
+        r1 shouldStaticallyBe an[ArrayRecord[
+          (
+            ("name", String),
+            ("age", Int),
+            ("email", ArrayRecord[(("user", String), ("domain", String))]),
+          ),
+        ]]
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+        r1.email.user shouldBe "tarao"
+        r1.email.domain shouldBe "example.com"
+      }
 
-    it("can replace existing field with reordering") {
-      def rename[R, T, RR <: ProductRecord](record: ArrayRecord[R], value: T)(
-        using Concat.Aux[R, ArrayRecord[("name", T) *: EmptyTuple], RR],
-      ): RR = record ++ ArrayRecord(name = value)
+      locally {
+        def rename[R, T, RR <: ProductRecord](record: ArrayRecord[R], value: T)(
+          using Concat.Aux[R, ArrayRecord[("name", T) *: EmptyTuple], RR],
+        ): RR = record ++ ArrayRecord(name = value)
 
-      val r0 = ArrayRecord(name = "tarao", age = 3, email = "tarao@example.com")
-      val r1 = rename(r0, "ikura")
-      r1 shouldStaticallyBe an[ArrayRecord[
-        (
-          ("age", Int),
-          ("email", String),
-          ("name", String),
-        ),
-      ]]
-      r1.name shouldBe "ikura"
-      r1.age shouldBe 3
-      r1.email shouldBe "tarao@example.com"
+        val r0 =
+          ArrayRecord(name = "tarao", age = 3, email = "tarao@example.com")
+        val r1 = rename(r0, "ikura")
+        r1 shouldStaticallyBe an[ArrayRecord[
+          (
+            ("name", String),
+            ("age", Int),
+            ("email", String),
+          ),
+        ]]
+        r1.name shouldBe "ikura"
+        r1.age shouldBe 3
+        r1.email shouldBe "tarao@example.com"
+      }
     }
 
     it("preserves a tag") {
@@ -434,42 +442,50 @@ class UseCaseSpec extends helper.UnitSpec {
     }
 
     it("can replace existing field") {
-      def addEmail[R, T, RR <: ProductRecord](record: ArrayRecord[R], email: T)(
-        using Append.Aux[R, ("email", T) *: EmptyTuple, RR],
-      ): RR = record + (email = email)
+      locally {
+        def addEmail[R, T, RR <: ProductRecord](
+          record: ArrayRecord[R],
+          email: T,
+        )(using
+          Append.Aux[R, ("email", T) *: EmptyTuple, RR],
+        ): RR = record + (email = email)
 
-      val r0 = ArrayRecord(name = "tarao", age = 3, email = "tarao@example.com")
-      val r1 = addEmail(r0, ArrayRecord(user = "tarao", domain = "example.com"))
-      r1 shouldStaticallyBe a[ArrayRecord[
-        (
-          ("name", String),
-          ("age", Int),
-          ("email", ArrayRecord[(("user", String), ("domain", String))]),
-        ),
-      ]]
-      r1.name shouldBe "tarao"
-      r1.age shouldBe 3
-      r1.email.user shouldBe "tarao"
-      r1.email.domain shouldBe "example.com"
-    }
+        val r0 =
+          ArrayRecord(name = "tarao", age = 3, email = "tarao@example.com")
+        val r1 =
+          addEmail(r0, ArrayRecord(user = "tarao", domain = "example.com"))
+        r1 shouldStaticallyBe a[ArrayRecord[
+          (
+            ("name", String),
+            ("age", Int),
+            ("email", ArrayRecord[(("user", String), ("domain", String))]),
+          ),
+        ]]
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+        r1.email.user shouldBe "tarao"
+        r1.email.domain shouldBe "example.com"
+      }
 
-    it("can replace existing field with reordering") {
-      def rename[R, T, RR <: ProductRecord](record: ArrayRecord[R], value: T)(
-        using Append.Aux[R, ("name", T) *: EmptyTuple, RR],
-      ): RR = record + (name = value)
+      locally {
+        def rename[R, T, RR <: ProductRecord](record: ArrayRecord[R], value: T)(
+          using Append.Aux[R, ("name", T) *: EmptyTuple, RR],
+        ): RR = record + (name = value)
 
-      val r0 = ArrayRecord(name = "tarao", age = 3, email = "tarao@example.com")
-      val r1 = rename(r0, "ikura")
-      r1 shouldStaticallyBe an[ArrayRecord[
-        (
-          ("age", Int),
-          ("email", String),
-          ("name", String),
-        ),
-      ]]
-      r1.name shouldBe "ikura"
-      r1.age shouldBe 3
-      r1.email shouldBe "tarao@example.com"
+        val r0 =
+          ArrayRecord(name = "tarao", age = 3, email = "tarao@example.com")
+        val r1 = rename(r0, "ikura")
+        r1 shouldStaticallyBe an[ArrayRecord[
+          (
+            ("name", String),
+            ("age", Int),
+            ("email", String),
+          ),
+        ]]
+        r1.name shouldBe "ikura"
+        r1.age shouldBe 3
+        r1.email shouldBe "tarao@example.com"
+      }
     }
 
     it("preserves a tag") {

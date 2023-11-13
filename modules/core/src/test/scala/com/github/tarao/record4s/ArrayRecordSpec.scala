@@ -156,8 +156,8 @@ class ArrayRecordSpec extends helper.UnitSpec {
         )
         r3 shouldStaticallyBe an[ArrayRecord[
           (
-            ("age", Int),
             ("name", String),
+            ("age", Int),
             ("email", ArrayRecord[(("user", String), ("domain", String))]),
           ),
         ]]
@@ -169,8 +169,8 @@ class ArrayRecordSpec extends helper.UnitSpec {
         )
         (r4 ++ r5) shouldStaticallyBe an[ArrayRecord[
           (
-            ("age", Int),
             ("name", String),
+            ("age", Int),
             ("email", ArrayRecord[(("user", String), ("domain", String))]),
           ),
         ]]
@@ -355,7 +355,7 @@ class ArrayRecordSpec extends helper.UnitSpec {
         val r2 = %(name = "ikura", email = "ikura@example.com")
         val r3 = r1 ++ r2
         r3 shouldStaticallyBe an[ArrayRecord[
-          (("age", Int), ("name", String), ("email", String)),
+          (("name", String), ("age", Int), ("email", String)),
         ]]
         r3.name shouldBe "ikura"
         r3.age shouldBe 3
