@@ -71,6 +71,8 @@ abstract class ProductRecord extends Record with Product {
 }
 
 object ProductRecord {
+  import ArrayRecord.newArrayRecord
+
   class MirrorOfProductRecord[
     ElemLabels <: Tuple,
     ElemTypes <: Tuple,
@@ -84,8 +86,7 @@ object ProductRecord {
     type MirroredElemLabels = ElemLabels
 
     def fromProduct(p: Product): P =
-      new VectorRecord(elemLabels.zip(p.productIterator).toVector)
-        .asInstanceOf[P]
+      newArrayRecord[P](elemLabels.zip(p.productIterator).toVector)
   }
 
   inline given [R](using
