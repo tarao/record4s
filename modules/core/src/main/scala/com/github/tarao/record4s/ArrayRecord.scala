@@ -530,7 +530,7 @@ object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
   *
   * This class is exposed due to inlining but not intended to be used directly.
   */
-final class VectorRecord(fields: IndexedSeq[(String, Any)])
+final class VectorRecord private[record4s] (fields: IndexedSeq[(String, Any)])
     extends ArrayRecord[EmptyTuple] {
   override private[record4s] val __fields: Vector[(String, Any)] =
     fields.toVector

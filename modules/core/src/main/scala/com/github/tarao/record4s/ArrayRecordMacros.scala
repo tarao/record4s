@@ -35,7 +35,7 @@ object ArrayRecordMacros {
 
     evidenceOf[Lookup[R, L]] match {
       case '{
-          type index <: Int;
+          type index <: Int
           ${ ev }: Lookup[R, L] {
             type Index = `index`
             type Out = out

@@ -324,7 +324,9 @@ object Record {
   transparent inline given recordLike[R <: %]: RecordLike[R] =
     ${ Macros.derivedRecordLikeImpl }
 
-  private def newMapRecord[R <: %](record: Iterable[(String, Any)]): R =
+  private[record4s] def newMapRecord[R <: %](
+    record: Iterable[(String, Any)],
+  ): R =
     new MapRecord(record.toMap).asInstanceOf[R]
 
   import scala.language.dynamics
@@ -389,7 +391,8 @@ val % = new Record.Extensible(Record.empty)
   *
   * This class is exposed due to inlining but not intended to be used directly.
   */
-final class MapRecord(private val __data: Map[String, Any]) extends % {
+final class MapRecord private[record4s] (private val __data: Map[String, Any])
+    extends % {
   override private[record4s] def __lookup(key: String): Any = __data(key)
 
   override private[record4s] def __iterable: Iterable[(String, Any)] = __data

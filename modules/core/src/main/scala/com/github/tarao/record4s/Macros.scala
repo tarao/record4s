@@ -18,6 +18,7 @@ package com.github.tarao.record4s
 
 import scala.annotation.nowarn
 
+import Record.newMapRecord
 import typing.Record.{Concat, Lookup, Select, Unselect}
 
 @nowarn("msg=unused local")
@@ -40,11 +41,11 @@ object Macros {
       tpe match {
         case '[tpe] =>
           evidenceOf[Concat[R, tpe]] match {
-            case '{ ${ _ }: Concat[R, tpe] { type Out = returnType } } =>
-              '{
-                new MapRecord(${ rec }.toMap.concat(${ fields }))
-                  .asInstanceOf[returnType]
-              }
+            case '{
+                type returnType <: %
+                ${ _ }: Concat[R, tpe] { type Out = `returnType` }
+              } =>
+              '{ newMapRecord[returnType](${ rec }.toMap.concat(${ fields })) }
           }
       }
     }
