@@ -184,6 +184,8 @@ lazy val docs = project
       tlSiteHelium
         .value
         .site
+        .internalCSS(Root / "css" / "site.css")
+        .site
         .favIcons(Favicon.internal(logo))
         .site
         .topNavigationBar(
