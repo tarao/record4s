@@ -5,7 +5,7 @@ ThisBuild / tlBaseVersion := "0.9"
 
 ThisBuild / projectName := "record4s"
 ThisBuild / groupId     := "com.github.tarao"
-ThisBuild / rootPkg     := "${groupId.value}.${projectName.value}"
+ThisBuild / rootPkg     := s"${groupId.value}.${projectName.value}"
 
 ThisBuild / organization     := groupId.value
 ThisBuild / organizationName := "record4s authors"
