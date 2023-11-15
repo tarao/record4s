@@ -163,3 +163,44 @@ ThisBuild / githubWorkflowAddedJobs ++= Seq(
     ),
   ),
 )
+
+ThisBuild / tlSitePublishBranch := Some("master")
+lazy val docs = project
+  .in(file("site"))
+  .dependsOn(core.jvm)
+  .enablePlugins(TypelevelSitePlugin)
+  .settings(
+    laikaTheme := {
+      import laika.ast.LengthUnit._
+      import laika.ast.Path.Root
+      import laika.ast._
+      import laika.helium.config._
+
+      val home = Root / "index.md"
+      val logo = Root / "img" / "record4s.svg"
+      val copyright =
+        s"Copyright &copy; ${startYear.value.get} ${organizationName.value}"
+
+      tlSiteHelium
+        .value
+        .site
+        .favIcons(Favicon.internal(logo))
+        .site
+        .topNavigationBar(
+          homeLink = ImageLink.internal(home, Image.internal(logo)),
+        )
+        .site
+        .footer(copyright)
+        .site
+        .fontSizes(
+          body    = px(16),
+          code    = em(1),
+          title   = pt(36),
+          header2 = pt(24),
+          header3 = pt(20),
+          header4 = pt(18),
+          small   = pt(10),
+        )
+        .build
+    },
+  )
