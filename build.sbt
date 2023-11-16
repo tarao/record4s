@@ -189,7 +189,10 @@ lazy val docs = project
         .favIcons(Favicon.internal(logo))
         .site
         .topNavigationBar(
-          homeLink = ImageLink.internal(home, Image.internal(logo)),
+          homeLink = LinkGroup.create(
+            ImageLink.internal(home, Image.internal(logo)),
+            TextLink.internal(home, projectName.value),
+          ),
         )
         .site
         .footer(copyright)

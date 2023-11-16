@@ -1,3 +1,14 @@
+header .row.links {
+  display: flex;
+  flex-direction: row;
+}
+
+header .text-link {
+  font-size: 22px;
+  margin: 0 0 0 5px ! important;
+  vertical-align: bottom;
+}
+
 code {
   padding: 0.2em 0.4em;
   background-color: rgba(99, 110, 123, 0.4);

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="${?laika.site.metadata.language}">
+
+  @:include(head.template.html)
+
+  <body>
+
+    @:include(helium.site.templates.topNav)
+
+    @:include(helium.site.templates.mainNav)
+
+    <div id="container">
+
+      @:include(helium.site.templates.pageNav)
+
+      <main class="content">
+
+        ${cursor.currentDocument.content}
+
+        @:include(helium.site.templates.footer)
+
+      </main>
+
+    </div>
+
+  </body>
+
+</html>
