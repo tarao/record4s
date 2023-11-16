@@ -170,6 +170,9 @@ lazy val docs = project
   .dependsOn(core.jvm)
   .enablePlugins(TypelevelSitePlugin)
   .settings(
+    scalacOptions --= Seq(
+      "-Wunused:locals",
+    ),
     laikaTheme := {
       import laika.ast.LengthUnit._
       import laika.ast.Path.Root
