@@ -173,6 +173,9 @@ lazy val docs = project
     scalacOptions --= Seq(
       "-Wunused:locals",
     ),
+    mdocExtraArguments ++= Seq(
+      "--exclude", ".*.md",
+    ),
     laikaTheme := {
       import laika.ast.LengthUnit._
       import laika.ast.Path.Root
