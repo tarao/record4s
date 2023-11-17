@@ -11,6 +11,10 @@ OPTIONS="-t 1"
 sbt=sbt
 
 OUTPUTS=()
+TARGETS=()
+FEATURES=()
+PREFIX=''
+SUFFIX=''
 
 file_path() {
     PROJECT=$1
@@ -46,51 +50,105 @@ to_json_rows() {
     } ]'
 }
 
-[ "$1" = "-0" ] && {
-    # Skip JMH run but accumulate outpus and plot the charts
-    # This is expecting the following workflow:
-    #   1. run `script/benchmark.sh <project> <target> <feature>` one by one
-    #   2. run `script/benchmark.sh -0 to accumulate all the results and plot the charts
-    shift
-    sbt=:
+while :
+do
+    [ "$1" = "-0" ] && {
+        # Skip JMH run but accumulate outpus and plot the charts
+        # This is expecting the following workflow:
+        #   1. run `script/benchmark.sh <project> <target> <feature>` one by one
+        #   2. run `script/benchmark.sh -0 to accumulate all the results and plot the charts
+        shift
+        sbt=:
+        continue
+    }
+
+    [ "$1" = "-1" ] && { # just run once for test
+        shift
+        OPTIONS="-wi 0 -i 1 -t 1 -f 1"
+        continue
+    }
+
+    [ "$1" = "-3" ] && { # just run few iterations for test
+        shift
+        OPTIONS="-wi 0 -i 3 -t 1 -f 1"
+        continue
+    }
+
+    [ "$1" = '-t' ] && [ -n "$2" ] && {
+        TARGETS+=("$2")
+        shift; shift
+        continue
+    }
+
+    [ "$1" = '-f' ] && [ -n "$2" ] && {
+        FEATURES+=("$2")
+        shift; shift
+        continue
+    }
+
+    [ "$1" = '-p' ] && [ -n "$2" ] && {
+        PREFIX="${2}_"
+        shift; shift
+        continue
+    }
+
+    [ "$1" = '-s' ] && [ -n "$2" ] && {
+        SUFFIX="_${2}"
+        shift; shift
+        continue
+    }
+
+    break
+done
+
+declare -A PROJECTS=(
+    ['record4s']='benchmark_3'
+    ['record4s_arrayrecord']='benchmark_3'
+    ['caseclass']='benchmark_3'
+    ['map']='benchmark_3'
+    ['shapeless']='benchmark_2_13'
+    ['scalarecords']='benchmark_2_11'
+)
+
+[ ${#TARGETS[@]} = 0 ] && {
+    TARGETS=(
+        'record4s'
+        'record4s_arrayrecord'
+        'map'
+        'caseclass'
+        'shapeless'
+        'scalarecords'
+    )
 }
 
-[ "$1" = "-1" ] && { # just run once for test
-    shift
-    OPTIONS="-wi 0 -i 1 -t 1 -f 1"
-}
+[ ${#FEATURES[@]} = 0 ] && {
+    FEATURES=(
+        'Creation'
+        'Update'
+        'Concatenation'
+        'FieldAccess'
+        'FieldAccessSize'
+        'FieldAccessPoly'
 
-[ "$1" = "-3" ] && { # just run few iterations for test
-    shift
-    OPTIONS="-wi 0 -i 3 -t 1 -f 1"
-}
-
-[ -n "$1" ] && [ -n "$2" ] && [ -n "$3" ] && {
-    run "$1" "$2" "$3"
-
-    CHART_INPUT="${OUT_DIR}/${FEATURE}_${TARGET}.json"
-    CHART_OUTPUT="${OUT_DIR}/${FEATURE}_${TARGET}.svg"
-
-    for output in ${OUTPUTS[@]}; do
-        jq '.[]' "${output}"
-    done | to_json_rows > "${CHART_INPUT}"
-
-    script/benchmark/visualize.sh "${FEATURE}" "${CHART_INPUT}" "${CHART_OUTPUT}"
-
-    exit
+        'CompileCreation'
+        'CompileCreationAndAccess'
+        'CompileCreationAndAccessRep'
+        'CompileUpdate'
+        'CompileUpdateRep'
+        'CompileConcatenation'
+        'CompileFieldAccess'
+        'CompileFieldAccessSize'
+    )
 }
 
 run_feature() {
     FEATURE="$1"
-    run "benchmark_3"    "record4s"             "${FEATURE}"
-    run "benchmark_3"    "record4s_arrayrecord" "${FEATURE}"
-    run "benchmark_3"    "caseclass"            "${FEATURE}"
-    run "benchmark_3"    "map"                  "${FEATURE}"
-    run "benchmark_2_13" "shapeless"            "${FEATURE}"
-    run "benchmark_2_11" "scalarecords"         "${FEATURE}"
+    for target in ${TARGETS[@]}; do
+        run "${PROJECTS[$target]}" "$target" "${FEATURE}"
+    done
 
-    CHART_INPUT="${OUT_DIR}/${FEATURE}.json"
-    CHART_OUTPUT="${OUT_DIR}/${FEATURE}.svg"
+    CHART_INPUT="${OUT_DIR}/${PREFIX}${FEATURE}${SUFFIX}.json"
+    CHART_OUTPUT="${OUT_DIR}/${PREFIX}${FEATURE}${SUFFIX}.svg"
 
     for output in ${OUTPUTS[@]}; do
         jq '.[]' "${output}"
@@ -101,23 +159,6 @@ run_feature() {
     OUTPUTS=()
 }
 
-[ -n "$1" ] && [ -z "$2" ] && {
-    run_feature "$1"
-    exit
-}
-
-run_feature "Creation"
-run_feature "Update"
-run_feature "Concatenation"
-run_feature "FieldAccess"
-run_feature "FieldAccessSize"
-run_feature "FieldAccessPoly"
-
-run_feature "CompileCreation"
-run_feature "CompileCreationAndAccess"
-run_feature "CompileCreationAndAccessRep"
-run_feature "CompileUpdate"
-run_feature "CompileUpdateRep"
-run_feature "CompileConcatenation"
-run_feature "CompileFieldAccess"
-run_feature "CompileFieldAccessSize"
+for feature in ${FEATURES[@]}; do
+    run_feature "$feature"
+done
