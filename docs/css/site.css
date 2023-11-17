@@ -9,6 +9,10 @@ header .text-link {
   vertical-align: bottom;
 }
 
+table td {
+  text-align: center;
+}
+
 code {
   padding: 0.2em 0.4em;
   background-color: rgba(99, 110, 123, 0.4);
