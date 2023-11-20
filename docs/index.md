@@ -6,6 +6,7 @@
 [![Coverage status](https://codecov.io/gh/tarao/record4s/graph/badge.svg?token=U9309O1VNK)](https://codecov.io/gh/tarao/record4s)
 [![Maven Central](https://img.shields.io/maven-central/v/com.github.tarao/record4s_3.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.tarao/record4s_3)
 [![Scaladoc](https://javadoc.io/badge2/com.github.tarao/record4s_3/javadoc.svg?color=blue&label=Scaladoc)](https://javadoc.io/doc/com.github.tarao/record4s_3)
+[![record4s Scala version support](https://index.scala-lang.org/tarao/record4s/record4s/latest.svg)](https://index.scala-lang.org/tarao/record4s/record4s)
 
 record4s proviedes extensible records for Scala.
 
@@ -21,6 +22,18 @@ Add the following dependency to your `build.sbt`:
 libraryDependencies ++= Seq(
   "com.github.tarao" %% "record4s" % "@VERSION@"
 ),
+```
+
+For Mill:
+
+```scala
+ivy"com.github.tarao::record4s:@VERSION@"
+```
+
+For Scala CLI:
+
+```scala
+//> using dep "com.github.tarao::record4s:@VERSION@"
 ```
 
 An easier way to try out record4s is to run `sbt console` in the record4s repository.
