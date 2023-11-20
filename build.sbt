@@ -164,7 +164,7 @@ ThisBuild / githubWorkflowAddedJobs ++= Seq(
   ),
 )
 
-ThisBuild / tlSitePublishBranch := Some("master")
+ThisBuild / tlSitePublishBranch := None // update on tag releases
 lazy val docs = project
   .in(file("site"))
   .dependsOn(core.jvm, circe.jvm)
