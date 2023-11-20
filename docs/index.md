@@ -24,6 +24,18 @@ libraryDependencies ++= Seq(
 ),
 ```
 
+For Mill:
+
+```scala
+ivy"com.github.tarao::record4s:@VERSION@"
+```
+
+For Scala CLI:
+
+```scala
+//> using dep "com.github.tarao::record4s:@VERSION@"
+```
+
 An easier way to try out record4s is to run `sbt console` in the record4s repository.
 
 ```
