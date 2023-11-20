@@ -4,14 +4,16 @@ Performance
 Internal Representation
 -----------------------
 
-Record fields are internally stored in a `Map`.  Roughly saying, field access `r.f`
-translates to `r.__data("f")` at compile time, where `r.__data` is the internal `Map`.  In
-the next two sections, we describe the overheads compared to `Map`.
+Record fields are internally stored in a @:api(scala.collection.immutable.Map).  Roughly
+saying, field access `r.f` translates to `r.__data("f")` at compile time, where `r.__data`
+is the internal @:api(scala.collection.immutable.Map).  In the next two sections, we
+describe the overheads compared to `Map`.
 
 Runtime Overhead
 ----------------
 
-The runtime performance characteristics of records are almost the same as those of `Map`s.
+The runtime performance characteristics of records are almost the same as those of
+@:api(scala.collection.immutable.Map)s.
 
 Time consumption of creating a new instance grows linearly against the number of fields.
 This is due to hash map construction.  There is a few overhead in record creation.  It
@@ -48,8 +50,9 @@ calls.
 | ---------------------------------------------------------------------------------------- |
 | Compilation time of update against record size                                           |
 
-Compilation of field access on records somehow faster than on `Map`s.  We have no idea why
-this is faster than `Map`.
+Compilation of field access on records somehow faster than on
+@:api(scala.collection.immutable.Map)s.  We have no idea why this is faster than
+@:api(scala.collection.immutable.Map).
 
 | ![Compilation time of access / Record size](img/benchmark/compiletime_CompileFieldAccessSize.svg) |
 | ------------------------------------------------------------------------------------------------- |
@@ -114,8 +117,8 @@ val named: ArrayRecord[("name", String) *: EmptyTuple] = person
 val named = person.upcast[("name", String) *: EmptyTuple]
 ```
 
-Its field access is faster than `%` records or `Map`s.  Record creation is also quite
-fast.
+Its field access is faster than `%` records or @:api(scala.collection.immutable.Map)s.
+Record creation is also quite fast.
 
 | ![Access time / Record size](img/benchmark/arrayrecord_FieldAccessSize.svg) |
 | --------------------------------------------------------------------------- |
@@ -149,9 +152,10 @@ In this section, we additionally compare the performance of our records with tha
 [scala-records]: https://github.com/scala-records/scala-records
 
 Basically, our `%` records and scala-records have similar performance characteristics
-since they are both `Map`-based, and our `ArrayRecord` and shapeless records have similar
-characteristics since they are both order-significant linearly allocated records.  Note
-that scala-records have no concatenation and update operation.
+since they are both @:api(scala.collection.immutable.Map)-based, and our `ArrayRecord` and
+shapeless records have similar characteristics since they are both order-significant
+linearly allocated records.  Note that scala-records have no concatenation and update
+operation.
 
 One major difference in shapeless records is that it takes linearly growing time to access
 fields as the field index increases while `ArrayRecord` keeps constant time.  This is

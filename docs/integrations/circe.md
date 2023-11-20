@@ -55,8 +55,8 @@ val r =
 ArrayRecord
 -----------
 
-`ArrayRecord` requires no additional module since it is a `Product`, whose conversions
-already supported by [circe][] itself.
+`ArrayRecord` requires no additional module since it is a @:api(scala.Product), whose
+conversions already supported by [circe][] itself.
 
 ```scala mdoc:reset:invisible
 ```

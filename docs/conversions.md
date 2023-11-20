@@ -8,7 +8,7 @@ import com.github.tarao.record4s.%
 From Something
 --------------
 
-`Record.from` creates a record from a `Product`, typically a case class instance.
+`Record.from` creates a record from a @:api(scala.Product), typically a case class instance.
 
 ```scala mdoc:mline
 import com.github.tarao.record4s.Record
@@ -18,20 +18,20 @@ case class Person(name: String, age: Int)
 Record.from(Person("tarao", 3))
 ```
 
-Anything other than `Product` can be converted to a record if `RecordLike` instance is
-given.
+Anything other than @:api(scala.Product) can be converted to a record if
+@:api(com.github.tarao.record4s.RecordLike) instance is given.
 
 To Something
 ------------
 
-You can use `to` method to convert a record to a `Product`.
+You can use `to` method to convert a record to a @:api(scala.Product).
 
 ```scala mdoc:mline
 %(name = "ikura", age = 1).to[Person]
 ```
 
-A record can be converted to anything other than `Product` if `Converter` instance is
-given.
+A record can be converted to anything other than @:api(scala.Product) if
+@:api(com.github.tarao.record4s.Converter) instance is given.  @:todo(link to the API)
 
 From / To JSON
 --------------

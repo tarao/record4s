@@ -73,4 +73,4 @@ personWithEmail + (email = %(user = "tarao", domain = "example.com"))
 ```
 
 This also applies to concatenation.  The semantics is that "the latter one wins" like
-duplicate keys in `Map` construction or concatenation.
+duplicate keys in @:api(scala.collection.immutable.Map) construction or concatenation.

@@ -179,8 +179,29 @@ lazy val docs = project
       "io.circe" %%% "circe-parser"  % circeVersion,
     ),
     mdocExtraArguments ++= Seq(
-      "--exclude", ".*.md",
+      "--exclude",
+      ".*.md",
     ),
+    tlSiteApiModule := Some((core.jvm / projectID).value),
+    laikaConfig := {
+      import laika.config.{ApiLinks, LinkConfig}
+      val apiBaseUrl = "https://javadoc.io/doc/com.github.tarao/record4s_3"
+
+      laikaConfig
+        .value
+        .withRawContent
+        .withConfigValue(
+          LinkConfig
+            .empty
+            .addApiLinks(
+              ApiLinks(s"""${apiBaseUrl}/${mdocVariables.value("VERSION")}/"""),
+            )
+            .addApiLinks(
+              ApiLinks(s"https://scala-lang.org/api/${scalaVersion.value}/")
+                .withPackagePrefix("scala"),
+            ),
+        )
+    },
     laikaTheme := {
       import laika.ast.LengthUnit._
       import laika.ast.Path.Root
