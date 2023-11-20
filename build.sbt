@@ -167,11 +167,16 @@ ThisBuild / githubWorkflowAddedJobs ++= Seq(
 ThisBuild / tlSitePublishBranch := Some("master")
 lazy val docs = project
   .in(file("site"))
-  .dependsOn(core.jvm)
+  .dependsOn(core.jvm, circe.jvm)
   .enablePlugins(TypelevelSitePlugin)
   .settings(
     scalacOptions --= Seq(
       "-Wunused:locals",
+    ),
+    libraryDependencies ++= Seq(
+      "io.circe" %%% "circe-core"    % circeVersion,
+      "io.circe" %%% "circe-generic" % circeVersion,
+      "io.circe" %%% "circe-parser"  % circeVersion,
     ),
     mdocExtraArguments ++= Seq(
       "--exclude", ".*.md",

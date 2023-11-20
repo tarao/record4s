@@ -33,6 +33,14 @@ You can use `to` method to convert a record to a `Product`.
 A record can be converted to anything other than `Product` if `Converter` instance is
 given.
 
+From / To JSON
+--------------
+
+Records can be converted from/to JSON using [circe][].  See [Integration with circe] for the
+detail.
+
+[circe]: https://circe.github.io/circe/
+
 Upcast
 ------
 
