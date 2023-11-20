@@ -147,6 +147,7 @@ def ticks(min, max, step):
 conf = plot_config[feature]
 
 df = pd.read_json(data_file)
+df['target'] = df['target'].map(target_names)
 
 x = 'index'
 y = 'score'
@@ -174,7 +175,5 @@ g.set_axis_labels(conf['xlabel'], conf['ylabel'])
 g.ax.set_xticks(xticks)
 g.ax.set_yticks(yticks)
 g.legend.set(title=None)
-for t in g.legend.get_texts():
-    t.set_text(target_names[t.get_text()])
 g.tight_layout()
 g.savefig(output, format='svg')

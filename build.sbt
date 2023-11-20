@@ -163,3 +163,81 @@ ThisBuild / githubWorkflowAddedJobs ++= Seq(
     ),
   ),
 )
+
+ThisBuild / tlSitePublishBranch := Some("master")
+lazy val docs = project
+  .in(file("site"))
+  .dependsOn(core.jvm, circe.jvm)
+  .enablePlugins(TypelevelSitePlugin)
+  .settings(
+    scalacOptions --= Seq(
+      "-Wunused:locals",
+    ),
+    libraryDependencies ++= Seq(
+      "io.circe" %%% "circe-core"    % circeVersion,
+      "io.circe" %%% "circe-generic" % circeVersion,
+      "io.circe" %%% "circe-parser"  % circeVersion,
+    ),
+    mdocExtraArguments ++= Seq(
+      "--exclude",
+      ".*.md",
+    ),
+    tlSiteApiModule := Some((core.jvm / projectID).value),
+    laikaConfig := {
+      import laika.config.{ApiLinks, LinkConfig}
+      val apiBaseUrl = "https://javadoc.io/doc/com.github.tarao/record4s_3"
+
+      laikaConfig
+        .value
+        .withRawContent
+        .withConfigValue(
+          LinkConfig
+            .empty
+            .addApiLinks(
+              ApiLinks(s"""${apiBaseUrl}/${mdocVariables.value("VERSION")}/"""),
+            )
+            .addApiLinks(
+              ApiLinks(s"https://scala-lang.org/api/${scalaVersion.value}/")
+                .withPackagePrefix("scala"),
+            ),
+        )
+    },
+    laikaTheme := {
+      import laika.ast.LengthUnit._
+      import laika.ast.Path.Root
+      import laika.ast._
+      import laika.helium.config._
+
+      val home = Root / "index.md"
+      val logo = Root / "img" / "record4s.svg"
+      val copyright =
+        s"Copyright &copy; ${startYear.value.get} ${organizationName.value}"
+
+      tlSiteHelium
+        .value
+        .site
+        .internalCSS(Root / "css" / "site.css")
+        .site
+        .favIcons(Favicon.internal(logo))
+        .site
+        .topNavigationBar(
+          homeLink = LinkGroup.create(
+            ImageLink.internal(home, Image.internal(logo)),
+            TextLink.internal(home, projectName.value),
+          ),
+        )
+        .site
+        .footer(copyright)
+        .site
+        .fontSizes(
+          body    = px(16),
+          code    = em(1),
+          title   = pt(36),
+          header2 = pt(24),
+          header3 = pt(20),
+          header4 = pt(18),
+          small   = pt(10),
+        )
+        .build
+    },
+  )
