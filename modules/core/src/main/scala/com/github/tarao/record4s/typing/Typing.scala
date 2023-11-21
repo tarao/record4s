@@ -17,12 +17,12 @@
 package com.github.tarao.record4s
 package typing
 
-/** Base trait typing given instances.
+/** Base trait for typing given instances.
   *
   * Typing given instances infers result type as `Out`. If it is impossible to
-  * infer the type then, `Out` is `Nothing` and `Msg` is a string literal type
-  * of a message describing violation of the typing rule. `Out` is `Nothing` if
-  * the type is successfully inferred.
+  * infer the type, then `Out` is `Nothing` and `Msg` is a string literal type
+  * of a message describing violation of the typing rule. `Out` is `Nothing`
+  * unless the type is successfully inferred.
   *
   * To show the typing failure, use `withPotentialTypingError { ... }`.
   */
