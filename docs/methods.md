@@ -1,5 +1,5 @@
-Methods on Records
-=================
+Defining Methods on Records
+===========================
 
 ```scala mdoc:invisible
 import com.github.tarao.record4s.%
