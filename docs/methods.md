@@ -8,7 +8,7 @@ import com.github.tarao.record4s.%
 Extension Methods
 -----------------
 
-You can define methods on records by define [extension methods] in a usual manner.
+You can define methods on records by defining [extension methods] in a usual manner.
 
 ```scala mdoc:mline
 object Extension {
