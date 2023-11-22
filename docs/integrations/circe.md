@@ -56,7 +56,7 @@ ArrayRecord
 -----------
 
 `ArrayRecord` requires no additional module since it is a @:api(scala.Product), whose
-conversions already supported by [circe][] itself.
+conversions are already supported by [circe][] itself.
 
 ```scala mdoc:reset:invisible
 ```
