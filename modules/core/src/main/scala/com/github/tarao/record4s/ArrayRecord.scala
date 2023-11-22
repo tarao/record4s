@@ -112,7 +112,7 @@ object ProductRecord {
   *   - Field access is faster (constant time)
   *   - Creation is faster
   *   - Update time grows significantly when record size grows
-  *   - Compilation is bit slower
+  *   - Compilation is a bit slower
   *   - No implicit upcast
   *
   * Example
