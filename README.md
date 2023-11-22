@@ -4,7 +4,10 @@
 [![Coverage status](https://codecov.io/gh/tarao/record4s/graph/badge.svg?token=U9309O1VNK)](https://codecov.io/gh/tarao/record4s)
 [![Maven Central](https://img.shields.io/maven-central/v/com.github.tarao/record4s_3.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.tarao/record4s_3)
 [![Scaladoc](https://javadoc.io/badge2/com.github.tarao/record4s_3/javadoc.svg?color=blue&label=Scaladoc)](https://javadoc.io/doc/com.github.tarao/record4s_3)
-[![record4s Scala version support](https://index.scala-lang.org/tarao/record4s/record4s/latest.svg)](https://index.scala-lang.org/tarao/record4s/record4s)
+<br>
+[![record4s Scala version support](https://index.scala-lang.org/tarao/record4s/record4s/latest-by-scala-version.svg?platform=jvm&color=blue)](https://index.scala-lang.org/tarao/record4s/record4s)
+[![record4s Scala version support](https://index.scala-lang.org/tarao/record4s/record4s/latest-by-scala-version.svg?platform=sjs1&color=blue)](https://index.scala-lang.org/tarao/record4s/record4s)
+[![record4s Scala version support](https://index.scala-lang.org/tarao/record4s/record4s/latest-by-scala-version.svg?platform=native0.4&color=blue)](https://index.scala-lang.org/tarao/record4s/record4s)
 
 record4s proviedes extensible records for Scala.
 
