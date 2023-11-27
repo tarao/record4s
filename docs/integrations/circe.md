@@ -34,7 +34,7 @@ val json = r.asJson.noSpaces
 From JSON
 ---------
 
-Importing `Codec.encoder` enables [circe][] to decode records in the ordinary way.
+Importing `Codec.decoder` enables [circe][] to decode records in the ordinary way.
 
 ```scala mdoc:reset:invisible
 ```
