@@ -48,6 +48,22 @@ class TypeErrorSpec extends helper.UnitSpec {
             typing.Record.Concat.Aux[R, % { val name: String }, RR],
           ): RR = record ++ %(email = email)
         """ shouldNot typeCheck
+
+        def checkErrors(errs: List[Error]): Unit = {
+          errs should not be empty
+          errs.head.kind shouldBe ErrorKind.Typer
+          val _ = errs.exists(
+            _.message.startsWith(
+              "A concrete type expected",
+            ),
+          ) shouldBe true
+        }
+
+        checkErrors(typeCheckErrors("""
+          def concat[R1 <: %, R2 <: %, RR <: %](r1: R1, r2: R2)(using
+            typing.Record.Concat.Aux[R1, R2, RR],
+          ): RR = r1 ++ r2
+        """))
       }
     }
 
@@ -149,16 +165,38 @@ class TypeErrorSpec extends helper.UnitSpec {
 
       it("should detect wrong usage") {
         """
-          def addEmail[R, RR <: %](record: ArrayRecord[R], email: String)(using
+          def addEmail[R, RR <: ProductRecord](record: ArrayRecord[R], email: String)(using
             typing.ArrayRecord.Concat.Aux[R, Nothing, RR],
           ): RR = record ++ ArrayRecord(email = email)
         """ shouldNot typeCheck
 
         """
-          def addEmail[R, RR <: %](record: ArrayRecord[R], email: String)(using
+          def addEmail[R, RR <: ProductRecord](record: ArrayRecord[R], email: String)(using
             typing.ArrayRecord.Concat.Aux[R, ArrayRecord[("name", String) *: EmptyTuple], RR],
           ): RR = record ++ ArrayRecord(email = email)
         """ shouldNot typeCheck
+
+        """
+          def concat[R1, R2, RR <: ProductRecord](r1: ArrayRecord[R1], r2: ArrayRecord[R2])(using
+            typing.ArrayRecord.Concat.Aux[R1, R2, RR],
+          ): RR = r1 ++ r2
+        """ shouldNot typeCheck
+
+        def checkErrors(errs: List[Error]): Unit = {
+          errs should not be empty
+          errs.head.kind shouldBe ErrorKind.Typer
+          val _ = errs.exists(
+            _.message.startsWith(
+              "A concrete type expected",
+            ),
+          ) shouldBe true
+        }
+
+        checkErrors(typeCheckErrors("""
+          def concat[R1, R2 <: %, RR <: ProductRecord](r1: ArrayRecord[R1], r2: R2)(using
+            typing.ArrayRecord.Concat.Aux[R1, R2, RR],
+          ): RR = r1 ++ r2
+        """))
       }
     }
 

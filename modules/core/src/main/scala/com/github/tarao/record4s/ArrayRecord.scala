@@ -243,6 +243,7 @@ object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
       other: R2,
     )(using c: Concat[R, R2]): c.Out =
       withPotentialTypingError {
+        summon[typing.Concrete[R2]]
         val vec = record
           .__fields
           .toVector

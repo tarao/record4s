@@ -19,6 +19,7 @@ package com.github.tarao.record4s
 import scala.annotation.nowarn
 
 import Record.newMapRecord
+import typing.Concrete
 import typing.Record.{Concat, Lookup, Select, Unselect}
 
 @nowarn("msg=unused local")
@@ -213,6 +214,27 @@ object Macros {
             ]
         }
     }
+  }
+
+  def derivedTypingConcreteImple[T: Type](using
+    Quotes,
+  ): Expr[Concrete[T]] = withInternal {
+    import quotes.reflect.*
+    import internal.*
+
+    if (TypeRepr.of[T].dealias.typeSymbol.isTypeParam)
+      errorAndAbort(
+        Seq(
+          s"A concrete type expected but type variable ${Type.show[T]} is given.",
+          "Did you forget to make the method inline?",
+        ).mkString("\n"),
+      )
+    else
+      '{
+        Concrete
+          .instance
+          .asInstanceOf[Concrete[T]]
+      }
   }
 
   private def typeNameOfImpl[T: Type](using Quotes): Expr[String] = {
