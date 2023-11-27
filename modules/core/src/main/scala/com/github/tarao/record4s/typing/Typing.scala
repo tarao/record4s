@@ -31,6 +31,14 @@ trait MaybeError {
   type Msg <: String
 }
 
+final class Concrete[T] private {}
+object Concrete {
+  private[record4s] val instance = new Concrete[Nothing]
+
+  transparent inline given [T]: Concrete[T] =
+    ${ Macros.derivedTypingConcreteImple }
+}
+
 private inline def showTypingError(using err: typing.MaybeError): Unit = {
   import scala.compiletime.{constValue, erasedValue, error}
 

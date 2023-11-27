@@ -129,6 +129,7 @@ object Record {
     inline def concat[R2: RecordLike, RR <: %](
       other: R2,
     )(using Concat.Aux[R, R2, RR]): RR = withPotentialTypingError {
+      summon[typing.Concrete[R2]]
       newMapRecord[RR](
         record
           .__iterable
