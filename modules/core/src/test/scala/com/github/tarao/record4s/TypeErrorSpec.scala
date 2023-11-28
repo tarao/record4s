@@ -64,6 +64,14 @@ class TypeErrorSpec extends helper.UnitSpec {
             typing.Record.Concat.Aux[R1, R2, RR],
           ): RR = r1 ++ r2
         """))
+
+        trait A
+
+        checkErrors(typeCheckErrors("""
+          def concat[R1 <: %, R2 <: %, RR <: %](r1: R1, r2: R2 & Tag[A])(using
+            typing.Record.Concat.Aux[R1, R2 & Tag[A], RR],
+          ): RR = r1 ++ r2
+        """))
       }
     }
 

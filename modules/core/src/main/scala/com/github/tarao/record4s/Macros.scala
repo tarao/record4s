@@ -222,13 +222,31 @@ object Macros {
     import quotes.reflect.*
     import internal.*
 
-    if (TypeRepr.of[T].dealias.typeSymbol.isTypeParam)
-      errorAndAbort(
-        Seq(
-          s"A concrete type expected but type variable ${Type.show[T]} is given.",
-          "Did you forget to make the method inline?",
-        ).mkString("\n"),
+    type Acc = List[Type[?]]
+    def freeTypeVariables[T: Type]: Acc =
+      traverse[T, Acc](
+        List.empty,
+        (acc: Acc, tpe: Type[?]) => {
+          tpe match {
+            case '[t] if TypeRepr.of[t].typeSymbol.isTypeParam =>
+              tpe :: acc
+            case _ =>
+              acc
+          }
+        },
       )
+
+    val vs = freeTypeVariables[T]
+    if (vs.nonEmpty)
+      vs.head match {
+        case '[tpe] =>
+          errorAndAbort(
+            Seq(
+              s"A concrete type expected but type variable ${Type.show[tpe]} is given.",
+              "Did you forget to make the method inline?",
+            ).mkString("\n"),
+          )
+      }
     else
       '{
         Concrete
