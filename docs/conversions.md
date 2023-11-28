@@ -18,8 +18,8 @@ case class Person(name: String, age: Int)
 Record.from(Person("tarao", 3))
 ```
 
-Anything other than @:api(scala.Product) can be converted to a record if
-@:api(com.github.tarao.record4s.RecordLike) instance is given.
+Anything other than @:api(scala.Product) can be converted to a record if [RecordLike]
+ instance is given.
 
 To Something
 ------------
@@ -30,8 +30,8 @@ You can use `to` method to convert a record to a @:api(scala.Product).
 %(name = "ikura", age = 1).to[Person]
 ```
 
-A record can be converted to anything other than @:api(scala.Product) if
-@:api(com.github.tarao.record4s.Converter) instance is given.  @:todo(link to the API)
+A record can be converted to anything other than @:api(scala.Product) if [Converter]
+instance is given.
 
 From / To JSON
 --------------

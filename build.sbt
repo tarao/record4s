@@ -184,8 +184,30 @@ lazy val docs = project
     ),
     tlSiteApiModule := Some((core.jvm / projectID).value),
     laikaConfig := {
-      import laika.config.{ApiLinks, LinkConfig}
-      val apiBaseUrl = "https://javadoc.io/doc/com.github.tarao/record4s_3"
+      import laika.config.{ApiLinks, LinkConfig, SourceLinks}
+      val version = mdocVariables.value("VERSION")
+      val apiUrl = {
+        val group = groupId.value
+        val project = projectName.value
+        val scalaVer = scalaBinaryVersion.value
+        val base = s"https://javadoc.io/doc/${group}/${project}_${scalaVer}"
+        s"${base}/${version}/"
+      }
+      val sourceUrl = {
+        val scmUrl = scmInfo.value.get.browseUrl.toString
+        val moduleBase = {
+          val rootDir = (root.all / baseDirectory).value.toString
+          val crossDir = (core.jvm / crossProjectBaseDirectory).value.toString
+          crossDir.stripPrefix(s"${rootDir}/")
+        }
+        val base = (core.jvm / baseDirectory).value
+        val dir = (core.jvm / Compile / scalaSource)
+          .value
+          .toString
+          .stripPrefix(s"${base}/")
+
+        s"${scmUrl}/tree/v${version}/${moduleBase}/${dir}/"
+      }
 
       laikaConfig
         .value
@@ -194,11 +216,17 @@ lazy val docs = project
           LinkConfig
             .empty
             .addApiLinks(
-              ApiLinks(s"""${apiBaseUrl}/${mdocVariables.value("VERSION")}/"""),
+              ApiLinks(apiUrl),
             )
             .addApiLinks(
               ApiLinks(s"https://scala-lang.org/api/${scalaVersion.value}/")
                 .withPackagePrefix("scala"),
+            )
+            .addSourceLinks(
+              SourceLinks(
+                baseUri = sourceUrl,
+                suffix  = "scala",
+              ),
             ),
         )
     },
