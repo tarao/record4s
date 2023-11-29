@@ -7,6 +7,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="generator" content="Typelevel Laika + Helium Theme" />
   <title>Conversions - record4s</title>
+  <meta property="og:title" content="record4s: extensible records for Scala" />
+  <meta property="og:image" content="https://tarao.orezdnu.org/record4s/img/record4s.svg" />
   
   <meta name="author" content="INA Lintaro"/>
   
@@ -94,6 +96,9 @@
     <li class="level1 nav-leaf"><a href="faq.html">FAQ</a></li>
     <li class="level1 nav-header">integrations</li>
     <li class="level2 nav-leaf"><a href="integrations/circe.html">Integration with circe</a></li>
+    <li class="level1 nav-header">Advanced Topics</li>
+    <li class="level2 nav-leaf"><a href="advanced/generic.html">Generic Records</a></li>
+    <li class="level2 nav-leaf"><a href="advanced/conversions.html">Defining Your Own Conversions</a></li>
     <li class="level1 nav-header">appendix</li>
     <li class="level2 nav-leaf"><a href="appendix/benchmark.html">Full Benchmark Result</a></li>
   </ul>
@@ -133,15 +138,15 @@
 //   val name: String
 //   val age: Int
 // } = %(name = tarao, age = 3)</span></code></pre>
-        <p>Anything other than <a class="api" href="https://scala-lang.org/api/3.3.1/scala/Product.html">Product</a> can be converted to a record if
-        <a class="api" href="https://javadoc.io/doc/com.github.tarao/record4s_3/0.9.0/com/github/tarao/record4s/RecordLike.html">RecordLike</a> instance is given.</p>
+        <p>Anything other than <a class="api" href="https://scala-lang.org/api/3.3.1/scala/Product.html">Product</a> can be converted to a record if <a href="advanced/conversions.html#recordlike">RecordLike</a>
+         instance is given.</p>
         
         <h2 id="to-something" class="section"><a class="anchor-link left" href="#to-something"><i class="icofont-laika link">&#xef71;</i></a>To Something</h2>
         <p>You can use <code>to</code> method to convert a record to a <a class="api" href="https://scala-lang.org/api/3.3.1/scala/Product.html">Product</a>.</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span>%(</span><span class="identifier">name</span><span> = </span><span class="string-literal">&quot;ikura&quot;</span><span>, </span><span class="identifier">age</span><span> = </span><span class="number-literal">1</span><span>).</span><span class="identifier">to</span><span>[</span><span class="type-name">Person</span><span>]
 </span><span class="comment">// res1: Person = Person(name = &quot;ikura&quot;, age = 1)</span></code></pre>
-        <p>A record can be converted to anything other than <a class="api" href="https://scala-lang.org/api/3.3.1/scala/Product.html">Product</a> if
-        <a class="api" href="https://javadoc.io/doc/com.github.tarao/record4s_3/0.9.0/com/github/tarao/record4s/Converter.html">Converter</a> instance is given.  </p>
+        <p>A record can be converted to anything other than <a class="api" href="https://scala-lang.org/api/3.3.1/scala/Product.html">Product</a> if <a href="advanced/conversions.html#converter">Converter</a>
+        instance is given.</p>
         
         <h2 id="from-to-json" class="section"><a class="anchor-link left" href="#from-to-json"><i class="icofont-laika link">&#xef71;</i></a>From / To JSON</h2>
         <p>Records can be converted from/to JSON using <a href="https://circe.github.io/circe/">circe</a>.  See <a href="integrations/circe.html#integration-with-circe">Integration with circe</a> for the

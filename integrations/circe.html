@@ -7,6 +7,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="generator" content="Typelevel Laika + Helium Theme" />
   <title>Integration with circe - record4s</title>
+  <meta property="og:title" content="record4s: extensible records for Scala" />
+  <meta property="og:image" content="https://tarao.orezdnu.org/record4s/img/record4s.svg" />
   
   <meta name="author" content="INA Lintaro"/>
   
@@ -94,6 +96,9 @@
     <li class="level1 nav-leaf"><a href="../faq.html">FAQ</a></li>
     <li class="level1 nav-header">integrations</li>
     <li class="level2 active nav-leaf"><a href="#">Integration with circe</a></li>
+    <li class="level1 nav-header">Advanced Topics</li>
+    <li class="level2 nav-leaf"><a href="../advanced/generic.html">Generic Records</a></li>
+    <li class="level2 nav-leaf"><a href="../advanced/conversions.html">Defining Your Own Conversions</a></li>
     <li class="level1 nav-header">appendix</li>
     <li class="level2 nav-leaf"><a href="../appendix/benchmark.html">Full Benchmark Result</a></li>
   </ul>
@@ -144,7 +149,7 @@
 </span><span class="comment">// json: String = &quot;{\&quot;name\&quot;:\&quot;tarao\&quot;,\&quot;age\&quot;:3}&quot;</span></code></pre>
         
         <h2 id="from-json" class="section"><a class="anchor-link left" href="#from-json"><i class="icofont-laika link">&#xef71;</i></a>From JSON</h2>
-        <p>Importing <code>Codec.encoder</code> enables <a href="https://circe.github.io/circe/">circe</a> to decode records in the ordinary way.</p>
+        <p>Importing <code>Codec.decoder</code> enables <a href="https://circe.github.io/circe/">circe</a> to decode records in the ordinary way.</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">com</span><span>.</span><span class="identifier">github</span><span>.</span><span class="identifier">tarao</span><span>.</span><span class="identifier">record4s</span><span>.%
 </span><span class="keyword">import</span><span> </span><span class="identifier">com</span><span>.</span><span class="identifier">github</span><span>.</span><span class="identifier">tarao</span><span>.</span><span class="identifier">record4s</span><span>.</span><span class="identifier">circe</span><span>.</span><span class="type-name">Codec</span><span>.</span><span class="identifier">decoder</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">io</span><span>.</span><span class="identifier">circe</span><span>.</span><span class="identifier">generic</span><span>.</span><span class="identifier">auto</span><span>.*
@@ -165,7 +170,7 @@
         
         <h2 id="arrayrecord" class="section"><a class="anchor-link left" href="#arrayrecord"><i class="icofont-laika link">&#xef71;</i></a>ArrayRecord</h2>
         <p><code>ArrayRecord</code> requires no additional module since it is a <a class="api" href="https://scala-lang.org/api/3.3.1/scala/Product.html">Product</a>, whose
-        conversions already supported by <a href="https://circe.github.io/circe/">circe</a> itself.</p>
+        conversions are already supported by <a href="https://circe.github.io/circe/">circe</a> itself.</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">com</span><span>.</span><span class="identifier">github</span><span>.</span><span class="identifier">tarao</span><span>.</span><span class="identifier">record4s</span><span>.</span><span class="type-name">ArrayRecord</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">io</span><span>.</span><span class="identifier">circe</span><span>.</span><span class="identifier">generic</span><span>.</span><span class="identifier">auto</span><span>.*
 </span><span class="keyword">import</span><span> </span><span class="identifier">io</span><span>.</span><span class="identifier">circe</span><span>.</span><span class="identifier">syntax</span><span>.*
