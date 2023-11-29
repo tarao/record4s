@@ -11,7 +11,7 @@
 
 record4s proviedes extensible records for Scala.
 
-See the [guide][] to learn installation and usage.
+See the [guide][] to learn about installation and usage.
 
 License
 -------
