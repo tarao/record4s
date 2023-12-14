@@ -187,7 +187,7 @@ jobs:
         run: sbt +update
 
       - name: Download target directories (3, rootJS)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-3-rootJS
 
@@ -197,7 +197,7 @@ jobs:
           rm targets.tar
 
       - name: Download target directories (3, rootJVM)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-3-rootJVM
 
@@ -207,7 +207,7 @@ jobs:
           rm targets.tar
 
       - name: Download target directories (3, rootNative)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-3-rootNative
 
