@@ -55,20 +55,45 @@ private[record4s] class InternalMacros(using
         TypingResult.error(e.getMessage())
     }
 
-  case class Schema(
-    fieldTypes: Seq[(String, Type[?])],
+  private def typeOf(tpr: TypeRepr): Type[?] =
+    tpr.asType match { case '[tpe] => Type.of[tpe] }
+
+  case class Schema private[InternalMacros] (
+    private[InternalMacros] val fieldTypes: Seq[(String, TypeRepr)],
     tags: Seq[Type[?]],
   ) {
     def size: Int = fieldTypes.size
+
+    private[InternalMacros] def appended(label: String, tpe: TypeRepr): Schema =
+      copy(fieldTypes = fieldTypes :+ (label, tpe))
+
+    private[InternalMacros] def prepended(
+      label: String,
+      tpe: TypeRepr,
+    ): Schema =
+      copy(fieldTypes = (label, tpe) +: fieldTypes)
 
     def ++(other: Schema): Schema = copy(
       fieldTypes = fieldTypes ++ other.fieldTypes,
       tags       = tags ++ other.tags,
     )
 
-    def ++(other: Seq[(String, Type[?])]): Schema = copy(
-      fieldTypes = fieldTypes ++ other,
-    )
+    private[InternalMacros] def ++(other: Seq[(String, TypeRepr)]): Schema =
+      copy(
+        fieldTypes = fieldTypes ++ other,
+      )
+
+    def find(label: String): Option[Type[?]] =
+      fieldTypes.find(_._1 == label).map(f => typeOf(f._2))
+
+    def findWithIndex(label: String): Option[(Type[?], Int)] =
+      fieldTypes.zipWithIndex.find(_._1._1 == label).map {
+        case ((_, tpr), index) =>
+          (typeOf(tpr), index)
+      }
+
+    def filterByLabel(pred: String => Boolean): Schema =
+      copy(fieldTypes = fieldTypes.filter(f => pred(f._1)))
 
     def deduped: Schema =
       copy(fieldTypes = fieldTypes.deduped.iterator.toSeq)
@@ -90,23 +115,45 @@ private[record4s] class InternalMacros(using
       //     & { val ${schema(1)._1}: ${schema(1)._2} })
       //     ...)
       val record = fieldTypes
-        .foldLeft(baseRepr) { case (base, (label, '[tpe])) =>
-          Refinement(base, label, TypeRepr.of[tpe])
+        .foldLeft(baseRepr) { case (base, (label, tpr)) =>
+          Refinement(base, label, tpr)
         }
       tagsWith(record).asType
     }
 
     def asTupleType: Type[?] = {
       val record = fieldTypes.foldRight(TypeRepr.of[EmptyTuple]) {
-        case ((label, '[tpe]), rest) =>
-          (ConstantType(StringConstant(label)).asType, rest.asType) match {
-            case ('[labelType], '[head *: tail]) =>
+        case ((label, tpr), rest) =>
+          (
+            ConstantType(StringConstant(label)).asType,
+            typeOf(tpr),
+            rest.asType,
+          ) match {
+            case ('[labelType], '[tpe], '[head *: tail]) =>
               TypeRepr.of[(labelType, tpe) *: head *: tail]
-            case ('[labelType], '[EmptyTuple]) =>
+            case ('[labelType], '[tpe], '[EmptyTuple]) =>
               TypeRepr.of[(labelType, tpe) *: EmptyTuple]
           }
       }
       tagsWith(record).asType
+    }
+
+    def asUnzippedTupleType: (Type[?], Type[?]) = {
+      val base = (Type.of[EmptyTuple]: Type[?], Type.of[EmptyTuple]: Type[?])
+      fieldTypes.foldRight(base) {
+        case ((label, tpr), (baseLabels, baseTypes)) =>
+          val tpe = typeOf(tpr)
+          val labels =
+            (baseLabels, ConstantType(StringConstant(label)).asType) match {
+              case ('[EmptyTuple], '[label])   => Type.of[label *: EmptyTuple]
+              case ('[head *: tail], '[label]) => Type.of[label *: head *: tail]
+            }
+          val types = (baseTypes, tpe) match {
+            case ('[EmptyTuple], '[tpe])   => Type.of[tpe *: EmptyTuple]
+            case ('[head *: tail], '[tpe]) => Type.of[tpe *: head *: tail]
+          }
+          (labels, types)
+      }
     }
 
     def tagsAsType: Type[?] = tagsWith(TypeRepr.of[Any]).asType
@@ -250,9 +297,7 @@ private[record4s] class InternalMacros(using
           case '[(labelType, valueType)] =>
             TypeRepr.of[labelType] match {
               case ConstantType(StringConstant(label)) =>
-                acc.copy(fieldTypes =
-                  acc.fieldTypes :+ (validatedLabel(label), Type.of[valueType]),
-                )
+                acc.appended(validatedLabel(label), TypeRepr.of[valueType])
               case _ =>
                 acc
             }
@@ -260,9 +305,7 @@ private[record4s] class InternalMacros(using
           case '[tpe] =>
             TypeRepr.of[tpe] match {
               case Refinement(_, label, valueType) =>
-                acc.copy(fieldTypes =
-                  (validatedLabel(label), valueType.asType) +: acc.fieldTypes,
-                )
+                acc.prepended(validatedLabel(label), valueType)
 
               // Tag[T]
               case tpr @ AppliedType(_, List(tag)) if isTag(tpr) =>
@@ -395,9 +438,8 @@ private[record4s] class InternalMacros(using
     }
   }
 
-  def fieldSelectionsOf[S: Type](
-    schema: Schema,
-  ): Seq[(String, String, Type[?])] = {
+  def selectedSchemaOf[R: Type, S: Type]: Schema = {
+    val schema = schemaOf[R]
     val fieldTypeMap = schema.fieldTypes.toMap
 
     def normalize(t: Type[?]): (TypeRepr, TypeRepr) = t match {
@@ -407,8 +449,8 @@ private[record4s] class InternalMacros(using
 
     @tailrec def fieldTypes(
       t: Type[?],
-      acc: Seq[(String, String, Type[?])],
-    ): Seq[(String, String, Type[?])] =
+      acc: Seq[(String, TypeRepr)],
+    ): Seq[(String, TypeRepr)] =
       t match {
         case '[head *: tail] =>
           normalize(Type.of[head]) match {
@@ -420,7 +462,7 @@ private[record4s] class InternalMacros(using
                 label,
                 errorAndAbort(s"Missing key '${label}'"),
               )
-              fieldTypes(Type.of[tail], acc :+ (label, renamed, fieldType))
+              fieldTypes(Type.of[tail], acc :+ (renamed, fieldType))
             case _ =>
               errorAndAbort(
                 "Selector type element must be a literal (possibly paired) label",
@@ -432,12 +474,12 @@ private[record4s] class InternalMacros(using
           errorAndAbort("Selector type must be a Tuple")
       }
 
-    fieldTypes(Type.of[S], Seq.empty)
+    schema.copy(fieldTypes = fieldTypes(Type.of[S], Seq.empty))
   }
 
-  def fieldUnselectionsOf[U <: Tuple: Type](
-    schema: Schema,
-  ): Seq[(String, Type[?])] = {
+  def unselectedSchemaOf[R: Type, U <: Tuple: Type]: Schema = {
+    val schema = schemaOf[R]
+
     @tailrec def unselectedLabelsOf[U <: Tuple: Type](
       acc: Set[String],
     ): Set[String] =
@@ -456,7 +498,7 @@ private[record4s] class InternalMacros(using
       }
     val unselected = unselectedLabelsOf[U](Set.empty)
 
-    schema.fieldTypes.filterNot((label, _) => unselected.contains(label))
+    schema.filterByLabel(label => !unselected.contains(label))
   }
 }
 

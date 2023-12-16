@@ -55,25 +55,10 @@ object Macros {
   def derivedRecordLikeImpl[R <: `%`: Type](using
     Quotes,
   ): Expr[RecordLike[R]] = withInternal {
-    import quotes.reflect.*
     import internal.*
 
     val schema = schemaOfRecord[R]
-    val base = (Type.of[EmptyTuple]: Type[?], Type.of[EmptyTuple]: Type[?])
-    val (elemLabels, elemTypes) = schema
-      .fieldTypes
-      .foldRight(base) { case ((label, tpe), (baseLabels, baseTypes)) =>
-        val labels =
-          (baseLabels, ConstantType(StringConstant(label)).asType) match {
-            case ('[EmptyTuple], '[label])   => Type.of[label *: EmptyTuple]
-            case ('[head *: tail], '[label]) => Type.of[label *: head *: tail]
-          }
-        val types = (baseTypes, tpe) match {
-          case ('[EmptyTuple], '[tpe])   => Type.of[tpe *: EmptyTuple]
-          case ('[head *: tail], '[tpe]) => Type.of[tpe *: head *: tail]
-        }
-        (labels, types)
-      }
+    val (elemLabels, elemTypes) = schema.asUnzippedTupleType
 
     (elemLabels, elemTypes, schema.tagsAsType, schema.asTupleType) match {
       case ('[elemLabels], '[elemTypes], '[tagsType], '[tupleType]) =>
@@ -129,7 +114,7 @@ object Macros {
       TypeRepr.of[Label] match {
         case ConstantType(StringConstant(label)) =>
           val schema = schemaOfRecord[R]
-          schema.fieldTypes.find(_._1 == label).map(_._2).getOrElse {
+          schema.find(label).getOrElse {
             errorAndAbort(
               s"Value '${label}' is not a member of ${Type.show[R]}",
             )
@@ -163,14 +148,8 @@ object Macros {
     import internal.*
 
     val result = catching {
-      val schema = schemaOf[R]
-      val fieldTypes = fieldSelectionsOf[S](schema)
-
-      val newSchema =
-        schema.copy(fieldTypes =
-          fieldTypes.map((_, label, tpe) => (label, tpe)),
-        )
-      newSchema.deduped.asType
+      val schema = selectedSchemaOf[R, S]
+      schema.deduped.asType
     }
 
     result match {
@@ -194,11 +173,8 @@ object Macros {
     import internal.*
 
     val result = catching {
-      val schema = schemaOf[R]
-      val fieldTypes = fieldUnselectionsOf[U](schema)
-
-      val newSchema = schema.copy(fieldTypes = fieldTypes)
-      newSchema.deduped.asType
+      val schema = unselectedSchemaOf[R, U]
+      schema.deduped.asType
     }
 
     result match {
