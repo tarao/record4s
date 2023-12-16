@@ -223,10 +223,52 @@ private[record4s] class InternalMacros(using
       case _         => false
     }
 
+  private def isOpaqueAlias(tpr: TypeRepr): Boolean =
+    tpr match {
+      case ref @ TypeRef(_, _) => ref.isOpaqueAlias
+      case _                   => false
+    }
+
+  private def fixupOpaqueAlias(tpr: TypeRepr): TypeRepr = {
+    def rec(tpr: TypeRepr): TypeRepr =
+      tpr match {
+        case ref @ TypeRef(_, _) if ref.isOpaqueAlias =>
+          // Resolve `$proxy1.SomeOpaqueAlias` to fully qualified RefType
+          tpr.typeSymbol.typeRef
+        case SuperType(thisTpr, superTpr) =>
+          SuperType(rec(thisTpr), rec(superTpr))
+        case Refinement(parent, name, info) =>
+          Refinement(rec(parent), name, rec(info))
+        case AppliedType(tycon, args) =>
+          AppliedType(rec(tycon), args.map(rec(_)))
+        case AnnotatedType(underlying, annot) =>
+          AnnotatedType(rec(underlying), annot)
+        case AndType(lhs, rhs) =>
+          AndType(rec(lhs), rec(rhs))
+        case OrType(lhs, rhs) =>
+          OrType(rec(lhs), rec(rhs))
+        case MatchType(bound, scrutinee, cases) =>
+          MatchType(rec(bound), rec(scrutinee), cases.map(rec(_)))
+        case ByNameType(underlying) =>
+          ByNameType(rec(underlying))
+        case MatchCase(pattern, rhs) =>
+          MatchCase(rec(pattern), rec(rhs))
+        case TypeBounds(low, hi) =>
+          TypeBounds(rec(low), rec(hi))
+        case _ =>
+          tpr
+      }
+
+    rec(tpr)
+  }
+
+  private def isAlias(tpr: TypeRepr): Boolean =
+    tpr.typeSymbol.isAliasType && !isOpaqueAlias(tpr)
+
   def traverse[R: Type, Acc](acc: Acc, f: (Acc, Type[?]) => Acc): Acc = {
     def safeDealias(tpr: TypeRepr): TypeRepr =
-      if (isTag(tpr)) tpr
-      else tpr.dealias
+      if (isAlias(tpr)) tpr.dealias
+      else tpr
 
     val nothing = TypeRepr.of[Nothing]
 
@@ -296,7 +338,7 @@ private[record4s] class InternalMacros(using
         acc
     }
 
-    traverse1(List(safeDealias(TypeRepr.of[R])), acc)
+    traverse1(List(safeDealias(fixupOpaqueAlias(TypeRepr.of[R]))), acc)
   }
 
   def schemaOfRecord[R: Type]: Schema = {
