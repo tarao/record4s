@@ -81,11 +81,6 @@ private[record4s] class InternalMacros(using
       tags       = tags ++ other.tags,
     )
 
-    private[InternalMacros] def ++(other: Seq[(String, TypeRepr)]): Schema =
-      copy(
-        fieldTypes = fieldTypes ++ other,
-      )
-
     def find(label: String): Option[Type[?]] =
       fieldTypes.find(_._1 == label).map(f => typeOf(f._2))
 
