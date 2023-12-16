@@ -58,6 +58,9 @@ private[record4s] class InternalMacros(using
   private def typeOf(tpr: TypeRepr): Type[?] =
     tpr.asType match { case '[tpe] => Type.of[tpe] }
 
+  private def typeReprOf(tpe: Type[?]): TypeRepr =
+    tpe match { case '[tpe] => TypeRepr.of[tpe] }
+
   case class Schema private[InternalMacros] (
     private[InternalMacros] val fieldTypes: Seq[(String, TypeRepr)],
     tags: Seq[Type[?]],
@@ -122,18 +125,21 @@ private[record4s] class InternalMacros(using
     }
 
     def asTupleType: Type[?] = {
+      val cons = TypeRepr.of[Nothing *: EmptyTuple] match {
+        case AppliedType(c, _) => c
+      }
+      def makeCons(car: TypeRepr, cdr: TypeRepr): TypeRepr =
+        AppliedType(cons, List(car, cdr))
+
+      val tuple2 = TypeRepr.of[(Nothing, Nothing)] match {
+        case AppliedType(c, _) => c
+      }
+      def makeTuple2(fst: TypeRepr, snd: TypeRepr): TypeRepr =
+        AppliedType(tuple2, List(fst, snd))
+
       val record = fieldTypes.foldRight(TypeRepr.of[EmptyTuple]) {
         case ((label, tpr), rest) =>
-          (
-            ConstantType(StringConstant(label)).asType,
-            typeOf(tpr),
-            rest.asType,
-          ) match {
-            case ('[labelType], '[tpe], '[head *: tail]) =>
-              TypeRepr.of[(labelType, tpe) *: head *: tail]
-            case ('[labelType], '[tpe], '[EmptyTuple]) =>
-              TypeRepr.of[(labelType, tpe) *: EmptyTuple]
-          }
+          makeCons(makeTuple2(ConstantType(StringConstant(label)), tpr), rest)
       }
       tagsWith(record).asType
     }
@@ -211,6 +217,12 @@ private[record4s] class InternalMacros(using
         false
     }
 
+  private def isTuple(tpr: TypeRepr): Boolean =
+    tpr.asType match {
+      case '[_ *: _] => true
+      case _         => false
+    }
+
   def traverse[R: Type, Acc](acc: Acc, f: (Acc, Type[?]) => Acc): Acc = {
     def safeDealias(tpr: TypeRepr): TypeRepr =
       if (isTag(tpr)) tpr
@@ -222,14 +234,12 @@ private[record4s] class InternalMacros(using
       tpe: Type[?],
       acc: Acc,
     ): Acc = tpe match {
-      case '[(labelType, valueType) *: rest]
+      case '[head *: rest]
         // Type variable or Nothing always matches with `Nothing *: Nothing`
-        if TypeRepr.of[labelType] != nothing
-          && TypeRepr.of[valueType] != nothing
-          && TypeRepr.of[rest] != nothing =>
+        if TypeRepr.of[head] != nothing && TypeRepr.of[rest] != nothing =>
         traverseTuple(
           Type.of[rest],
-          f(acc, Type.of[(labelType, valueType)]),
+          f(acc, Type.of[head]),
         )
       case _ =>
         f(acc, tpe)
@@ -290,30 +300,49 @@ private[record4s] class InternalMacros(using
   }
 
   def schemaOfRecord[R: Type]: Schema = {
+    def unapplyTuple2(tpr: TypeRepr): Option[(TypeRepr, TypeRepr)] =
+      // We can't do
+      //
+      // ```
+      // tpr.asType match {
+      //   case '[fst *: snd] =>
+      //      Some((TypeRepr.of[fst], TypeRepr.of[snd]))
+      // }
+      // ```
+      //
+      // because that will dealiases opaque type aliases
+      tpr match {
+        case AppliedType(c, fst :: snd :: _)
+          if c.typeSymbol.fullName == "scala.Tuple2" =>
+          Some((fst, snd))
+        case AppliedType(c, fst :: AppliedType(_, snd :: _) :: _)
+          if c.typeSymbol.fullName == "scala.*:" =>
+          Some((fst, snd))
+        case _ =>
+          None
+      }
+
     traverse[R, Schema](
       Schema.empty,
       (acc: Schema, tpe: Type[?]) => {
-        tpe match {
-          case '[(labelType, valueType)] =>
-            TypeRepr.of[labelType] match {
-              case ConstantType(StringConstant(label)) =>
-                acc.appended(validatedLabel(label), TypeRepr.of[valueType])
+        typeReprOf(tpe) match {
+          case Refinement(_, label, valueType) =>
+            acc.prepended(validatedLabel(label), valueType)
+
+          case tpr if isTuple(tpr) =>
+            unapplyTuple2(tpr) match {
+              case Some((ConstantType(StringConstant(label)), valueType)) =>
+                acc.appended(validatedLabel(label), valueType)
               case _ =>
                 acc
             }
 
-          case '[tpe] =>
-            TypeRepr.of[tpe] match {
-              case Refinement(_, label, valueType) =>
-                acc.prepended(validatedLabel(label), valueType)
+          // Tag[T]
+          case tpr @ AppliedType(_, List(tag)) if isTag(tpr) =>
+            acc.copy(tags = tag.asType +: acc.tags)
 
-              // Tag[T]
-              case tpr @ AppliedType(_, List(tag)) if isTag(tpr) =>
-                acc.copy(tags = tag.asType +: acc.tags)
-
-              case _ =>
-                acc
-            }
+          case _ =>
+            acc
         }
       },
     )
