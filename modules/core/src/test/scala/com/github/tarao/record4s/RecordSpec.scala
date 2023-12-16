@@ -200,6 +200,56 @@ class RecordSpec extends helper.UnitSpec {
                                          |  val email: String
                                          |}""".stripMargin
       }
+
+      it("should preserve opaque alias of field type") {
+        import RecordSpec.Name
+
+        locally {
+          val r1 = %(name = Name("tarao"), age = 3)
+          helper.showTypeOf(r1) shouldBe """% {
+                                           |  val name: Name
+                                           |  val age: Int
+                                           |}""".stripMargin
+
+          trait MyType
+
+          val r2 = r1.tag[MyType]
+          helper.showTypeOf(r2) shouldBe """% {
+                                           |  val name: Name
+                                           |  val age: Int
+                                           |} & Tag[MyType]""".stripMargin
+
+          val r3 = r2 + (email = "tarao@example.com")
+          helper.showTypeOf(r3) shouldBe """% {
+                                           |  val name: Name
+                                           |  val age: Int
+                                           |  val email: String
+                                           |} & Tag[MyType]""".stripMargin
+        }
+
+        locally {
+          val r1 = %(name = (Name("tarao"), Name("fuguta")), age = 3)
+          helper.showTypeOf(r1) shouldBe """% {
+                                           |  val name: Tuple2[Name, Name]
+                                           |  val age: Int
+                                           |}""".stripMargin
+
+          trait MyType
+
+          val r2 = r1.tag[MyType]
+          helper.showTypeOf(r2) shouldBe """% {
+                                           |  val name: Tuple2[Name, Name]
+                                           |  val age: Int
+                                           |} & Tag[MyType]""".stripMargin
+
+          val r3 = r2 + (email = "tarao@example.com")
+          helper.showTypeOf(r3) shouldBe """% {
+                                           |  val name: Tuple2[Name, Name]
+                                           |  val age: Int
+                                           |  val email: String
+                                           |} & Tag[MyType]""".stripMargin
+        }
+      }
     }
 
     describe("Record.lookup") {
@@ -752,5 +802,12 @@ class RecordSpec extends helper.UnitSpec {
         r1.toString shouldBe "%(foo = 42, bar = yay!, child = %(buzz = true))"
       }
     }
+  }
+}
+
+object RecordSpec {
+  opaque type Name = String
+  object Name {
+    def apply(name: String): Name = name
   }
 }
