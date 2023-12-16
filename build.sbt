@@ -1,7 +1,7 @@
 import ProjectKeys._
 import Implicits._
 
-ThisBuild / tlBaseVersion := "0.9"
+ThisBuild / tlBaseVersion := "0.10"
 
 ThisBuild / projectName := "record4s"
 ThisBuild / groupId     := "com.github.tarao"

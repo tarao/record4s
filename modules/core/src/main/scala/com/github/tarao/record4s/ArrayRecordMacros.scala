@@ -116,25 +116,10 @@ object ArrayRecordMacros {
   def derivedRecordLikeImpl[R: Type](using
     Quotes,
   ): Expr[RecordLike[ArrayRecord[R]]] = withInternal {
-    import quotes.reflect.*
     import internal.*
 
     val schema = schemaOfRecord[R]
-    val base = (Type.of[EmptyTuple]: Type[?], Type.of[EmptyTuple]: Type[?])
-    val (elemLabels, elemTypes) = schema
-      .fieldTypes
-      .foldRight(base) { case ((label, tpe), (baseLabels, baseTypes)) =>
-        val labels =
-          (baseLabels, ConstantType(StringConstant(label)).asType) match {
-            case ('[EmptyTuple], '[label])   => Type.of[label *: EmptyTuple]
-            case ('[head *: tail], '[label]) => Type.of[label *: head *: tail]
-          }
-        val types = (baseTypes, tpe) match {
-          case ('[EmptyTuple], '[tpe])   => Type.of[tpe *: EmptyTuple]
-          case ('[head *: tail], '[tpe]) => Type.of[tpe *: head *: tail]
-        }
-        (labels, types)
-      }
+    val (elemLabels, elemTypes) = schema.asUnzippedTupleType
 
     (elemLabels, elemTypes, schema.tagsAsType, schema.asTupleType) match {
       case ('[elemLabels], '[elemTypes], '[tagsType], '[tupleType]) =>
@@ -167,7 +152,7 @@ object ArrayRecordMacros {
       val newSchema = (schema1 ++ schema2).deduped
       if (schema1.size + schema2.size != newSchema.size)
         deduped = true
-      (schema1 ++ schema2).deduped.asTupleType
+      newSchema.asTupleType
     }
 
     val needDedupType =
@@ -220,12 +205,11 @@ object ArrayRecordMacros {
       }
 
     val schema = schemaOfRecord[R]
-    val ((_, tpe), index) =
-      schema.fieldTypes.zipWithIndex.find(_._1._1 == label).getOrElse {
-        errorAndAbort(
-          s"Value '${label}' is not a member of ${Type.show[R]}",
-        )
-      }
+    val (tpe, index) = schema.findWithIndex(label).getOrElse {
+      errorAndAbort(
+        s"Value '${label}' is not a member of ${Type.show[R]}",
+      )
+    }
     val indexType = ConstantType(IntConstant(index)).asType
 
     (tpe, indexType) match {

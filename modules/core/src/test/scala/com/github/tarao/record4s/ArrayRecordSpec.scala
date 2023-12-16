@@ -189,6 +189,47 @@ class ArrayRecordSpec extends helper.UnitSpec {
           (("name", String), ("age", Int), ("email", String)),
         ]]
       }
+
+      it("should preserve opaque alias of field type") {
+        import ArrayRecordSpec.Name
+
+        locally {
+          val r1 = ArrayRecord(name = Name("tarao"), age = 3)
+          r1 shouldStaticallyBe an[ArrayRecord[(("name", Name), ("age", Int))]]
+
+          trait MyType
+
+          val r2 = r1.tag[MyType]
+          r2 shouldStaticallyBe an[ArrayRecord[
+            (("name", Name), ("age", Int)) & Tag[MyType],
+          ]]
+
+          val r3 = r2 + (email = "tarao@example.com")
+          r3 shouldStaticallyBe an[ArrayRecord[
+            (("name", Name), ("age", Int), ("email", String)) & Tag[MyType],
+          ]]
+        }
+
+        locally {
+          val r1 = ArrayRecord(name = (Name("tarao"), Name("fuguta")), age = 3)
+          r1 shouldStaticallyBe an[ArrayRecord[
+            (("name", (Name, Name)), ("age", Int)),
+          ]]
+
+          trait MyType
+
+          val r2 = r1.tag[MyType]
+          r2 shouldStaticallyBe an[ArrayRecord[
+            (("name", (Name, Name)), ("age", Int)) & Tag[MyType],
+          ]]
+
+          val r3 = r2 + (email = "tarao@example.com")
+          r3 shouldStaticallyBe an[ArrayRecord[
+            (("name", (Name, Name)), ("age", Int), ("email", String)) &
+              Tag[MyType],
+          ]]
+        }
+      }
     }
 
     describe("As a Product") {
@@ -867,5 +908,12 @@ class ArrayRecordSpec extends helper.UnitSpec {
         r1.toString shouldBe "ArrayRecord(foo = 42, bar = yay!, child = ArrayRecord(buzz = true))"
       }
     }
+  }
+}
+
+object ArrayRecordSpec {
+  opaque type Name = String
+  object Name {
+    def apply(name: String): Name = name
   }
 }
