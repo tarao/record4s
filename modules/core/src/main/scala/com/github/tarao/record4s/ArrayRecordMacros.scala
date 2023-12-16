@@ -152,7 +152,7 @@ object ArrayRecordMacros {
       val newSchema = (schema1 ++ schema2).deduped
       if (schema1.size + schema2.size != newSchema.size)
         deduped = true
-      (schema1 ++ schema2).deduped.asTupleType
+      newSchema.asTupleType
     }
 
     val needDedupType =
