@@ -22,15 +22,93 @@ import scala.compiletime.{constValue, erasedValue, summonInline}
 import scala.scalajs.js
 
 trait RecordPlatformSpecific {
+
+  /** Construct a record from a JavaScript object.
+    *
+    * Any nested type `T` can be converted as long as a `NativeConverter[T]`
+    * instance is given.
+    *
+    * This operation is of course unsafe. Missing primitive fields become zeros
+    * or nulls and missing object fields yield `java.lang.RuntimeException`.
+    *
+    * @example
+    *   ```
+    *   import scala.scalajs.js
+    *   val obj: js.Any = js.Dynamic.literal(name = "tarao", age = 3)
+    *   val r = Record.fromJS[% { val name: String; val age: Int }](obj)
+    *   // val r: com.github.tarao.record4s.%{val name: String; val age: Int} = %(name = tarao, age = 3)
+    *   ```
+    *
+    * @param obj
+    *   a JavaScript object
+    * @param nc
+    *   a conversion type class
+    * @return
+    *   a record
+    */
   def fromJS[R <: %](obj: js.Any)(using nc: NativeConverter[R]): R =
     nc.fromNative(obj)
 
+  /** Construct a record from a JSON string.
+    *
+    * Any nested type `T` can be converted as long as a `NativeConverter[T]`
+    * instance is given.
+    *
+    * This operation is of course unsafe. Missing primitive fields become zeros
+    * or nulls and missing object fields yield `java.lang.RuntimeException`.
+    *
+    * @example
+    *   ```
+    *   import scala.scalajs.js
+    *   val json = """{"name":"tarao","age":3}"""
+    *   val r = Record.fromJSON[% { val name: String; val age: Int }](json)
+    *   // val r: com.github.tarao.record4s.%{val name: String; val age: Int} = %(name = tarao, age = 3)
+    *   ```
+    *
+    * @param json
+    *   a JSON string
+    * @param nc
+    *   a conversion type class
+    * @return
+    *   a record
+    */
   def fromJSON[R <: %](json: String)(using nc: NativeConverter[R]): R =
     nc.fromJson(json)
 
   extension [R <: %](record: R) {
+
+    /** Convert this record to a JavaScript object
+      *
+      * Any nested type `T` can be converted as long as a `NativeConverter[T]`
+      * instance is given.
+      *
+      * @example
+      *   ```
+      *   val r = %(name = "tarao", age = 3)
+      *   val obj = r.toJS
+      *   // val obj: scala.scalajs.js.Any = [object Object]
+      *   ```
+      *
+      * @return
+      *   a JavaScript object
+      */
     def toJS(using NativeConverter[R]): js.Any = record.toNative
 
+    /** Convert this record to a JSON string
+      *
+      * Any nested type `T` can be converted as long as a `NativeConverter[T]`
+      * instance is given.
+      *
+      * @example
+      *   ```
+      *   val r = %(name = "tarao", age = 3)
+      *   val json = r.toJSON
+      *   // val json: String = {"name":"tarao","age":3}
+      *   ```
+      *
+      * @return
+      *   a JSON string
+      */
     def toJSON(using NativeConverter[R]): String = record.toJson
   }
 
