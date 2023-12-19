@@ -132,7 +132,9 @@ abstract class ArrayRecord[R] extends ProductRecord with Dynamic {
     ${ ArrayRecordMacros.selectImpl('this, 'name) }
 }
 
-object ArrayRecord extends ArrayRecord.Extensible[EmptyTuple] {
+object ArrayRecord
+    extends ArrayRecord.Extensible[EmptyTuple]
+    with ArrayRecordPlatformSpecific {
   import scala.compiletime.{constValue, erasedValue, summonInline}
   import typing.withPotentialTypingError
 

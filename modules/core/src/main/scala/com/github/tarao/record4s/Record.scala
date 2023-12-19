@@ -25,7 +25,7 @@ import typing.Record.{Aux, Concat, Lookup, Select, Unselect}
   */
 trait Record
 
-object Record {
+object Record extends RecordPlatformSpecific {
   import typing.withPotentialTypingError
 
   /** An empty record. */

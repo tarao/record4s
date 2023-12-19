@@ -41,6 +41,15 @@ detail.
 
 [circe]: https://circe.github.io/circe/
 
+In Scala.js, `fromJSON` and `toJSON` methods are available.  See [Converting a Record from
+/ to a JSON string] for the detail.
+
+From / To JavaScript Objects
+----------------------------
+
+In Scala.js, `fromJS` and `toJS` methods are available.  See [Converting a Record from / to
+a Native JavaScript Object] for the detail.
+
 Upcast
 ------
 

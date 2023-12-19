@@ -73,6 +73,11 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform)
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test,
     ),
   )
+  .jsSettings(
+    libraryDependencies ++= Seq(
+      "org.getshaka" %%% "native-converter" % "0.9.0",
+    ),
+  )
 
 lazy val circe = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   .crossType(CrossType.Pure)
