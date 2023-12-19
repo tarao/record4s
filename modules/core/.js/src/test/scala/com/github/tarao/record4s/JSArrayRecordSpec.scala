@@ -195,5 +195,33 @@ class JSArrayRecordSpec extends helper.UnitSpec {
         json shouldBe """{"name":"tarao","age":3,"email":{"local":"tarao","domain":"example.com"}}"""
       }
     }
+
+    describe("With NativeConverter") {
+      it("can be converted if a reocrd type appears as a nested type") {
+        locally {
+          import org.getshaka.nativeconverter.fromJson
+
+          val json = """[{"name":"tarao","age":3}]"""
+          val seq =
+            json.fromJson[Seq[ArrayRecord[(("name", String), ("age", Int))]]]
+          seq shouldStaticallyBe a[Seq[
+            ArrayRecord[(("name", String), ("age", Int))],
+          ]]
+          seq(0).name shouldBe "tarao"
+          seq(0).age shouldBe 3
+        }
+
+        locally {
+          import org.getshaka.nativeconverter.NativeConverter.SeqConv
+
+          val s = Seq(
+            ArrayRecord(name = "tarao", age = 3),
+            ArrayRecord(name = "ikura", age = 1),
+          )
+          val json = s.toJson
+          json shouldBe """[{"name":"tarao","age":3},{"name":"ikura","age":1}]"""
+        }
+      }
+    }
   }
 }
