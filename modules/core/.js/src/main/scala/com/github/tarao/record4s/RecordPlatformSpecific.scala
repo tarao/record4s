@@ -20,6 +20,7 @@ import org.getshaka.nativeconverter.{NativeConverter, ParseState}
 
 import scala.compiletime.{constValue, erasedValue, summonInline}
 import scala.scalajs.js
+import scala.util.NotGiven
 
 trait RecordPlatformSpecific {
 
@@ -164,6 +165,7 @@ trait RecordPlatformSpecific {
 
   inline given nativeConverter[R <: %](using
     r: RecordLike[R],
+    nonTuple: NotGiven[R <:< Tuple],
   ): NativeConverter[R] = {
     type Types = r.ElemTypes
     type Labels = r.ElemLabels
