@@ -91,7 +91,6 @@ lazy val circe = crossProject(JVMPlatform, JSPlatform, NativePlatform)
       "io.circe"      %%% "circe-core"    % circeVersion,
       "io.circe"      %%% "circe-generic" % circeVersion     % Test,
       "io.circe"      %%% "circe-parser"  % circeVersion     % Test,
-      "org.scalatest" %%% "scalatest"     % scalaTestVersion % Test,
     ),
   )
 
