@@ -86,7 +86,7 @@ lazy val circe = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   .asModule
   .settings(commonSettings)
   .settings(
-    description := "Circe integration for record4s",
+    description := "circe integration for record4s",
     libraryDependencies ++= Seq(
       "io.circe"      %%% "circe-core"    % circeVersion,
       "io.circe"      %%% "circe-generic" % circeVersion     % Test,
