@@ -184,7 +184,7 @@ ThisBuild / githubWorkflowAddedJobs ++= Seq(
 ThisBuild / tlSitePublishBranch := None // update on tag releases
 lazy val docs = project
   .in(file("site"))
-  .dependsOn(core.jvm, circe.jvm)
+  .dependsOn(core.jvm, circe.jvm, upickle.jvm)
   .enablePlugins(TypelevelSitePlugin)
   .settings(
     scalacOptions --= Seq(
