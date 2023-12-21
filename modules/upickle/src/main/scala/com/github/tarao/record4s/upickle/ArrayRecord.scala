@@ -32,7 +32,10 @@ object ArrayRecord {
       record => ujson.Obj(writeDict[Types, Labels](r.iterableOf(record).toMap)),
       json => {
         val dict = json.obj
-        val iterable = readDict[Types, Labels](dict)
+        val iterable = readDict[Types, Labels, Vector[(String, Any)]](
+          dict,
+          Vector.newBuilder[(String, Any)],
+        ).result()
         record4s.ArrayRecord.newArrayRecord[ArrayRecord[T]](iterable)
       },
     )

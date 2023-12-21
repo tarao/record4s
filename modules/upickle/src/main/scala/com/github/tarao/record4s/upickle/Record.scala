@@ -28,6 +28,7 @@ import _root_.upickle.default.{
   writeJs,
 }
 
+import scala.collection.mutable.Builder
 import scala.compiletime.{constValue, erasedValue, summonInline}
 import scala.util.NotGiven
 
@@ -54,10 +55,10 @@ object Record {
         writeDict[types, labels](record, res += (labelStr -> value))
     }
 
-  private[upickle] inline def readDict[Types, Labels](
+  private[upickle] inline def readDict[Types, Labels, C](
     dict: LinkedHashMap[String, ujson.Value],
-    res: Vector[(String, Any)] = Vector.empty,
-  ): Vector[(String, Any)] =
+    res: Builder[(String, Any), C],
+  ): Builder[(String, Any), C] =
     inline (erasedValue[Types], erasedValue[Labels]) match {
       case _: (EmptyTuple, EmptyTuple) =>
         res
@@ -67,7 +68,8 @@ object Record {
         val jsonElem = dict.getOrElse(labelStr, ujson.Null)
         val reader = summonInline[Reader[tpe]]
         val elem = read[tpe](jsonElem)(using reader)
-        readDict[types, labels](dict, res :+ (labelStr, elem))
+        res += (labelStr -> elem)
+        readDict[types, labels, C](dict, res)
     }
 
   inline given readWriter[R <: %](using
@@ -81,7 +83,10 @@ object Record {
       record => ujson.Obj(writeDict[Types, Labels](r.iterableOf(record).toMap)),
       json => {
         val dict = json.obj
-        val iterable = readDict[Types, Labels](dict)
+        val iterable = readDict[Types, Labels, Map[String, Any]](
+          dict,
+          Map.newBuilder[String, Any],
+        ).result()
         record4s.Record.newMapRecord[R](iterable)
       },
     )
