@@ -18,6 +18,7 @@ package com.github.tarao.record4s
 
 import org.getshaka.nativeconverter.{NativeConverter, ParseState}
 
+import scala.collection.mutable.Builder
 import scala.compiletime.{constValue, erasedValue, summonInline}
 import scala.scalajs.js
 import scala.util.NotGiven
@@ -143,8 +144,8 @@ trait RecordPlatformSpecific {
   private inline def nativeToFields[Types, Labels](
     dict: js.Dictionary[js.Any],
     ps: ParseState,
-    res: Seq[(String, Any)] = Seq.empty,
-  ): Seq[(String, Any)] =
+    res: Builder[(String, Any), Map[String, Any]] = Map.newBuilder[String, Any],
+  ): Builder[(String, Any), Map[String, Any]] =
     inline (erasedValue[Types], erasedValue[Labels]) match {
       case _: (EmptyTuple, EmptyTuple) =>
         res
@@ -154,7 +155,8 @@ trait RecordPlatformSpecific {
         val labelStr = constValue[label & String]
         val jsElem = dict.getOrElse(labelStr, null)
         val elem = nc.fromNative(ps.atKey(labelStr, jsElem))
-        nativeToFields[types, labels](dict, ps, res :+ (labelStr, elem))
+        res += (labelStr -> elem)
+        nativeToFields[types, labels](dict, ps, res)
     }
 
   private def asDict(ps: ParseState): js.Dictionary[js.Any] =
@@ -177,7 +179,7 @@ trait RecordPlatformSpecific {
       }
 
       def fromNative(ps: ParseState): R = {
-        val iterable = nativeToFields[Types, Labels](asDict(ps), ps)
+        val iterable = nativeToFields[Types, Labels](asDict(ps), ps).result()
         Record.newMapRecord[R](iterable)
       }
     }
