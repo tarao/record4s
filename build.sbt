@@ -94,6 +94,19 @@ lazy val circe = crossProject(JVMPlatform, JSPlatform, NativePlatform)
     ),
   )
 
+lazy val upickle = crossProject(JVMPlatform, JSPlatform, NativePlatform)
+  .crossType(CrossType.Pure)
+  .withoutSuffixFor(JVMPlatform)
+  .dependsOn(core % "compile->compile;test->test")
+  .asModule
+  .settings(commonSettings)
+  .settings(
+    description := "uPickle / uJson integration for record4s",
+    libraryDependencies ++= Seq(
+      "com.lihaoyi" %%% "upickle" % "3.1.3",
+    ),
+  )
+
 lazy val benchmark_3 = (project in file("modules/benchmark_3"))
   .dependsOn(core.jvm)
   .settings(commonSettings)
@@ -171,7 +184,7 @@ ThisBuild / githubWorkflowAddedJobs ++= Seq(
 ThisBuild / tlSitePublishBranch := None // update on tag releases
 lazy val docs = project
   .in(file("site"))
-  .dependsOn(core.jvm, circe.jvm)
+  .dependsOn(core.jvm, circe.jvm, upickle.jvm)
   .enablePlugins(TypelevelSitePlugin)
   .settings(
     scalacOptions --= Seq(
