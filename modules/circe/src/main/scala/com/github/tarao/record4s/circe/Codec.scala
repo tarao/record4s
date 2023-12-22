@@ -21,7 +21,6 @@ import io.circe.{Decoder, Encoder, HCursor, Json}
 
 import scala.collection.mutable.Builder
 import scala.compiletime.{constValue, erasedValue, summonInline}
-import scala.util.NotGiven
 
 object Codec {
   private inline def encodeFields[Types, Labels](
@@ -64,10 +63,7 @@ object Codec {
         }
     }
 
-  inline given encoder[R <: %](using
-    r: RecordLike[R],
-    nonTuple: NotGiven[R <:< Tuple],
-  ): Encoder[R] = {
+  inline given encoder[R <: %](using r: RecordLike[R]): Encoder[R] = {
     type Types = r.ElemTypes
     type Labels = r.ElemLabels
 
@@ -79,10 +75,7 @@ object Codec {
     }
   }
 
-  inline given decoder[R <: %](using
-    r: RecordLike[R],
-    nonTuple: NotGiven[R <:< Tuple],
-  ): Decoder[R] = {
+  inline given decoder[R <: %](using r: RecordLike[R]): Decoder[R] = {
     type Types = r.ElemTypes
     type Labels = r.ElemLabels
 

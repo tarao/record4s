@@ -30,7 +30,6 @@ import _root_.upickle.default.{
 
 import scala.collection.mutable.Builder
 import scala.compiletime.{constValue, erasedValue, summonInline}
-import scala.util.NotGiven
 
 object Record {
   private[upickle] inline def writeDict[Types, Labels](
@@ -72,10 +71,7 @@ object Record {
         readDict[types, labels, C](dict, res)
     }
 
-  inline given readWriter[R <: %](using
-    r: RecordLike[R],
-    nonTuple: NotGiven[R <:< Tuple],
-  ): ReadWriter[R] = {
+  inline given readWriter[R <: %](using r: RecordLike[R]): ReadWriter[R] = {
     type Types = r.ElemTypes
     type Labels = r.ElemLabels
 

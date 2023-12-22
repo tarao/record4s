@@ -96,6 +96,7 @@ object RecordLike {
   given ofProduct[P <: Product](using
     m: Mirror.Of[P],
     nonRecord: NotGiven[P <:< Record],
+    nonTuple: NotGiven[P <:< Tuple],
   ): OfProduct[P, m.MirroredElemLabels, m.MirroredElemTypes] =
     new OfProduct
 
@@ -125,5 +126,5 @@ object RecordLike {
         .toSeq
   }
 
-  given ofTuple[T <: Tuple]: OfTuple[T] = new OfTuple
+  given ofTuple[T <: Tuple](using T <:< Tuple): OfTuple[T] = new OfTuple
 }
