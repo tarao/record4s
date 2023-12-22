@@ -6,7 +6,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="generator" content="Typelevel Laika + Helium Theme" />
-  <title>Full Benchmark Result - record4s</title>
+  <title>Integration with uPickle - record4s</title>
   <meta property="og:title" content="record4s: extensible records for Scala" />
   <meta property="og:image" content="https://tarao.orezdnu.org/record4s/img/record4s.svg" />
   
@@ -96,13 +96,13 @@
     <li class="level1 nav-leaf"><a href="../performance.html">Performance</a></li>
     <li class="level1 nav-leaf"><a href="../faq.html">FAQ</a></li>
     <li class="level1 nav-header">integrations</li>
-    <li class="level2 nav-leaf"><a href="../integrations/upickle.html">Integration with uPickle</a></li>
-    <li class="level2 nav-leaf"><a href="../integrations/circe.html">Integration with circe</a></li>
+    <li class="level2 active nav-leaf"><a href="#">Integration with uPickle</a></li>
+    <li class="level2 nav-leaf"><a href="circe.html">Integration with circe</a></li>
     <li class="level1 nav-header">Advanced Topics</li>
     <li class="level2 nav-leaf"><a href="../advanced/generic.html">Generic Records</a></li>
     <li class="level2 nav-leaf"><a href="../advanced/conversions.html">Defining Your Own Conversions</a></li>
     <li class="level1 nav-header">appendix</li>
-    <li class="level2 active nav-leaf"><a href="#">Full Benchmark Result</a></li>
+    <li class="level2 nav-leaf"><a href="../appendix/benchmark.html">Full Benchmark Result</a></li>
   </ul>
 
 </nav>
@@ -111,16 +111,11 @@
 
       
 <nav id="page-nav">
-  <p class="header"><a href="#">Full Benchmark Result</a></p>
+  <p class="header"><a href="#">Integration with uPickle</a></p>
 
   <ul class="nav-list">
-    <li class="level1 nav-node"><a href="#runtime-metrics">Runtime metrics</a></li>
-    <li class="level2 nav-leaf"><a href="#runtime-metrics-from-karlsson-18">Runtime metrics from [<a href="https://www.csc.kth.se/~phaller/doc/karlsson-haller18-scala.pdf">Karlsson &#39;18</a>]</a></li>
-    <li class="level2 nav-leaf"><a href="#other-runtime-metrics">Other runtime metrics</a></li>
-    <li class="level1 nav-node"><a href="#compile-time-metrics">Compile-time metrics</a></li>
-    <li class="level2 nav-leaf"><a href="#compile-time-metrics-from-karlsson-17">Compile-time metrics from [<a href="https://www.diva-portal.org/smash/get/diva2:1123270/fulltext01.pdf">Karlsson &#39;17</a>]</a></li>
-    <li class="level2 nav-leaf"><a href="#compile-time-metrics-from-scala-records-benchmarks">Compile-time metrics from <a href="https://github.com/scala-records/scala-records-benchmarks">scala-records-benchmarks</a></a></li>
-    <li class="level2 nav-leaf"><a href="#other-compile-time-metrics">Other compile-time metrics</a></li>
+    <li class="level1 nav-leaf"><a href="#installation">Installation</a></li>
+    <li class="level1 nav-leaf"><a href="#from-to-json">From / To JSON</a></li>
   </ul>
 
   <p class="footer"></p>
@@ -129,45 +124,36 @@
 
       <main class="content">
 
-        <h1 id="full-benchmark-result" class="title">Full Benchmark Result</h1>
-        <p>The source code of the benchmarks is available in the following directories:</p>
-        <ul>
-          <li><a href="https://github.com/tarao/record4s/tree/master/modules/benchmark_3/src/main/scala/benchmark/record4s">record4s %</a></li>
-          <li><a href="https://github.com/tarao/record4s/tree/master/modules/benchmark_3/src/main/scala/benchmark/record4s_arrayrecord">record4s ArrayRecord</a></li>
-          <li><a href="https://github.com/tarao/record4s/tree/master/modules/benchmark_3/src/main/scala/benchmark/map">Scala 3 Map</a></li>
-          <li><a href="https://github.com/tarao/record4s/tree/master/modules/benchmark_3/src/main/scala/benchmark/caseclass">Scala 3 case class</a></li>
-          <li><a href="https://github.com/tarao/record4s/tree/master/modules/benchmark_2_13/src/main/scala/benchmark/shapeless">shapeless Record</a></li>
-          <li><a href="https://github.com/tarao/record4s/tree/master/modules/benchmark_2_11/src/main/scala/benchmark/scalarecords">scala-records Rec</a></li>
-        </ul>
-        <p>See <a href="../performance.html#performance">Performance</a> for the discussion on the benchmark results.</p>
+        <h1 id="integration-with-upickle" class="title">Integration with uPickle</h1>
+        <p>Records can be converted to/from JSON by using <a href="https://com-lihaoyi.github.io/upickle/">uPickle</a>.</p>
         
-        <h2 id="runtime-metrics" class="section"><a class="anchor-link left" href="#runtime-metrics"><i class="icofont-laika link">&#xef71;</i></a>Runtime metrics</h2>
+        <h2 id="installation" class="section"><a class="anchor-link left" href="#installation"><i class="icofont-laika link">&#xef71;</i></a>Installation</h2>
+        <p>You need an additional module to use records integrated with <a href="https://com-lihaoyi.github.io/upickle/">uPickle</a>.</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> ++= </span><span class="type-name">Seq</span><span>(
+  </span><span class="string-literal">&quot;com.github.tarao&quot;</span><span> %% </span><span class="string-literal">&quot;record4s-upickle&quot;</span><span> % </span><span class="string-literal">&quot;0.10.0&quot;</span><span>
+),</span></code></pre>
         
-        <h3 id="runtime-metrics-from-karlsson-18" class="section"><a class="anchor-link left" href="#runtime-metrics-from-karlsson-18"><i class="icofont-laika link">&#xef71;</i></a>Runtime metrics from [<a href="https://www.csc.kth.se/~phaller/doc/karlsson-haller18-scala.pdf">Karlsson &#39;18</a>]</h3>
-        <p><img src="../img/benchmark/Creation.svg" alt="Creation time / Record size"></p>
-        <p><img src="../img/benchmark/Update.svg" alt="Update time / Record size"></p>
-        <p><img src="../img/benchmark/FieldAccess.svg" alt="Access time / Field index"></p>
-        <p><img src="../img/benchmark/FieldAccessSize.svg" alt="Access time / Record size"></p>
-        <p><img src="../img/benchmark/FieldAccessPoly.svg" alt="Access time / Degree of polymorphism"></p>
-        
-        <h3 id="other-runtime-metrics" class="section"><a class="anchor-link left" href="#other-runtime-metrics"><i class="icofont-laika link">&#xef71;</i></a>Other runtime metrics</h3>
-        <p><img src="../img/benchmark/Concatenation.svg" alt="Concatenation time / Record size"></p>
-        
-        <h2 id="compile-time-metrics" class="section"><a class="anchor-link left" href="#compile-time-metrics"><i class="icofont-laika link">&#xef71;</i></a>Compile-time metrics</h2>
-        
-        <h3 id="compile-time-metrics-from-karlsson-17" class="section"><a class="anchor-link left" href="#compile-time-metrics-from-karlsson-17"><i class="icofont-laika link">&#xef71;</i></a>Compile-time metrics from [<a href="https://www.diva-portal.org/smash/get/diva2:1123270/fulltext01.pdf">Karlsson &#39;17</a>]</h3>
-        <p><img src="../img/benchmark/CompileCreation.svg" alt="Compilation time (record creation) / Record size"></p>
-        <p><img src="../img/benchmark/CompileCreationAndAccess.svg" alt="Compilation time (record creation and all field access) / Record size"></p>
-        
-        <h3 id="compile-time-metrics-from-scala-records-benchmarks" class="section"><a class="anchor-link left" href="#compile-time-metrics-from-scala-records-benchmarks"><i class="icofont-laika link">&#xef71;</i></a>Compile-time metrics from <a href="https://github.com/scala-records/scala-records-benchmarks">scala-records-benchmarks</a></h3>
-        <p><img src="../img/benchmark/CompileCreationAndAccessRep.svg" alt="Compilation time (record creation and repeated field access) / Record size"></p>
-        
-        <h3 id="other-compile-time-metrics" class="section"><a class="anchor-link left" href="#other-compile-time-metrics"><i class="icofont-laika link">&#xef71;</i></a>Other compile-time metrics</h3>
-        <p><img src="../img/benchmark/CompileUpdate.svg" alt="Compilation time (field update) / Record size"></p>
-        <p><img src="../img/benchmark/CompileUpdateRep.svg" alt="Compilation time (repeated field updates) / Record size"></p>
-        <p><img src="../img/benchmark/CompileFieldAccess.svg" alt="Compilation time (field access) / Field index"></p>
-        <p><img src="../img/benchmark/CompileFieldAccessSize.svg" alt="Compilation time (field access) / Record size"></p>
-        <p><img src="../img/benchmark/CompileConcatenation.svg" alt="Compilation time (concatenation) / Record size"></p>
+        <h2 id="from-to-json" class="section"><a class="anchor-link left" href="#from-to-json"><i class="icofont-laika link">&#xef71;</i></a>From / To JSON</h2>
+        <p>Importing <code>Record.readWriter</code> enables <a href="https://com-lihaoyi.github.io/upickle/">uPickle</a> to decode/encode records in the ordinary way.</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">com</span><span>.</span><span class="identifier">github</span><span>.</span><span class="identifier">tarao</span><span>.</span><span class="identifier">record4s</span><span>.%
+</span><span class="keyword">import</span><span> </span><span class="identifier">com</span><span>.</span><span class="identifier">github</span><span>.</span><span class="identifier">tarao</span><span>.</span><span class="identifier">record4s</span><span>.</span><span class="identifier">upickle</span><span>.</span><span class="type-name">Record</span><span>.</span><span class="identifier">readWriter</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">upickle</span><span>.</span><span class="identifier">default</span><span>.{</span><span class="identifier">read</span><span>, </span><span class="identifier">write</span><span>}
+
+</span><span class="keyword">type</span><span> </span><span class="type-name">Person</span><span> = % { </span><span class="keyword">val</span><span> </span><span class="identifier">name</span><span>: </span><span class="type-name">String</span><span>; </span><span class="keyword">val</span><span> </span><span class="identifier">age</span><span>: </span><span class="type-name">Int</span><span> }
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">json</span><span> = </span><span class="string-literal">&quot;&quot;&quot;{&quot;name&quot;:&quot;tarao&quot;,&quot;age&quot;:3}&quot;&quot;&quot;</span><span>
+</span><span class="comment">// json: String = &quot;{\&quot;name\&quot;:\&quot;tarao\&quot;,\&quot;age\&quot;:3}&quot;
+</span><span>
+</span><span class="comment">// Read from JSON
+</span><span class="keyword">val</span><span> </span><span class="identifier">r</span><span> = </span><span class="identifier">read</span><span>[</span><span class="type-name">Person</span><span>](</span><span class="identifier">json</span><span>)
+</span><span class="comment">// r: % {
+//   val name: String
+//   val age: Int
+// } = %(name = tarao, age = 3)
+</span><span>
+</span><span class="comment">// Write it back
+</span><span class="identifier">write</span><span>(</span><span class="identifier">r</span><span>)
+</span><span class="comment">// res0: String = &quot;{\&quot;name\&quot;:\&quot;tarao\&quot;,\&quot;age\&quot;:3}&quot;</span></code></pre>
 
         
 <hr class="footer-rule"/>
