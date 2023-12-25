@@ -107,17 +107,24 @@ Concatenating Two Generic Records
 You may think that you can define a method to concatenate two generic records by using
 `Concat` but it doesn't work in a simple way.
 
+```scala mdoc:reset:invisible
+import com.github.tarao.record4s.%
+import com.github.tarao.record4s.typing.Record.Concat
+```
+
 ```scala mdoc:fail
-def concat[R1 <: %, R2 <: %, RR <: %](r1: R1, r2: R2)(using Concat.Aux[R1, R2, RR]): RR =
-  r1 ++ r2
+def concat[R1 <: %, R2 <: %, RR <: %](r1: R1, r2: R2)(using
+  Concat.Aux[R1, R2, RR],
+): RR = r1 ++ r2
 ```
 
 The problem is that the right-hand-side argument type of `++` is restricted to be a
 concrete type for type safety.  In this case, defining an inline method makes it work.
 
 ```scala mdoc:mline
-inline def concat[R1 <: %, R2 <: %, RR <: %](r1: R1, r2: R2)(using Concat.Aux[R1, R2, RR]): RR =
-  r1 ++ r2
+inline def concat[R1 <: %, R2 <: %, RR <: %](r1: R1, r2: R2)(using
+  Concat.Aux[R1, R2, RR],
+): RR = r1 ++ r2
 
 concat(%(name = "tarao"), %(age = 3))
 ```
