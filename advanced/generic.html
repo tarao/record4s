@@ -168,7 +168,7 @@ l.Out</code>.</p>
 // 
 // But given instance given_Lookup_R_L in object Lookup does not match type com.github.tarao.record4s.typing.Record.Lookup.Aux[
 //   com.github.tarao.record4s.%{val name: String}, (&quot;value&quot; : String), Any].
-// def concat[R1 &lt;: %, R2 &lt;: %, RR &lt;: %](r1: R1, r2: R2)(using Concat.Aux[R1, R2, RR]): RR =
+// def concat[R1 &lt;: %, R2 &lt;: %, RR &lt;: %](r1: R1, r2: R2)(using
 //</span></code></pre>
         
         <h2 id="extending-generic-records-with-concrete-fields" class="section"><a class="anchor-link left" href="#extending-generic-records-with-concrete-fields"><i class="icofont-laika link">&#xef71;</i></a>Extending Generic Records with Concrete Fields</h2>
@@ -224,8 +224,9 @@ l.Out</code>.</p>
         <h2 id="concatenating-two-generic-records" class="section"><a class="anchor-link left" href="#concatenating-two-generic-records"><i class="icofont-laika link">&#xef71;</i></a>Concatenating Two Generic Records</h2>
         <p>You may think that you can define a method to concatenate two generic records by using
         <code>Concat</code> but it doesn&#39;t work in a simple way.</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">concat</span><span>[</span><span class="type-name">R1</span><span> &lt;: %, </span><span class="type-name">R2</span><span> &lt;: %, </span><span class="type-name">RR</span><span> &lt;: %](</span><span class="identifier">r1</span><span>: </span><span class="type-name">R1</span><span>, </span><span class="identifier">r2</span><span>: </span><span class="type-name">R2</span><span>)(</span><span class="keyword">using</span><span> </span><span class="type-name">Concat</span><span>.</span><span class="type-name">Aux</span><span>[</span><span class="type-name">R1</span><span>, </span><span class="type-name">R2</span><span>, </span><span class="type-name">RR</span><span>]): </span><span class="type-name">RR</span><span> =
-  </span><span class="identifier">r1</span><span> ++ </span><span class="identifier">r2</span><span>
+        <pre><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">concat</span><span>[</span><span class="type-name">R1</span><span> &lt;: %, </span><span class="type-name">R2</span><span> &lt;: %, </span><span class="type-name">RR</span><span> &lt;: %](</span><span class="identifier">r1</span><span>: </span><span class="type-name">R1</span><span>, </span><span class="identifier">r2</span><span>: </span><span class="type-name">R2</span><span>)(</span><span class="identifier">using</span><span>
+  </span><span class="type-name">Concat</span><span>.</span><span class="type-name">Aux</span><span>[</span><span class="type-name">R1</span><span>, </span><span class="type-name">R2</span><span>, </span><span class="type-name">RR</span><span>],
+): </span><span class="type-name">RR</span><span> = </span><span class="identifier">r1</span><span> ++ </span><span class="identifier">r2</span><span>
 </span><span class="comment">// error: 
 // Line is indented too far to the left, or a `}` is missing
 // error:
@@ -235,14 +236,19 @@ l.Out</code>.</p>
 // error: 
 // Line is indented too far to the left, or a `}` is missing
 // error: 
+// Line is indented too far to the left, or a `}` is missing
+// error: 
+// Line is indented too far to the left, or a `}` is missing
+// error: 
 // Line is indented too far to the left, or a `}` is missing</span></code></pre>
         <p>The problem is that the right-hand-side argument type of <code>++</code> is restricted to be a
         concrete type for type safety.  In this case, defining an inline method makes it work.</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">inline</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">concat</span><span>[</span><span class="type-name">R1</span><span> &lt;: %, </span><span class="type-name">R2</span><span> &lt;: %, </span><span class="type-name">RR</span><span> &lt;: %](</span><span class="identifier">r1</span><span>: </span><span class="type-name">R1</span><span>, </span><span class="identifier">r2</span><span>: </span><span class="type-name">R2</span><span>)(</span><span class="keyword">using</span><span> </span><span class="type-name">Concat</span><span>.</span><span class="type-name">Aux</span><span>[</span><span class="type-name">R1</span><span>, </span><span class="type-name">R2</span><span>, </span><span class="type-name">RR</span><span>]): </span><span class="type-name">RR</span><span> =
-  </span><span class="identifier">r1</span><span> ++ </span><span class="identifier">r2</span><span>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">inline</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">concat</span><span>[</span><span class="type-name">R1</span><span> &lt;: %, </span><span class="type-name">R2</span><span> &lt;: %, </span><span class="type-name">RR</span><span> &lt;: %](</span><span class="identifier">r1</span><span>: </span><span class="type-name">R1</span><span>, </span><span class="identifier">r2</span><span>: </span><span class="type-name">R2</span><span>)(</span><span class="identifier">using</span><span>
+  </span><span class="type-name">Concat</span><span>.</span><span class="type-name">Aux</span><span>[</span><span class="type-name">R1</span><span>, </span><span class="type-name">R2</span><span>, </span><span class="type-name">RR</span><span>],
+): </span><span class="type-name">RR</span><span> = </span><span class="identifier">r1</span><span> ++ </span><span class="identifier">r2</span><span>
 
 </span><span class="identifier">concat</span><span>(%(</span><span class="identifier">name</span><span> = </span><span class="string-literal">&quot;tarao&quot;</span><span>), %(</span><span class="identifier">age</span><span> = </span><span class="number-literal">3</span><span>))
-</span><span class="comment">// res6: % {
+</span><span class="comment">// res7: % {
 //   val name: String
 //   val age: Int
 // } = %(name = tarao, age = 3)</span></code></pre>
