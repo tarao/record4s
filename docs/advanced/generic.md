@@ -46,11 +46,8 @@ For example, `withEmail` method, which expects a domain name and returns a recor
 by `email` field of E-mail address, whose local part is filled by the first segment of
 `name` field of the original record, can be defined as the following.
 
-```scala mdoc:reset:invisible
-```
-
 ```scala mdoc:mline
-import com.github.tarao.record4s.{%, Tag}
+import com.github.tarao.record4s.Tag
 import com.github.tarao.record4s.typing.Record.Append
 
 trait Person
@@ -79,11 +76,10 @@ val person = %(name = "tarao fuguta", age = 3)
 There is also `typing.Record.Concat` to calculate concatenation of two record types.  The
 above example can be rewritten with `Concat` as the following.
 
-```scala mdoc:reset:invisible
+```scala mdoc:nest:invisible
 ```
 
 ```scala mdoc:mline
-import com.github.tarao.record4s.{%, Tag}
 import com.github.tarao.record4s.typing.Record.Concat
 
 trait Person
@@ -106,11 +102,6 @@ Concatenating Two Generic Records
 
 You may think that you can define a method to concatenate two generic records by using
 `Concat` but it doesn't work in a simple way.
-
-```scala mdoc:reset:invisible
-import com.github.tarao.record4s.%
-import com.github.tarao.record4s.typing.Record.Concat
-```
 
 ```scala mdoc:fail
 def concat[R1 <: %, R2 <: %, RR <: %](r1: R1, r2: R2)(using
