@@ -100,7 +100,7 @@ class ArrayRecordSpec extends helper.UnitSpec {
 
       it("should reject non-vararg construction") {
         val args = Seq("name" -> "tarao")
-        "ArrayRecord(args: _*)" shouldNot typeCheck
+        "ArrayRecord(args*)" shouldNot typeCheck
       }
 
       it("should reject accessing non-existing fields") {
