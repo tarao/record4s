@@ -168,8 +168,8 @@ l.Out</code>.</p>
 // 
 // But given instance given_Lookup_R_L in object Lookup does not match type com.github.tarao.record4s.typing.Record.Lookup.Aux[
 //   com.github.tarao.record4s.%{val name: String}, (&quot;value&quot; : String), Any].
-// def concat[R1 &lt;: %, R2 &lt;: %, RR &lt;: %](r1: R1, r2: R2)(using
-//</span></code></pre>
+// import com.github.tarao.record4s.typing.Record.Concat
+//                                                      ^</span></code></pre>
         
         <h2 id="extending-generic-records-with-concrete-fields" class="section"><a class="anchor-link left" href="#extending-generic-records-with-concrete-fields"><i class="icofont-laika link">&#xef71;</i></a>Extending Generic Records with Concrete Fields</h2>
         <p>To define a method to extend a generic record with some concrete field, we need to somehow
@@ -177,7 +177,7 @@ l.Out</code>.</p>
         <p>For example, <code>withEmail</code> method, which expects a domain name and returns a record extended
         by <code>email</code> field of E-mail address, whose local part is filled by the first segment of
         <code>name</code> field of the original record, can be defined as the following.</p>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">com</span><span>.</span><span class="identifier">github</span><span>.</span><span class="identifier">tarao</span><span>.</span><span class="identifier">record4s</span><span>.{%, </span><span class="type-name">Tag</span><span>}
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">com</span><span>.</span><span class="identifier">github</span><span>.</span><span class="identifier">tarao</span><span>.</span><span class="identifier">record4s</span><span>.</span><span class="type-name">Tag</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">com</span><span>.</span><span class="identifier">github</span><span>.</span><span class="identifier">tarao</span><span>.</span><span class="identifier">record4s</span><span>.</span><span class="identifier">typing</span><span>.</span><span class="type-name">Record</span><span>.</span><span class="type-name">Append</span><span>
 
 </span><span class="keyword">trait</span><span> </span><span class="type-name">Person</span><span>
@@ -204,8 +204,7 @@ l.Out</code>.</p>
 // } &amp; Tag[Person] = %(name = tarao fuguta, age = 3, email = tarao@example.com)</span></code></pre>
         <p>There is also <code>typing.Record.Concat</code> to calculate concatenation of two record types.  The
         above example can be rewritten with <code>Concat</code> as the following.</p>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">com</span><span>.</span><span class="identifier">github</span><span>.</span><span class="identifier">tarao</span><span>.</span><span class="identifier">record4s</span><span>.{%, </span><span class="type-name">Tag</span><span>}
-</span><span class="keyword">import</span><span> </span><span class="identifier">com</span><span>.</span><span class="identifier">github</span><span>.</span><span class="identifier">tarao</span><span>.</span><span class="identifier">record4s</span><span>.</span><span class="identifier">typing</span><span>.</span><span class="type-name">Record</span><span>.</span><span class="type-name">Concat</span><span>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">com</span><span>.</span><span class="identifier">github</span><span>.</span><span class="identifier">tarao</span><span>.</span><span class="identifier">record4s</span><span>.</span><span class="identifier">typing</span><span>.</span><span class="type-name">Record</span><span>.</span><span class="type-name">Concat</span><span>
 
 </span><span class="keyword">trait</span><span> </span><span class="type-name">Person</span><span>
 </span><span class="keyword">object</span><span> </span><span class="type-name">Person</span><span> {
@@ -224,23 +223,17 @@ l.Out</code>.</p>
         <h2 id="concatenating-two-generic-records" class="section"><a class="anchor-link left" href="#concatenating-two-generic-records"><i class="icofont-laika link">&#xef71;</i></a>Concatenating Two Generic Records</h2>
         <p>You may think that you can define a method to concatenate two generic records by using
         <code>Concat</code> but it doesn&#39;t work in a simple way.</p>
-        <pre><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">concat</span><span>[</span><span class="type-name">R1</span><span> &lt;: %, </span><span class="type-name">R2</span><span> &lt;: %, </span><span class="type-name">RR</span><span> &lt;: %](</span><span class="identifier">r1</span><span>: </span><span class="type-name">R1</span><span>, </span><span class="identifier">r2</span><span>: </span><span class="type-name">R2</span><span>)(</span><span class="identifier">using</span><span>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">concat</span><span>[</span><span class="type-name">R1</span><span> &lt;: %, </span><span class="type-name">R2</span><span> &lt;: %, </span><span class="type-name">RR</span><span> &lt;: %](</span><span class="identifier">r1</span><span>: </span><span class="type-name">R1</span><span>, </span><span class="identifier">r2</span><span>: </span><span class="type-name">R2</span><span>)(</span><span class="identifier">using</span><span>
   </span><span class="type-name">Concat</span><span>.</span><span class="type-name">Aux</span><span>[</span><span class="type-name">R1</span><span>, </span><span class="type-name">R2</span><span>, </span><span class="type-name">RR</span><span>],
 ): </span><span class="type-name">RR</span><span> = </span><span class="identifier">r1</span><span> ++ </span><span class="identifier">r2</span><span>
-</span><span class="comment">// error: 
-// Line is indented too far to the left, or a `}` is missing
-// error:
-// Line is indented too far to the left, or a `}` is missing
-// 
-// ^
+</span><span class="comment">// error:
+// A concrete type expected but type variable R2 is given.
+// Did you forget to make the method inline?
+// ): RR = r1 ++ r2
+//         ^^^^^^^^
 // error: 
-// Line is indented too far to the left, or a `}` is missing
-// error: 
-// Line is indented too far to the left, or a `}` is missing
-// error: 
-// Line is indented too far to the left, or a `}` is missing
-// error: 
-// Line is indented too far to the left, or a `}` is missing</span></code></pre>
+// Found:    &lt;notype&gt;
+// Required: com.github.tarao.record4s.typing.Concrete[R2]</span></code></pre>
         <p>The problem is that the right-hand-side argument type of <code>++</code> is restricted to be a
         concrete type for type safety.  In this case, defining an inline method makes it work.</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">inline</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">concat</span><span>[</span><span class="type-name">R1</span><span> &lt;: %, </span><span class="type-name">R2</span><span> &lt;: %, </span><span class="type-name">RR</span><span> &lt;: %](</span><span class="identifier">r1</span><span>: </span><span class="type-name">R1</span><span>, </span><span class="identifier">r2</span><span>: </span><span class="type-name">R2</span><span>)(</span><span class="identifier">using</span><span>
@@ -248,7 +241,7 @@ l.Out</code>.</p>
 ): </span><span class="type-name">RR</span><span> = </span><span class="identifier">r1</span><span> ++ </span><span class="identifier">r2</span><span>
 
 </span><span class="identifier">concat</span><span>(%(</span><span class="identifier">name</span><span> = </span><span class="string-literal">&quot;tarao&quot;</span><span>), %(</span><span class="identifier">age</span><span> = </span><span class="number-literal">3</span><span>))
-</span><span class="comment">// res7: % {
+</span><span class="comment">// res4: % {
 //   val name: String
 //   val age: Int
 // } = %(name = tarao, age = 3)</span></code></pre>
