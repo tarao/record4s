@@ -49,7 +49,7 @@ object ArrayRecordMacros {
   def applyImpl[R: Type](
     record: Expr[ArrayRecord[R]],
     method: Expr[String],
-    args: Expr[Seq[(String, Any)]],
+    args: Expr[Seq[Any]],
   )(using Quotes): Expr[Any] = withInternal {
     import internal.*
 
