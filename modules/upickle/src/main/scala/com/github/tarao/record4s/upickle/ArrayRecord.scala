@@ -20,7 +20,7 @@ package upickle
 
 import _root_.upickle.default.{ReadWriter, readwriter}
 
-import upickle.Record.{readDict, writeDict}
+import record4s.upickle.Record.{readDict, writeDict}
 
 object ArrayRecord {
   inline given readWriter[T <: Tuple](using
