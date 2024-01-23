@@ -31,7 +31,7 @@ object Macros {
   def applyImpl[R <: `%`: Type](
     record: Expr[R],
     method: Expr[String],
-    args: Expr[Seq[(String, Any)]],
+    args: Expr[Seq[Any]],
   )(using Quotes): Expr[Any] = withInternal {
     import internal.*
 

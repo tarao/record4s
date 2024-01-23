@@ -513,7 +513,7 @@ object ArrayRecord
     protected def record: ArrayRecord[R]
 
     transparent inline def applyDynamic(method: String)(
-      inline fields: (String, Any)*,
+      inline fields: Any*,
     ) =
       ${ ArrayRecordMacros.applyImpl('record, 'method, 'fields) }
 

@@ -334,7 +334,7 @@ object Record extends RecordPlatformSpecific {
 
   class Extensible[R <: %](private val record: R) extends AnyVal with Dynamic {
     transparent inline def applyDynamic(method: String)(
-      inline fields: (String, Any)*,
+      inline fields: Any*,
     ) =
       ${ Macros.applyImpl('record, 'method, 'fields) }
 

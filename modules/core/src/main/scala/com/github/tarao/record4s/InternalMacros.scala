@@ -414,12 +414,12 @@ private[record4s] class InternalMacros(using
   }
 
   def fieldTypeOf(
-    field: Expr[(String, Any)],
-  ): (String, Type[?]) = {
+    field: Expr[Any],
+  ): (String, Expr[Any], Type[?]) = {
     def fieldTypeOf(
       labelExpr: Expr[Any],
       valueExpr: Expr[Any],
-    ): (String, Type[?]) = {
+    ): (String, Expr[Any], Type[?]) = {
       val label = labelExpr.asTerm match {
         case Literal(StringConstant(label)) =>
           validatedLabel(label, Some(labelExpr))
@@ -432,12 +432,12 @@ private[record4s] class InternalMacros(using
       val tpe = valueExpr match {
         case '{ ${ _ }: tp } => TypeRepr.of[tp].widen.asType
       }
-      (label, tpe)
+      (label, valueExpr, tpe)
     }
 
     field match {
       // ("label", value)
-      case '{ ($labelExpr, $valueExpr) } =>
+      case '{ (${ labelExpr }: String, $valueExpr) } =>
         fieldTypeOf(labelExpr, valueExpr)
 
       // "label" -> value
@@ -445,16 +445,21 @@ private[record4s] class InternalMacros(using
         fieldTypeOf(labelExpr, valueExpr)
 
       case expr =>
-        errorAndAbort("Invalid field", Some(expr))
+        expr.asTerm match {
+          case Ident(name) =>
+            fieldTypeOf(Literal(StringConstant(name)).asExpr, expr)
+          case _ =>
+            errorAndAbort("Invalid field", Some(expr))
+        }
     }
   }
 
   def fieldTypesOf(
-    fields: Seq[Expr[(String, Any)]],
-  ): Seq[(String, Type[?])] = fields.map(fieldTypeOf(_))
+    fields: Seq[Expr[Any]],
+  ): Seq[(String, Expr[Any], Type[?])] = fields.map(fieldTypeOf(_))
 
   def extractFieldsFrom(
-    varargs: Expr[Seq[(String, Any)]],
+    varargs: Expr[Seq[Any]],
   ): (Expr[Seq[(String, Any)]], Type[?]) = {
     // We have no way to write this without transparent inline macro.  Literal string
     // types are subject to widening and they become `String`s at the type level.  A
@@ -472,7 +477,7 @@ private[record4s] class InternalMacros(using
 
     val tupledFieldTypes =
       fieldTypes.foldRight(Type.of[EmptyTuple]: Type[?]) {
-        case ((label, '[tpe]), base) =>
+        case ((label, _, '[tpe]), base) =>
           val pair = ConstantType(StringConstant(label)).asType match {
             case '[label] => Type.of[(label, tpe)]
           }
@@ -484,7 +489,10 @@ private[record4s] class InternalMacros(using
           }
       }
 
-    (Expr.ofSeq(fields), tupledFieldTypes)
+    val namedFields = fieldTypes.map { case (label, value, _) =>
+      Expr.ofTuple((Literal(StringConstant(label)).asExprOf[String], value))
+    }
+    (Expr.ofSeq(namedFields), tupledFieldTypes)
   }
 
   def requireApply[C, T](context: Expr[C], method: Expr[String])(
