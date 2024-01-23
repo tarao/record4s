@@ -1,7 +1,7 @@
 import ProjectKeys._
 import Implicits._
 
-ThisBuild / tlBaseVersion := "0.10"
+ThisBuild / tlBaseVersion := "0.11"
 
 ThisBuild / projectName := "record4s"
 ThisBuild / groupId     := "com.github.tarao"
@@ -54,7 +54,7 @@ lazy val commonSettings = Def.settings(
 )
 
 lazy val root = tlCrossRootProject
-  .aggregate(core, circe)
+  .aggregate(core, circe, upickle)
   .settings(commonSettings)
   .settings(
     console        := (core.jvm / Compile / console).value,

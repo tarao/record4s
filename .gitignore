@@ -6,4 +6,10 @@ target/
 .cache/
 .ipython/
 .jupyter/
+.metals
 .local/
+.js
+.native
+.bloop
+out
+.vscode
