@@ -54,7 +54,7 @@ lazy val commonSettings = Def.settings(
 )
 
 lazy val root = tlCrossRootProject
-  .aggregate(core, circe)
+  .aggregate(core, circe, upickle)
   .settings(commonSettings)
   .settings(
     console        := (core.jvm / Compile / console).value,
