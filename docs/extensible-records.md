@@ -74,3 +74,15 @@ personWithEmail + (email = %(user = "tarao", domain = "example.com"))
 
 This also applies to concatenation.  The semantics is that "the latter one wins" like
 duplicate keys in @:api(scala.collection.immutable.Map) construction or concatenation.
+
+Unnamed construction
+--------------------
+
+You can omit field name when field name is same as variable name.
+
+```scala mdoc:mline
+val name = "tarao"
+val age = 3
+
+%(name, age)
+```
