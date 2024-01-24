@@ -80,9 +80,25 @@ Unnamed construction
 
 You can omit field name when field name is same as variable name.
 
+```scala mdoc:reset-object:invisible
+// Split mdoc to keep code inside object.
+// Currently we can not use class field for unnamed construction.
+import com.github.tarao.record4s.%
+```
+
 ```scala mdoc:mline
 val name = "tarao"
 val age = 3
 
 %(name, age)
+```
+
+Currently, we cannot use class field for unnamed construction.
+
+```scala mdoc:fail
+class Foo:
+  val name = "tarao"
+  val age = 3
+
+  val record = %(name, age)
 ```
