@@ -417,12 +417,19 @@ private[record4s] class InternalMacros(using
     field: Expr[Any],
   ): (String, Expr[Any], Type[?]) = {
     def fieldTypeOf(
-      labelExpr: Expr[Any],
+      labelExpr: Expr[String],
       valueExpr: Expr[Any],
     ): (String, Expr[Any], Type[?]) = {
-      val label = labelExpr.asTerm match {
-        case Literal(StringConstant(label)) =>
+      val label = (labelExpr.value, valueExpr.asTerm) match {
+        case (Some(""), Ident(label)) =>
           validatedLabel(label, Some(labelExpr))
+
+        case (Some(""), Select(_, label)) =>
+          validatedLabel(label, Some(labelExpr))
+
+        case (Some(label), _) =>
+          validatedLabel(label, Some(labelExpr))
+
         case _ =>
           errorAndAbort(
             "Field label must be a literal string",
@@ -445,12 +452,7 @@ private[record4s] class InternalMacros(using
         fieldTypeOf(labelExpr, valueExpr)
 
       case expr =>
-        expr.asTerm match {
-          case Ident(name) =>
-            fieldTypeOf(Literal(StringConstant(name)).asExpr, expr)
-          case _ =>
-            errorAndAbort("Invalid field", Some(expr))
-        }
+        fieldTypeOf(Expr(""), expr)
     }
   }
 
