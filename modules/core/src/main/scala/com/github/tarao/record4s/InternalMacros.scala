@@ -491,9 +491,8 @@ private[record4s] class InternalMacros(using
           }
       }
 
-    val namedFields = fieldTypes.map { case (label, value, _) =>
-      Expr.ofTuple((Literal(StringConstant(label)).asExprOf[String], value))
-    }
+    val namedFields =
+      fieldTypes.map((label, value, _) => Expr.ofTuple((Expr(label), value)))
     (Expr.ofSeq(namedFields), tupledFieldTypes)
   }
 
