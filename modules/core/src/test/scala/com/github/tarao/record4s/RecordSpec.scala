@@ -40,9 +40,29 @@ class RecordSpec extends helper.UnitSpec {
       it("can create records from identifiers") {
         val name = "tarao"
         val age = 3
-        val r = %(name, age)
-        r.name shouldBe "tarao"
-        r.age shouldBe 3
+        val r1 = %(name, age)
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+
+        val r2 = %(name, age = 3)
+        r2.name shouldBe "tarao"
+        r2.age shouldBe 3
+
+        val r3 = %(name = "tarao", age)
+        r3.name shouldBe "tarao"
+        r3.age shouldBe 3
+
+        class A {
+          val name = "tarao"
+          def record = %(name)
+        }
+        val r4 = new A().record
+        r4.name shouldBe "tarao"
+
+        case class Person(name: String)
+        val p = Person("tarao")
+        val r5 = %(p.name)
+        r5.name shouldBe "tarao"
       }
 
       it("can create records by adding fields") {
@@ -121,13 +141,6 @@ class RecordSpec extends helper.UnitSpec {
         """%("tarao")""" shouldNot typeCheck
 
         """%("tarao", age = 3)""" shouldNot typeCheck
-
-        val name = "tarao"
-        """%(name, age = 3)""" shouldNot typeCheck
-
-        case class Person(name: String)
-        val p = Person("tarao")
-        """%(p.name)""" shouldNot typeCheck
       }
     }
 

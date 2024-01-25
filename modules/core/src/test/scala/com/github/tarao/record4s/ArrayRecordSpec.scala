@@ -42,9 +42,29 @@ class ArrayRecordSpec extends helper.UnitSpec {
       it("can create records from identifiers") {
         val name = "tarao"
         val age = 3
-        val r = ArrayRecord(name, age)
-        r.name shouldBe "tarao"
-        r.age shouldBe 3
+        val r1 = ArrayRecord(name, age)
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+
+        val r2 = ArrayRecord(name, age = 3)
+        r2.name shouldBe "tarao"
+        r2.age shouldBe 3
+
+        val r3 = ArrayRecord(name = "tarao", age)
+        r3.name shouldBe "tarao"
+        r3.age shouldBe 3
+
+        class A {
+          val name = "tarao"
+          def record = ArrayRecord(name)
+        }
+        val r4 = new A().record
+        r4.name shouldBe "tarao"
+
+        case class Person(name: String)
+        val p = Person("tarao")
+        val r5 = ArrayRecord(p.name)
+        r5.name shouldBe "tarao"
       }
 
       it("can create records by adding fields") {
@@ -122,13 +142,6 @@ class ArrayRecordSpec extends helper.UnitSpec {
         """ArrayRecord("tarao")""" shouldNot typeCheck
 
         """ArrayRecord("tarao", age = 3)""" shouldNot typeCheck
-
-        val name = "tarao"
-        """ArrayRecord(name, age = 3)""" shouldNot typeCheck
-
-        case class Person(name: String)
-        val p = Person("tarao")
-        """ArrayRecord(p.name)""" shouldNot typeCheck
       }
     }
 
