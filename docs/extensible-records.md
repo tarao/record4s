@@ -17,7 +17,7 @@ Then use `%` as a constructor to instantiate a record.
 val person = %(name = "tarao", age = 3)
 ```
 
-In addition, you can omit field name when field name is same as variable name.
+In addition, you can omit field names when they are the same as variable names.
 
 ```scala mdoc:mline
 val name = "tarao"
