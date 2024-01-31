@@ -26,18 +26,6 @@ val age = 3
 %(name, age)
 ```
 
-We can also use class field for unnamed construction.
-
-```scala mdoc:mline
-class Foo:
-  val name = "tarao"
-  val age = 3
-
-  val record = %(name, age)
-
-Foo().record
-```
-
 Field Access
 ------------
 
