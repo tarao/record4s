@@ -17,6 +17,33 @@ Then use `%` as a constructor to instantiate a record.
 val person = %(name = "tarao", age = 3)
 ```
 
+In addition, you can omit field name when field name is same as variable name.
+
+```scala mdoc:reset-object:invisible
+// Split mdoc to keep code inside object.
+// Currently we can not use class field for unnamed construction.
+import com.github.tarao.record4s.%
+```
+
+```scala mdoc:mline
+val name = "tarao"
+val age = 3
+
+%(name, age)
+```
+
+We can also use class field for unnamed construction.
+
+```scala mdoc:mline
+class Foo:
+  val name = "tarao"
+  val age = 3
+
+  val record = %(name, age)
+
+Foo().record
+```
+
 Field Access
 ------------
 
@@ -74,31 +101,3 @@ personWithEmail + (email = %(user = "tarao", domain = "example.com"))
 
 This also applies to concatenation.  The semantics is that "the latter one wins" like
 duplicate keys in @:api(scala.collection.immutable.Map) construction or concatenation.
-
-Unnamed construction
---------------------
-
-You can omit field name when field name is same as variable name.
-
-```scala mdoc:reset-object:invisible
-// Split mdoc to keep code inside object.
-// Currently we can not use class field for unnamed construction.
-import com.github.tarao.record4s.%
-```
-
-```scala mdoc:mline
-val name = "tarao"
-val age = 3
-
-%(name, age)
-```
-
-Currently, we cannot use class field for unnamed construction.
-
-```scala mdoc:fail
-class Foo:
-  val name = "tarao"
-  val age = 3
-
-  val record = %(name, age)
-```
