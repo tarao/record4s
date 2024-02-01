@@ -168,7 +168,7 @@ ThisBuild / githubWorkflowAddedJobs ++= Seq(
         UseRef.Public(
           "codecov",
           "codecov-action",
-          "v3",
+          "v4",
         ),
         params = Map(
           "flags" -> List("${{matrix.scala}}").mkString(","),
