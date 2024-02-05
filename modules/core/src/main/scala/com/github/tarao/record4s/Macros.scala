@@ -39,7 +39,7 @@ object Macros {
       val rec = '{ ${ record }.__iterable }
       val (fields, schema) = extractFieldsFrom(args)
 
-      schema.asTupleType match {
+      schema.asType match {
         case '[tpe] =>
           evidenceOf[Concat[R, tpe]] match {
             case '{

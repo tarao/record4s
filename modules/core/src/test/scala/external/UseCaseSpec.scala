@@ -149,7 +149,7 @@ class UseCaseSpec extends helper.UnitSpec {
 
     it("can be done by using Append") {
       def addEmail[R <: %](record: R, email: String)(using
-        append: Append[R, ("email", String) *: EmptyTuple],
+        append: Append[R, % { val email: String }],
       ): append.Out = record + (email = email)
 
       val r0 = %(name = "tarao", age = 3)
@@ -164,7 +164,7 @@ class UseCaseSpec extends helper.UnitSpec {
 
     it("can be done by using Append.Aux") {
       def addEmail[R <: %, RR <: %](record: R, email: String)(using
-        Append.Aux[R, ("email", String) *: EmptyTuple, RR],
+        Append.Aux[R, % { val email: String }, RR],
       ): RR = record + (email = email)
 
       val r0 = %(name = "tarao", age = 3)
@@ -179,7 +179,7 @@ class UseCaseSpec extends helper.UnitSpec {
 
     it("can replace existing field") {
       def addEmail[R <: %, T, RR <: %](record: R, email: T)(using
-        Append.Aux[R, ("email", T) *: EmptyTuple, RR],
+        Append.Aux[R, % { val email: T }, RR],
       ): RR = record + (email = email)
 
       val r0 = %(name = "tarao", age = 3, email = "tarao@example.com")
@@ -203,13 +203,13 @@ class UseCaseSpec extends helper.UnitSpec {
           def firstName: String = p.name.split(" ").head
 
           def withEmail[RR <: %](email: String)(using
-            Append.Aux[R & Tag[Person], ("email", String) *: EmptyTuple, RR],
+            Append.Aux[R & Tag[Person], % { val email: String }, RR],
           ): RR = p + (email = email)
         }
       }
 
       def addEmail[R <: %, RR <: %](record: R, email: String)(using
-        Append.Aux[R, ("email", String) *: EmptyTuple, RR],
+        Append.Aux[R, % { val email: String }, RR],
       ): RR = record + (email = email)
 
       val r0 = %(name = "tarao fuguta", age = 3).tag[Person]
