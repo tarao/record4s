@@ -37,16 +37,18 @@ object Macros {
 
     requireApply(record, method) {
       val rec = '{ ${ record }.__iterable }
-      val (fields, tpe) = extractFieldsFrom(args)
+      val (fields, schema) = extractFieldsFrom(args)
 
-      tpe match {
+      schema.asTupleType match {
         case '[tpe] =>
           evidenceOf[Concat[R, tpe]] match {
             case '{
                 type returnType <: %
                 ${ _ }: Concat[R, tpe] { type Out = `returnType` }
               } =>
-              '{ newMapRecord[returnType](${ rec }.toMap.concat(${ fields })) }
+              '{
+                newMapRecord[returnType](${ rec }.toMap.concat(${ fields }))
+              }
           }
       }
     }

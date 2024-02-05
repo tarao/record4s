@@ -55,10 +55,10 @@ object ArrayRecordMacros {
 
     requireApply(record, method) {
       val rec = '{ ${ record }.__fields }
-      val (fields, tpe) = extractFieldsFrom(args)
+      val (fields, schema) = extractFieldsFrom(args)
       val vec = '{ ${ rec }.toVector }
 
-      tpe match {
+      schema.asTupleType match {
         case '[tpe] =>
           val concat = evidenceOf[Concat[R, tpe]]
           concat match {
