@@ -135,33 +135,67 @@ class UseCaseSpec extends helper.UnitSpec {
     import com.github.tarao.record4s.typing.Record.Append
 
     it("can be done by using Append") {
-      def addEmail[R <: %](record: R, email: String)(using
-        append: Append[R, % { val email: String }],
-      ): append.Out = record + (email = email)
+      locally {
+        def addEmail[R <: %](record: R, email: String)(using
+          append: Append[R, % { val email: String }],
+        ): append.Out = record + (email = email)
 
-      val r0 = %(name = "tarao", age = 3)
-      val r1 = addEmail(r0, "tarao@example.com")
-      r1 shouldStaticallyBe a[
-        % { val name: String; val age: Int; val email: String },
-      ]
-      r1.name shouldBe "tarao"
-      r1.age shouldBe 3
-      r1.email shouldBe "tarao@example.com"
+        val r0 = %(name = "tarao", age = 3)
+        val r1 = addEmail(r0, "tarao@example.com")
+        r1 shouldStaticallyBe a[
+          % { val name: String; val age: Int; val email: String },
+        ]
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+        r1.email shouldBe "tarao@example.com"
+      }
+
+      locally {
+        def addEmail[R <: %](record: R, email: String)(using
+          append: Append[R, ("email", String) *: EmptyTuple],
+        ): append.Out = record + (email = email)
+
+        val r0 = %(name = "tarao", age = 3)
+        val r1 = addEmail(r0, "tarao@example.com")
+        r1 shouldStaticallyBe a[
+          % { val name: String; val age: Int; val email: String },
+        ]
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+        r1.email shouldBe "tarao@example.com"
+      }
     }
 
     it("can be done by using Append.Aux") {
-      def addEmail[R <: %, RR <: %](record: R, email: String)(using
-        Append.Aux[R, % { val email: String }, RR],
-      ): RR = record + (email = email)
+      locally {
+        def addEmail[R <: %, RR <: %](record: R, email: String)(using
+          Append.Aux[R, % { val email: String }, RR],
+        ): RR = record + (email = email)
 
-      val r0 = %(name = "tarao", age = 3)
-      val r1 = addEmail(r0, "tarao@example.com")
-      r1 shouldStaticallyBe a[
-        % { val name: String; val age: Int; val email: String },
-      ]
-      r1.name shouldBe "tarao"
-      r1.age shouldBe 3
-      r1.email shouldBe "tarao@example.com"
+        val r0 = %(name = "tarao", age = 3)
+        val r1 = addEmail(r0, "tarao@example.com")
+        r1 shouldStaticallyBe a[
+          % { val name: String; val age: Int; val email: String },
+        ]
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+        r1.email shouldBe "tarao@example.com"
+      }
+
+      locally {
+        def addEmail[R <: %, RR <: %](record: R, email: String)(using
+          Append.Aux[R, ("email", String) *: EmptyTuple, RR],
+        ): RR = record + (email = email)
+
+        val r0 = %(name = "tarao", age = 3)
+        val r1 = addEmail(r0, "tarao@example.com")
+        r1 shouldStaticallyBe a[
+          % { val name: String; val age: Int; val email: String },
+        ]
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+        r1.email shouldBe "tarao@example.com"
+      }
     }
 
     it("can replace existing field") {
@@ -379,40 +413,77 @@ class UseCaseSpec extends helper.UnitSpec {
   }
 
   describe("Generic array record extension with +") {
-    import com.github.tarao.record4s.{ArrayRecord, ProductRecord, Tag}
+    import com.github.tarao.record4s.{%, ArrayRecord, ProductRecord, Tag}
     import com.github.tarao.record4s.typing.ArrayRecord.Append
 
     it("can be done by using Append") {
-      def addEmail[R](record: ArrayRecord[R], email: String)(using
-        append: Append[R, ("email", String) *: EmptyTuple],
-      ): append.Out = record + (email = email)
+      locally {
+        def addEmail[R](record: ArrayRecord[R], email: String)(using
+          append: Append[R, ("email", String) *: EmptyTuple],
+        ): append.Out = record + (email = email)
 
-      val r0 = ArrayRecord(name = "tarao", age = 3)
-      val r1 = addEmail(r0, "tarao@example.com")
-      r1 shouldStaticallyBe a[ArrayRecord[
-        (("name", String), ("age", Int), ("email", String)),
-      ]]
-      r1.name shouldBe "tarao"
-      r1.age shouldBe 3
-      r1.email shouldBe "tarao@example.com"
+        val r0 = ArrayRecord(name = "tarao", age = 3)
+        val r1 = addEmail(r0, "tarao@example.com")
+        r1 shouldStaticallyBe a[ArrayRecord[
+          (("name", String), ("age", Int), ("email", String)),
+        ]]
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+        r1.email shouldBe "tarao@example.com"
+      }
+
+      locally {
+        def addEmail[R](record: ArrayRecord[R], email: String)(using
+          append: Append[R, % { val email: String }],
+        ): append.Out = record + (email = email)
+
+        val r0 = ArrayRecord(name = "tarao", age = 3)
+        val r1 = addEmail(r0, "tarao@example.com")
+        r1 shouldStaticallyBe a[ArrayRecord[
+          (("name", String), ("age", Int), ("email", String)),
+        ]]
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+        r1.email shouldBe "tarao@example.com"
+      }
     }
 
     it("can be done by using Append.Aux") {
-      def addEmail[R, RR <: ProductRecord](
-        record: ArrayRecord[R],
-        email: String,
-      )(using
-        Append.Aux[R, ("email", String) *: EmptyTuple, RR],
-      ): RR = record + (email = email)
+      locally {
+        def addEmail[R, RR <: ProductRecord](
+          record: ArrayRecord[R],
+          email: String,
+        )(using
+          Append.Aux[R, ("email", String) *: EmptyTuple, RR],
+        ): RR = record + (email = email)
 
-      val r0 = ArrayRecord(name = "tarao", age = 3)
-      val r1 = addEmail(r0, "tarao@example.com")
-      r1 shouldStaticallyBe a[ArrayRecord[
-        (("name", String), ("age", Int), ("email", String)),
-      ]]
-      r1.name shouldBe "tarao"
-      r1.age shouldBe 3
-      r1.email shouldBe "tarao@example.com"
+        val r0 = ArrayRecord(name = "tarao", age = 3)
+        val r1 = addEmail(r0, "tarao@example.com")
+        r1 shouldStaticallyBe a[ArrayRecord[
+          (("name", String), ("age", Int), ("email", String)),
+        ]]
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+        r1.email shouldBe "tarao@example.com"
+      }
+
+      locally {
+        def addEmail[R, RR <: ProductRecord](
+          record: ArrayRecord[R],
+          email: String,
+        )(using
+          Append.Aux[R, % { val email: String }, RR],
+        ): RR = record + (email = email)
+
+        val r0 = ArrayRecord(name = "tarao", age = 3)
+        val r1 = addEmail(r0, "tarao@example.com")
+        r1 shouldStaticallyBe a[ArrayRecord[
+          (("name", String), ("age", Int), ("email", String)),
+        ]]
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+        r1.email shouldBe "tarao@example.com"
+      }
     }
 
     it("can replace existing field") {

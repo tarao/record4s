@@ -39,18 +39,30 @@ object Macros {
       val rec = '{ ${ record }.__iterable }
       val (fields, schema) = extractFieldsFrom(args)
 
-      schema.asType match {
-        case '[tpe] =>
-          evidenceOf[Concat[R, tpe]] match {
-            case '{
-                type returnType <: %
-                ${ _ }: Concat[R, tpe] { type Out = `returnType` }
-              } =>
-              '{
-                newMapRecord[returnType](${ rec }.toMap.concat(${ fields }))
-              }
+      def tryFieldTypes(tpe: Type[?]): Option[Expr[Any]] =
+        tpe match {
+          case '[tpe] =>
+            Expr.summon[Concat[R, tpe]].map {
+              case '{
+                  type returnType <: %
+                  ${ _ }: Concat[R, tpe] { type Out = `returnType` }
+                } =>
+                '{
+                  newMapRecord[returnType](${ rec }.toMap.concat(${ fields }))
+                }
+            }
+        }
+
+      tryFieldTypes(schema.asType)
+        .orElse(tryFieldTypes(schema.asTupleType))
+        .getOrElse {
+          schema.asType match {
+            case '[tpe] =>
+              errorAndAbort(
+                s"No given instance of ${Type.show[Concat[R, tpe]]}",
+              )
           }
-      }
+        }
     }
   }
 
