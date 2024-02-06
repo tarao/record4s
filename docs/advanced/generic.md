@@ -59,7 +59,7 @@ object Person {
       domain: String,
       localPart: String = p.firstName,
     )(using
-      Append.Aux[R & Tag[Person], ("email", String) *: EmptyTuple, RR],
+      Append.Aux[R & Tag[Person], % { val email: String }, RR],
     ): RR = p + (email = s"${localPart}@${domain}")
   }
 }

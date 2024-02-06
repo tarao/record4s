@@ -55,28 +55,43 @@ object ArrayRecordMacros {
 
     requireApply(record, method) {
       val rec = '{ ${ record }.__fields }
-      val (fields, tpe) = extractFieldsFrom(args)
+      val (fields, schema) = extractFieldsFrom(args)
       val vec = '{ ${ rec }.toVector }
 
-      tpe match {
-        case '[tpe] =>
-          val concat = evidenceOf[Concat[R, tpe]]
-          concat match {
-            case '{ ${ _ }: Concat[R, tpe] { type Out = returnType } } =>
-              concat match {
-                // We have to do `match` independently because `NeedDedup` is
-                // not necessarily supplied
-                case '{ ${ _ }: Concat[R, tpe] { type NeedDedup = false } } =>
-                  '{ newArrayRecord[returnType](${ vec }.concat(${ fields })) }
-                case _ =>
-                  '{
-                    newArrayRecord[returnType](
-                      unsafeConcat(${ vec }, ${ fields }),
-                    )
-                  }
-              }
+      def tryFieldTypes(tpe: Type[?]): Option[Expr[Any]] =
+        tpe match {
+          case '[tpe] =>
+            Expr.summon[Concat[R, tpe]].map {
+              case concat @ '{
+                  ${ _ }: Concat[R, tpe] { type Out = returnType }
+                } =>
+                concat match {
+                  // We have to do `match` independently because `NeedDedup` is
+                  // not necessarily supplied
+                  case '{ ${ _ }: Concat[R, tpe] { type NeedDedup = false } } =>
+                    '{
+                      newArrayRecord[returnType](${ vec }.concat(${ fields }))
+                    }
+                  case _ =>
+                    '{
+                      newArrayRecord[returnType](
+                        unsafeConcat(${ vec }, ${ fields }),
+                      )
+                    }
+                }
+            }
+        }
+
+      tryFieldTypes(schema.asTupleType)
+        .orElse(tryFieldTypes(schema.asType))
+        .getOrElse {
+          schema.asTupleType match {
+            case '[tpe] =>
+              errorAndAbort(
+                s"No given instance of ${Type.show[Concat[R, tpe]]}",
+              )
           }
-      }
+        }
     }
   }
 
@@ -142,6 +157,9 @@ object ArrayRecordMacros {
     Quotes,
   ): Expr[Concat[R1, R2]] = withTyping {
     import internal.*
+
+    requireConcreteType[R1]
+    requireConcreteType[R2]
 
     var deduped = false
 

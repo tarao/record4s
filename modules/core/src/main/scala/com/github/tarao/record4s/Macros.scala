@@ -37,18 +37,32 @@ object Macros {
 
     requireApply(record, method) {
       val rec = '{ ${ record }.__iterable }
-      val (fields, tpe) = extractFieldsFrom(args)
+      val (fields, schema) = extractFieldsFrom(args)
 
-      tpe match {
-        case '[tpe] =>
-          evidenceOf[Concat[R, tpe]] match {
-            case '{
-                type returnType <: %
-                ${ _ }: Concat[R, tpe] { type Out = `returnType` }
-              } =>
-              '{ newMapRecord[returnType](${ rec }.toMap.concat(${ fields })) }
+      def tryFieldTypes(tpe: Type[?]): Option[Expr[Any]] =
+        tpe match {
+          case '[tpe] =>
+            Expr.summon[Concat[R, tpe]].map {
+              case '{
+                  type returnType <: %
+                  ${ _ }: Concat[R, tpe] { type Out = `returnType` }
+                } =>
+                '{
+                  newMapRecord[returnType](${ rec }.toMap.concat(${ fields }))
+                }
+            }
+        }
+
+      tryFieldTypes(schema.asType)
+        .orElse(tryFieldTypes(schema.asTupleType))
+        .getOrElse {
+          schema.asType match {
+            case '[tpe] =>
+              errorAndAbort(
+                s"No given instance of ${Type.show[Concat[R, tpe]]}",
+              )
           }
-      }
+        }
     }
   }
 
@@ -81,6 +95,9 @@ object Macros {
     Quotes,
   ): Expr[Concat[R1, R2]] = withTyping {
     import internal.*
+
+    requireConcreteType[R1]
+    requireConcreteType[R2]
 
     val result = catching {
       val schema1 = schemaOf[R1]
@@ -195,40 +212,15 @@ object Macros {
   def derivedTypingConcreteImple[T: Type](using
     Quotes,
   ): Expr[Concrete[T]] = withInternal {
-    import quotes.reflect.*
     import internal.*
 
-    type Acc = List[Type[?]]
-    def freeTypeVariables[T: Type]: Acc =
-      traverse[T, Acc](
-        List.empty,
-        (acc: Acc, tpe: Type[?]) => {
-          tpe match {
-            case '[t] if TypeRepr.of[t].typeSymbol.isTypeParam =>
-              tpe :: acc
-            case _ =>
-              acc
-          }
-        },
-      )
+    requireConcreteType[T]
 
-    val vs = freeTypeVariables[T]
-    if (vs.nonEmpty)
-      vs.head match {
-        case '[tpe] =>
-          errorAndAbort(
-            Seq(
-              s"A concrete type expected but type variable ${Type.show[tpe]} is given.",
-              "Did you forget to make the method inline?",
-            ).mkString("\n"),
-          )
-      }
-    else
-      '{
-        Concrete
-          .instance
-          .asInstanceOf[Concrete[T]]
-      }
+    '{
+      Concrete
+        .instance
+        .asInstanceOf[Concrete[T]]
+    }
   }
 
   private def typeNameOfImpl[T: Type](using Quotes): Expr[String] = {

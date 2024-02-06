@@ -63,7 +63,7 @@ private[record4s] class InternalMacros(using
 
   case class Schema private[InternalMacros] (
     private[InternalMacros] val fieldTypes: Seq[(String, TypeRepr)],
-    tags: Seq[Type[?]],
+    tags: Seq[Type[?]] = Seq.empty,
   ) {
     def size: Int = fieldTypes.size
 
@@ -336,6 +336,33 @@ private[record4s] class InternalMacros(using
     traverse1(List(safeDealias(fixupOpaqueAlias(TypeRepr.of[R]))), acc)
   }
 
+  def freeTypeVariables[T: Type]: List[Type[?]] =
+    traverse[T, List[Type[?]]](
+      List.empty,
+      (acc: List[Type[?]], tpe: Type[?]) => {
+        tpe match {
+          case '[t] if TypeRepr.of[t].typeSymbol.isTypeParam =>
+            tpe :: acc
+          case _ =>
+            acc
+        }
+      },
+    )
+
+  def requireConcreteType[T: Type]: Unit = {
+    val vs = freeTypeVariables[T]
+    if (vs.nonEmpty)
+      vs.head match {
+        case '[tpe] =>
+          errorAndAbort(
+            Seq(
+              s"A concrete type expected but type variable ${Type.show[tpe]} is given.",
+              "Did you forget to make the method inline?",
+            ).mkString("\n"),
+          )
+      }
+  }
+
   def schemaOfRecord[R: Type]: Schema = {
     def unapplyTuple2(tpr: TypeRepr): Option[(TypeRepr, TypeRepr)] =
       // We can't do
@@ -462,7 +489,7 @@ private[record4s] class InternalMacros(using
 
   def extractFieldsFrom(
     varargs: Expr[Seq[Any]],
-  ): (Expr[Seq[(String, Any)]], Type[?]) = {
+  ): (Expr[Seq[(String, Any)]], Schema) = {
     // We have no way to write this without transparent inline macro.  Literal string
     // types are subject to widening and they become `String`s at the type level.  A
     // `transparent inline given` also doesn't work since it can only depend on type-level
@@ -476,24 +503,12 @@ private[record4s] class InternalMacros(using
         errorAndAbort("Expected explicit varargs sequence", Some(varargs))
     }
     val fieldTypes = fieldTypesOf(fields)
-
-    val tupledFieldTypes =
-      fieldTypes.foldRight(Type.of[EmptyTuple]: Type[?]) {
-        case ((label, _, '[tpe]), base) =>
-          val pair = ConstantType(StringConstant(label)).asType match {
-            case '[label] => Type.of[(label, tpe)]
-          }
-          (pair, base) match {
-            case ('[tpe], '[head *: tail]) =>
-              Type.of[tpe *: head *: tail]
-            case ('[tpe], '[EmptyTuple]) =>
-              Type.of[tpe *: EmptyTuple]
-          }
-      }
-
     val namedFields =
       fieldTypes.map((label, value, _) => Expr.ofTuple((Expr(label), value)))
-    (Expr.ofSeq(namedFields), tupledFieldTypes)
+    val schema = Schema(fieldTypes.map { case (label, _, '[tpe]) =>
+      (label, TypeRepr.of[tpe])
+    })
+    (Expr.ofSeq(namedFields), schema)
   }
 
   def requireApply[C, T](context: Expr[C], method: Expr[String])(
