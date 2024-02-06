@@ -84,6 +84,9 @@ object Macros {
   ): Expr[Concat[R1, R2]] = withTyping {
     import internal.*
 
+    requireConcreteType[R1]
+    requireConcreteType[R2]
+
     val result = catching {
       val schema1 = schemaOf[R1]
       val schema2 = schemaOf[R2]
@@ -197,40 +200,15 @@ object Macros {
   def derivedTypingConcreteImple[T: Type](using
     Quotes,
   ): Expr[Concrete[T]] = withInternal {
-    import quotes.reflect.*
     import internal.*
 
-    type Acc = List[Type[?]]
-    def freeTypeVariables[T: Type]: Acc =
-      traverse[T, Acc](
-        List.empty,
-        (acc: Acc, tpe: Type[?]) => {
-          tpe match {
-            case '[t] if TypeRepr.of[t].typeSymbol.isTypeParam =>
-              tpe :: acc
-            case _ =>
-              acc
-          }
-        },
-      )
+    requireConcreteType[T]
 
-    val vs = freeTypeVariables[T]
-    if (vs.nonEmpty)
-      vs.head match {
-        case '[tpe] =>
-          errorAndAbort(
-            Seq(
-              s"A concrete type expected but type variable ${Type.show[tpe]} is given.",
-              "Did you forget to make the method inline?",
-            ).mkString("\n"),
-          )
-      }
-    else
-      '{
-        Concrete
-          .instance
-          .asInstanceOf[Concrete[T]]
-      }
+    '{
+      Concrete
+        .instance
+        .asInstanceOf[Concrete[T]]
+    }
   }
 
   private def typeNameOfImpl[T: Type](using Quotes): Expr[String] = {

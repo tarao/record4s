@@ -122,24 +122,11 @@ class UseCaseSpec extends helper.UnitSpec {
       r2.email shouldBe "tarao@example.com"
     }
 
-    it("should lose record type information without using Concat") {
-      def addEmail[R <: %](record: R, email: String) =
+    it("should reject generic record concatenation without using Concat") {
+      """
+      def addEmail[R <: %](record: R, email: String): Any =
         record ++ %(email = email)
-
-      val r0 = %(name = "tarao", age = 3)
-      val r1 = addEmail(r0, "tarao@example.com")
-      "r1.name" shouldNot typeCheck
-      "r1.age" shouldNot typeCheck
-      r1.email shouldBe "tarao@example.com"
-      r1 shouldStaticallyBe a[% { val email: String }]
-
-      def addEmail2[R <: % { val name: String }](record: R, email: String) =
-        record ++ %(email = email)
-      val r2 = addEmail(r0, "tarao@example.com")
-      "r2.name" shouldNot typeCheck
-      "r2.age" shouldNot typeCheck
-      r2.email shouldBe "tarao@example.com"
-      r2 shouldStaticallyBe a[% { val email: String }]
+      """ shouldNot typeCheck
     }
   }
 
@@ -232,24 +219,11 @@ class UseCaseSpec extends helper.UnitSpec {
       r2.email shouldBe "tarao@example.com"
     }
 
-    it("should lose record type information without using Append") {
-      def addEmail[R <: %](record: R, email: String) =
+    it("should reject generic record extension without using Append") {
+      """
+      def addEmail[R <: %](record: R, email: String): Any =
         record + (email = email)
-
-      val r0 = %(name = "tarao", age = 3)
-      val r1 = addEmail(r0, "tarao@example.com")
-      "r1.name" shouldNot typeCheck
-      "r1.age" shouldNot typeCheck
-      r1.email shouldBe "tarao@example.com"
-      r1 shouldStaticallyBe a[% { val email: String }]
-
-      def addEmail2[R <: % { val name: String }](record: R, email: String) =
-        record + (email = email)
-      val r2 = addEmail2(r0, "tarao@example.com")
-      "r2.name" shouldNot typeCheck
-      "r2.age" shouldNot typeCheck
-      r2.email shouldBe "tarao@example.com"
-      r2 shouldStaticallyBe a[% { val email: String }]
+      """ shouldNot typeCheck
     }
   }
 
@@ -398,7 +372,7 @@ class UseCaseSpec extends helper.UnitSpec {
 
     it("should reject concatenation without concrete field types") {
       """
-        def addEmail[R](record: ArrayRecord[R], email: String) =
+        def addEmail[R](record: ArrayRecord[R], email: String): Any =
           record ++ ArrayRecord(email = email)
       """ shouldNot typeCheck
     }
@@ -533,7 +507,7 @@ class UseCaseSpec extends helper.UnitSpec {
 
     it("should reject concatenation without concrete field types") {
       """
-        def addEmail[R](record: ArrayRecord[R], email: String) =
+        def addEmail[R](record: ArrayRecord[R], email: String): Any =
           record + (email = email)
       """ shouldNot typeCheck
     }

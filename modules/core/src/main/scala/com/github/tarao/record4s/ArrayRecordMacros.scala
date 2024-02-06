@@ -143,6 +143,9 @@ object ArrayRecordMacros {
   ): Expr[Concat[R1, R2]] = withTyping {
     import internal.*
 
+    requireConcreteType[R1]
+    requireConcreteType[R2]
+
     var deduped = false
 
     val result = catching {

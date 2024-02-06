@@ -336,6 +336,33 @@ private[record4s] class InternalMacros(using
     traverse1(List(safeDealias(fixupOpaqueAlias(TypeRepr.of[R]))), acc)
   }
 
+  def freeTypeVariables[T: Type]: List[Type[?]] =
+    traverse[T, List[Type[?]]](
+      List.empty,
+      (acc: List[Type[?]], tpe: Type[?]) => {
+        tpe match {
+          case '[t] if TypeRepr.of[t].typeSymbol.isTypeParam =>
+            tpe :: acc
+          case _ =>
+            acc
+        }
+      },
+    )
+
+  def requireConcreteType[T: Type]: Unit = {
+    val vs = freeTypeVariables[T]
+    if (vs.nonEmpty)
+      vs.head match {
+        case '[tpe] =>
+          errorAndAbort(
+            Seq(
+              s"A concrete type expected but type variable ${Type.show[tpe]} is given.",
+              "Did you forget to make the method inline?",
+            ).mkString("\n"),
+          )
+      }
+  }
+
   def schemaOfRecord[R: Type]: Schema = {
     def unapplyTuple2(tpr: TypeRepr): Option[(TypeRepr, TypeRepr)] =
       // We can't do
