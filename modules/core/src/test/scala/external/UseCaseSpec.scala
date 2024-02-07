@@ -107,7 +107,7 @@ class UseCaseSpec extends helper.UnitSpec {
       r2.email shouldBe "tarao@example.com"
     }
 
-    it("should reject generic record concatenation without using Concat") {
+    it("should reject generic record concatenation without using ++ type") {
       """
       def addEmail[R <: %](record: R, email: String): Any =
         record ++ %(email = email)
@@ -206,7 +206,7 @@ class UseCaseSpec extends helper.UnitSpec {
       r2.email shouldBe "tarao@example.com"
     }
 
-    it("should reject generic record extension without using Append") {
+    it("should reject generic record extension without using ++ type") {
       """
       def addEmail[R <: %](record: R, email: String): Any =
         record + (email = email)
@@ -355,7 +355,7 @@ class UseCaseSpec extends helper.UnitSpec {
     import com.github.tarao.record4s.{%, ArrayRecord, ProductRecord, Tag}
     import com.github.tarao.record4s.typing.syntax.{++, :=}
 
-    it("can be done by using Append.Aux") {
+    it("can be done by using typing.syntax") {
       locally {
         def addEmail[R <: Tuple, RR <: ProductRecord](
           record: ArrayRecord[R],

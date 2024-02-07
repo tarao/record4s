@@ -5,16 +5,16 @@ Generic Field Lookup
 --------------------
 
 It is possible to retrieve a field value of an arbitrary type from records by using
-`Record.lookup`.  To express the type of the field value, which is unknown until the
-record type is specified, you can use `typing.Record.Lookup`.  In the following example,
+`typing.syntax`.  To express the type of the field value, which is unknown until the
+record type is specified, you can use `typing.syntax.in`.  In the following example,
 `getValue` method retrieves a field value named `value` from records of any type.
 
 ```scala mdoc:mline
 import com.github.tarao.record4s.{%, Record}
-import com.github.tarao.record4s.typing.Record.Lookup
+import com.github.tarao.record4s.typing.syntax.{:=, in}
 
 def getValue[R <: %, V](record: R)(using
-  Lookup.Aux[R, "value", V],
+  V := ("value" in R),
 ): V = Record.lookup(record, "value")
 
 val r1 = %(value = "tarao")
@@ -24,9 +24,6 @@ getValue(r1)
 
 getValue(r2)
 ```
-
-Note that `(using Lookup.Aux[R, L, V]): V` is a shorthand for `(using l: Lookup[R, L]):
-l.Out`.
 
 Of course, it doesn't compile for a record without `value` field.
 
@@ -40,7 +37,7 @@ Extending Generic Records with Concrete Fields
 ----------------------------------------------
 
 To define a method to extend a generic record with some concrete field, we need to somehow
-calculate the extended result record type.  This can be done by using `typing.Record.Append`.
+calculate the extended result record type.  This can be done by using `typing.syntax.++`.
 
 For example, `withEmail` method, which expects a domain name and returns a record extended
 by `email` field of E-mail address, whose local part is filled by the first segment of
@@ -48,7 +45,7 @@ by `email` field of E-mail address, whose local part is filled by the first segm
 
 ```scala mdoc:mline
 import com.github.tarao.record4s.Tag
-import com.github.tarao.record4s.typing.Record.Append
+import com.github.tarao.record4s.typing.syntax.++
 
 trait Person
 object Person {
@@ -59,7 +56,7 @@ object Person {
       domain: String,
       localPart: String = p.firstName,
     )(using
-      Append.Aux[R & Tag[Person], % { val email: String }, RR],
+      RR := (R & Tag[Person]) ++ % { val email: String },
     ): RR = p + (email = s"${localPart}@${domain}")
   }
 }
@@ -73,15 +70,13 @@ val person = %(name = "tarao fuguta", age = 3)
   .withEmail("example.com")
 ```
 
-There is also `typing.Record.Concat` to calculate concatenation of two record types.  The
-above example can be rewritten with `Concat` as the following.
+It is also possible to calculate concatenation of two record types in the same way.  The
+above example can be rewritten as the following.
 
 ```scala mdoc:nest:invisible
 ```
 
 ```scala mdoc:mline
-import com.github.tarao.record4s.typing.Record.Concat
-
 trait Person
 object Person {
   extension [R <: % { val name: String }](p: R & Tag[Person]) {
@@ -91,7 +86,7 @@ object Person {
       domain: String,
       localPart: String = p.firstName,
     )(using
-      Concat.Aux[R & Tag[Person], % { val email: String }, RR],
+      RR := (R & Tag[Person]) ++ % { val email: String },
     ): RR = p ++ %(email = s"${localPart}@${domain}")
   }
 }
@@ -101,11 +96,11 @@ Concatenating Two Generic Records
 ---------------------------------
 
 You may think that you can define a method to concatenate two generic records by using
-`Concat` but it doesn't work in a simple way.
+`typing.syntax.++` but it doesn't work in a simple way.
 
 ```scala mdoc:fail
 def concat[R1 <: %, R2 <: %, RR <: %](r1: R1, r2: R2)(using
-  Concat.Aux[R1, R2, RR],
+  RR := R1 ++ R2,
 ): RR = r1 ++ r2
 ```
 
@@ -114,7 +109,7 @@ concrete type for type safety.  In this case, defining an inline method makes it
 
 ```scala mdoc:mline
 inline def concat[R1 <: %, R2 <: %, RR <: %](r1: R1, r2: R2)(using
-  Concat.Aux[R1, R2, RR],
+  RR := R1 ++ R2,
 ): RR = r1 ++ r2
 
 concat(%(name = "tarao"), %(age = 3))
