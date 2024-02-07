@@ -30,7 +30,7 @@ ThisBuild / githubWorkflowJavaVersions := Seq(
 )
 
 val circeVersion = "0.14.6"
-val scalaTestVersion = "3.2.17"
+val scalaTestVersion = "3.2.18"
 
 lazy val compileSettings = Def.settings(
   // Default options are set by sbt-typelevel-settings
