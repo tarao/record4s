@@ -462,8 +462,8 @@ object ArrayRecord
       withPotentialTypingError {
         withPotentialTypingError {
           record.shrinkTo[Tuple.Zip[rr.ElemLabels, rr.ElemTypes]]
-        } (using ev)
-      } (using r)
+        }(using ev)
+      }(using r)
 
     /** Convert this record to a `To`.
       *

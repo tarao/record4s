@@ -264,7 +264,8 @@ class UseCaseSpec extends helper.UnitSpec {
 
       trait Person
 
-      val r0 = %(name = "tarao", age = 3, email = "tarao@example.com").tag[Person]
+      val r0 =
+        %(name = "tarao", age = 3, email = "tarao@example.com").tag[Person]
       val r1 = withoutAge(r0)
       r1.name shouldBe "tarao"
       r1.email shouldBe "tarao@example.com"
