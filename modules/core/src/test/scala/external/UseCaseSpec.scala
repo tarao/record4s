@@ -214,6 +214,40 @@ class UseCaseSpec extends helper.UnitSpec {
     }
   }
 
+  describe("Generic record upcast") {
+    import com.github.tarao.record4s.{%, RecordLike, Tag}
+    import com.github.tarao.record4s.typing.syntax.{--, :=}
+
+    it("can be done by using --") {
+      def withoutAge[R <: %, RR <: %](record: R)(using
+        RR := R -- "age" *: EmptyTuple,
+        R <:< RR,
+      ): RR = record
+
+      val r0 = %(name = "tarao", age = 3, email = "tarao@example.com")
+      val r1 = withoutAge(r0)
+      r1.name shouldBe "tarao"
+      r1.email shouldBe "tarao@example.com"
+      "r1.age" shouldNot typeCheck
+    }
+
+    it("preserves a tag") {
+      def withoutAge[R <: %, RR <: %](record: R)(using
+        RR := R -- "age" *: EmptyTuple,
+        R <:< RR,
+      ): RR = record
+
+      trait Person
+
+      val r0 = %(name = "tarao", age = 3, email = "tarao@example.com").tag[Person]
+      val r1 = withoutAge(r0)
+      r1.name shouldBe "tarao"
+      r1.email shouldBe "tarao@example.com"
+      "r1.age" shouldNot typeCheck
+      r1 shouldStaticallyBe a[Tag[Person]]
+    }
+  }
+
   describe("Generic array record lookup") {
     import com.github.tarao.record4s.ArrayRecord
     import com.github.tarao.record4s.typing.syntax.{:=, by, in}

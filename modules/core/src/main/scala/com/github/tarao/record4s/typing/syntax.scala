@@ -20,6 +20,7 @@ package typing
 object syntax {
   type :=[Out0, A] = A match {
     case Record.Concat[r1, r2]      => Record.Concat.Aux[r1, r2, Out0]
+    case Record.Unselect[r, u]      => Record.Unselect.Aux[r, u, Out0]
     case Record.Lookup[r, l]        => Record.Lookup.Aux[r, l, Out0]
     case ArrayRecord.Concat[r1, r2] => ArrayRecord.Concat.Aux[r1, r2, Out0]
     case ArrayRecord.Lookup[r, l] =>
@@ -30,6 +31,8 @@ object syntax {
     case % => Record.Concat[R1, R2]
     case _ => ArrayRecord.Concat[R1, R2]
   }
+
+  type --[R, U <: Tuple] = Record.Unselect[R, U]
 
   type in[L, R] = R match {
     case % => Record.Lookup[R, L]
