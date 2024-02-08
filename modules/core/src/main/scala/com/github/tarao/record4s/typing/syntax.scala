@@ -28,13 +28,13 @@ object syntax {
   }
 
   type ++[R1, R2] = R1 match {
-    case % => Record.Concat[R1, R2]
-    case _ => ArrayRecord.Concat[R1, R2]
+    case %     => Record.Concat[R1, R2]
+    case Tuple => ArrayRecord.Concat[R1, R2]
   }
 
   type +[R, F <: Tuple] = R match {
-    case % => Record.Concat[R, F *: EmptyTuple]
-    case _ => ArrayRecord.Concat[R, F *: EmptyTuple]
+    case %     => Record.Concat[R, F *: EmptyTuple]
+    case Tuple => ArrayRecord.Concat[R, F *: EmptyTuple]
   }
 
   type --[R <: %, U <: Tuple] = Record.Unselect[R, U]
@@ -42,8 +42,8 @@ object syntax {
   type -[R <: %, L] = Record.Unselect[R, L *: EmptyTuple]
 
   type in[L, R] = R match {
-    case % => Record.Lookup[R, L]
-    case _ => ArrayRecord.Lookup[R, L]
+    case %     => Record.Lookup[R, L]
+    case Tuple => ArrayRecord.Lookup[R, L]
   }
 
   type by[L, I] = L match {
