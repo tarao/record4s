@@ -62,16 +62,16 @@ object Record {
       ${ Macros.derivedTypingSelectImpl }
   }
 
-  final class Unselect[R, U] private extends MaybeError {
-    type Out <: %
+  final class Unselect[R <: %, U] private extends MaybeError {
+    type Out >: R <: %
   }
 
   object Unselect {
     private[record4s] val instance = new Unselect[Nothing, Nothing]
 
-    type Aux[R, U, Out0 <: %] = Unselect[R, U] { type Out = Out0 }
+    type Aux[R <: %, U, Out0 <: %] = Unselect[R, U] { type Out = Out0 }
 
-    transparent inline given [R: RecordLike, S <: Tuple]: Unselect[R, S] =
+    transparent inline given [R <: %, S <: Tuple]: Unselect[R, S] =
       ${ Macros.derivedTypingUnselectImpl }
   }
 }

@@ -37,9 +37,9 @@ object syntax {
     case _ => ArrayRecord.Concat[R, F *: EmptyTuple]
   }
 
-  type --[R, U <: Tuple] = Record.Unselect[R, U]
+  type --[R <: %, U <: Tuple] = Record.Unselect[R, U]
 
-  type -[R, L] = Record.Unselect[R, L *: EmptyTuple]
+  type -[R <: %, L] = Record.Unselect[R, L *: EmptyTuple]
 
   type in[L, R] = R match {
     case % => Record.Lookup[R, L]

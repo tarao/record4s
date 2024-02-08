@@ -230,13 +230,12 @@ class UseCaseSpec extends helper.UnitSpec {
   }
 
   describe("Generic record upcast") {
-    import com.github.tarao.record4s.{%, RecordLike, Tag}
+    import com.github.tarao.record4s.{%, Tag}
     import com.github.tarao.record4s.typing.syntax.{-, --, :=}
 
     it("can be done by using --") {
-      def withoutAge[R <: %, RR <: %](record: R)(using
+      def withoutAge[R <: %, RR >: R <: %](record: R)(using
         RR := R -- "age" *: EmptyTuple,
-        R <:< RR,
       ): RR = record
 
       val r0 = %(name = "tarao", age = 3, email = "tarao@example.com")
@@ -247,9 +246,8 @@ class UseCaseSpec extends helper.UnitSpec {
     }
 
     it("can be done by using -") {
-      def withoutAge[R <: %, RR <: %](record: R)(using
+      def withoutAge[R <: %, RR >: R <: %](record: R)(using
         RR := R - "age",
-        R <:< RR,
       ): RR = record
 
       val r0 = %(name = "tarao", age = 3, email = "tarao@example.com")
@@ -260,9 +258,8 @@ class UseCaseSpec extends helper.UnitSpec {
     }
 
     it("preserves a tag") {
-      def withoutAge[R <: %, RR <: %](record: R)(using
+      def withoutAge[R <: %, RR >: R <: %](record: R)(using
         RR := R -- "age" *: EmptyTuple,
-        R <:< RR,
       ): RR = record
 
       trait Person
