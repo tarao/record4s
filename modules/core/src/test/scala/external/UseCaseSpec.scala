@@ -117,7 +117,7 @@ class UseCaseSpec extends helper.UnitSpec {
 
   describe("Generic record extension with +") {
     import com.github.tarao.record4s.{%, Tag}
-    import com.github.tarao.record4s.typing.syntax.{++, :=}
+    import com.github.tarao.record4s.typing.syntax.{+, ++, :=}
 
     it("can be done by using typing.syntax") {
       locally {
@@ -138,6 +138,21 @@ class UseCaseSpec extends helper.UnitSpec {
       locally {
         def addEmail[R <: %, RR <: %](record: R, email: String)(using
           RR := R ++ ("email", String) *: EmptyTuple,
+        ): RR = record + (email = email)
+
+        val r0 = %(name = "tarao", age = 3)
+        val r1 = addEmail(r0, "tarao@example.com")
+        r1 shouldStaticallyBe a[
+          % { val name: String; val age: Int; val email: String },
+        ]
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+        r1.email shouldBe "tarao@example.com"
+      }
+
+      locally {
+        def addEmail[R <: %, RR <: %](record: R, email: String)(using
+          RR := R + ("email", String),
         ): RR = record + (email = email)
 
         val r0 = %(name = "tarao", age = 3)
@@ -216,11 +231,24 @@ class UseCaseSpec extends helper.UnitSpec {
 
   describe("Generic record upcast") {
     import com.github.tarao.record4s.{%, RecordLike, Tag}
-    import com.github.tarao.record4s.typing.syntax.{--, :=}
+    import com.github.tarao.record4s.typing.syntax.{-, --, :=}
 
     it("can be done by using --") {
       def withoutAge[R <: %, RR <: %](record: R)(using
         RR := R -- "age" *: EmptyTuple,
+        R <:< RR,
+      ): RR = record
+
+      val r0 = %(name = "tarao", age = 3, email = "tarao@example.com")
+      val r1 = withoutAge(r0)
+      r1.name shouldBe "tarao"
+      r1.email shouldBe "tarao@example.com"
+      "r1.age" shouldNot typeCheck
+    }
+
+    it("can be done by using -") {
+      def withoutAge[R <: %, RR <: %](record: R)(using
+        RR := R - "age",
         R <:< RR,
       ): RR = record
 
@@ -387,7 +415,7 @@ class UseCaseSpec extends helper.UnitSpec {
 
   describe("Generic array record extension with +") {
     import com.github.tarao.record4s.{%, ArrayRecord, ProductRecord, Tag}
-    import com.github.tarao.record4s.typing.syntax.{++, :=}
+    import com.github.tarao.record4s.typing.syntax.{+, ++, :=}
 
     it("can be done by using typing.syntax") {
       locally {
@@ -412,6 +440,23 @@ class UseCaseSpec extends helper.UnitSpec {
           record: ArrayRecord[R],
           email: String,
         )(using RR := R ++ % { val email: String }): RR =
+          record + (email = email)
+
+        val r0 = ArrayRecord(name = "tarao", age = 3)
+        val r1 = addEmail(r0, "tarao@example.com")
+        r1 shouldStaticallyBe a[ArrayRecord[
+          (("name", String), ("age", Int), ("email", String)),
+        ]]
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+        r1.email shouldBe "tarao@example.com"
+      }
+
+      locally {
+        def addEmail[R <: Tuple, RR <: ProductRecord](
+          record: ArrayRecord[R],
+          email: String,
+        )(using RR := R + ("email", String)): RR =
           record + (email = email)
 
         val r0 = ArrayRecord(name = "tarao", age = 3)
