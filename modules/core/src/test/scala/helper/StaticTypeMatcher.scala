@@ -25,11 +25,15 @@ import scala.compiletime.summonInline
 
 trait StaticTypeMatcher {
   extension [T1](anything: T1) {
-    inline def shouldStaticallyBe[T2](r: ResultOfATypeInvocation[T2]): Unit = {
+    inline infix def shouldStaticallyBe[T2](
+      r: ResultOfATypeInvocation[T2],
+    ): Unit = {
       val _ = summonInline[T1 <:< T2]
     }
 
-    inline def shouldStaticallyBe[T2](r: ResultOfAnTypeInvocation[T2]): Unit = {
+    inline infix def shouldStaticallyBe[T2](
+      r: ResultOfAnTypeInvocation[T2],
+    ): Unit = {
       val _ = summonInline[T1 <:< T2]
     }
   }
