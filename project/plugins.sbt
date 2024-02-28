@@ -1,5 +1,5 @@
 addSbtPlugin("pl.project13.scala" % "sbt-jmh"                % "0.4.7")
-addSbtPlugin("org.typelevel"      % "sbt-typelevel"          % "0.6.5")
+addSbtPlugin("org.typelevel"      % "sbt-typelevel"          % "0.6.7")
 addSbtPlugin("org.typelevel"      % "sbt-typelevel-scalafix" % "0.6.5")
 addSbtPlugin("org.typelevel"      % "sbt-typelevel-site"     % "0.6.7")
 addSbtPlugin("org.scala-js"       % "sbt-scalajs"            % "1.15.0")
