@@ -28,6 +28,7 @@ ThisBuild / githubWorkflowJavaVersions := Seq(
   JavaSpec.temurin("11"),
   JavaSpec.temurin("17"),
 )
+val BenchmarkJavaVersion = JavaSpec.temurin("11")
 
 val circeVersion = "0.14.6"
 val scalaTestVersion = "3.2.18"
@@ -141,7 +142,8 @@ lazy val benchmark_2_11 = (project in file("modules/benchmark_2_11"))
   .enablePlugins(JmhPlugin)
   .enablePlugins(NoPublishPlugin)
   .settings(
-    scalaVersion := Scala_2_11,
+    scalaVersion    := Scala_2_11,
+    tlFatalWarnings := false,
     Compile / run / javaOptions ++= Seq(
       "-Xss10m",
     ),
@@ -150,6 +152,31 @@ lazy val benchmark_2_11 = (project in file("modules/benchmark_2_11"))
       scalaOrganization.value % "scala-compiler" % scalaVersion.value,
     ),
   )
+
+ThisBuild / githubWorkflowAddedJobs ++= Seq(
+  WorkflowJob(
+    id     = "build-benchmark",
+    name   = "Build and Test Benchmarks",
+    javas  = List(BenchmarkJavaVersion),
+    scalas = Nil,
+    matrixAdds = Map(
+      "project" -> List(benchmark_2_11.id, benchmark_2_13.id, benchmark_3.id),
+    ),
+    steps = List(WorkflowStep.Checkout) ++ WorkflowStep.SetupJava(
+      List(BenchmarkJavaVersion),
+    ) ++ githubWorkflowGeneratedCacheSteps.value ++ List(
+      WorkflowStep.Run(
+        name     = Some("sbt update (project)"),
+        commands = List("sbt 'project ${{ matrix.project }}' update"),
+      ),
+      WorkflowStep.Run(
+        name = Some("Test"),
+        commands =
+          List("sbt 'project ${{ matrix.project }}' 'Jmh / run TimersBench'"),
+      ),
+    ),
+  ),
+)
 
 ThisBuild / githubWorkflowTargetBranches := Seq("master")
 ThisBuild / tlCiReleaseBranches          := Seq() // publish only tags

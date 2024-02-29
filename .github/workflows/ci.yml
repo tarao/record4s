@@ -299,6 +299,37 @@ jobs:
           modules-ignore: benchmark_3_3 benchmark_2_11_2.11 rootjs_3 docs_3 benchmark_2_13_2.13 rootjvm_3 rootnative_3
           configs-ignore: test scala-tool scala-doc-tool test-internal
 
+  build-benchmark:
+    name: Build and Test Benchmarks
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        java: [temurin@11]
+        project: [benchmark_2_11, benchmark_2_13, benchmark_3]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout current branch (fast)
+        uses: actions/checkout@v4
+
+      - name: Setup Java (temurin@11)
+        id: setup-java-temurin-11
+        if: matrix.java == 'temurin@11'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 11
+          cache: sbt
+
+      - name: sbt update
+        if: matrix.java == 'temurin@11' && steps.setup-java-temurin-11.outputs.cache-hit == 'false'
+        run: sbt +update
+
+      - name: sbt update (project)
+        run: sbt 'project ${{ matrix.project }}' update
+
+      - name: Test
+        run: sbt 'project ${{ matrix.project }}' 'Jmh / run TimersBench'
+
   coverage:
     name: Generate coverage report
     strategy:
