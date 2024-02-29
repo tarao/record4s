@@ -17,7 +17,7 @@ ThisBuild / developers := List(
   tlGitHubDev("windymelt", "Windymelt"),
 )
 
-val Scala_3 = "3.3.1"
+val Scala_3 = "3.4.0"
 val Scala_2_13 = "2.13.13"
 val Scala_2_11 = "2.11.12"
 
