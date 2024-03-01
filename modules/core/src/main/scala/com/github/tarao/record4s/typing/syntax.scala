@@ -24,7 +24,13 @@ object syntax {
     case Record.Lookup[r, l]        => Record.Lookup.Aux[r, l, Out0]
     case ArrayRecord.Concat[r1, r2] => ArrayRecord.Concat.Aux[r1, r2, Out0]
     case ArrayRecord.Lookup[r, l] =>
-      ArrayRecord.Lookup[r, l] { type Out = Out0 }
+      Out0 match {
+        case (o, i) =>
+          ArrayRecord.Lookup[r, l] {
+            type Out = o
+            type Index = i
+          }
+      }
   }
 
   type ++[R1, R2] = R1 match {
@@ -44,9 +50,5 @@ object syntax {
   infix type in[L, R] = R match {
     case %     => Record.Lookup[R, L]
     case Tuple => ArrayRecord.Lookup[R, L]
-  }
-
-  type by[L, I] = L match {
-    case o := (l in r) => ArrayRecord.Lookup.Aux[r, l, I, o]
   }
 }

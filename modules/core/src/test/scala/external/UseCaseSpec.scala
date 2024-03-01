@@ -276,11 +276,11 @@ class UseCaseSpec extends helper.UnitSpec {
 
   describe("Generic array record lookup") {
     import com.github.tarao.record4s.ArrayRecord
-    import com.github.tarao.record4s.typing.syntax.{:=, by, in}
+    import com.github.tarao.record4s.typing.syntax.{:=, in}
 
     it("can be done by using Lookup") {
-      inline def getEmail[R, V, I <: Int](record: ArrayRecord[R])(using
-        V := ("email" in R) by I,
+      inline def getEmail[R <: Tuple, V, I <: Int](record: ArrayRecord[R])(using
+        (V, I) := ("email" in R),
       ): V = ArrayRecord.lookup(record, "email")
 
       val r0 = ArrayRecord(name = "tarao", age = 3)
