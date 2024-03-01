@@ -41,7 +41,7 @@ object syntax {
 
   type -[R <: %, L] = Record.Unselect[R, L *: EmptyTuple]
 
-  type in[L, R] = R match {
+  infix type in[L, R] = R match {
     case %     => Record.Lookup[R, L]
     case Tuple => ArrayRecord.Lookup[R, L]
   }
