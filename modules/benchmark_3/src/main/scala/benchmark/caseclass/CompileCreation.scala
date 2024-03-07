@@ -21,11 +21,11 @@ class CompileCreation {
 
     val fields = (1 to size).map(i => s"f${i} = ${i}").mkString(",")
     source = s"""
-      |import benchmark.caseclass.*
-      |object A {
-      |  val r = Record${size}(${fields})
-      |}
-      |""".stripMargin
+                |import benchmark.caseclass.*
+                |object A {
+                |  val r = Record${size}(${fields})
+                |}
+                |""".stripMargin
   }
 
   @Benchmark

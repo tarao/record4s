@@ -10,7 +10,26 @@ import com.github.tarao.record4s.%
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Thread)
 class CompileFieldAccess {
-  @Param(Array("1", "2", "4", "8", "10", "12", "14", "16", "18", "20", "22", "24", "26", "28", "30", "32"))
+  @Param(
+    Array(
+      "1",
+      "2",
+      "4",
+      "8",
+      "10",
+      "12",
+      "14",
+      "16",
+      "18",
+      "20",
+      "22",
+      "24",
+      "26",
+      "28",
+      "30",
+      "32",
+    ),
+  )
   var index: Int = 0
 
   var source: String = ""
@@ -22,11 +41,11 @@ class CompileFieldAccess {
     compiler = new Compiler
 
     source = s"""
-      |import benchmark.record4s.CompileFieldAccess.r
-      |object A {
-      |  r.f${index}
-      |}
-      |""".stripMargin
+                |import benchmark.record4s.CompileFieldAccess.r
+                |object A {
+                |  r.f${index}
+                |}
+                |""".stripMargin
   }
 
   @Benchmark
@@ -36,15 +55,15 @@ class CompileFieldAccess {
 
 object CompileFieldAccess {
   val r = %(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,

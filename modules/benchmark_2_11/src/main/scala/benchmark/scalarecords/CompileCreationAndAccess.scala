@@ -22,12 +22,12 @@ class CompileCreationAndAccess {
     val fields = (1 to size).map(i => s"f${i} = ${i}").mkString(",")
     val access = (1 to size).map(i => s"  r.f${i}").mkString("\n")
     source = s"""
-      |import records._
-      |object A {
-      |  val r = Rec(${fields})
-      |${access}
-      |}
-      |""".stripMargin
+                |import records._
+                |object A {
+                |  val r = Rec(${fields})
+                |${access}
+                |}
+                |""".stripMargin
   }
 
   @Benchmark

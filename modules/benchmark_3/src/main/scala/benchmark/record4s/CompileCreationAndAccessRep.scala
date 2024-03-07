@@ -24,12 +24,12 @@ class CompileCreationAndAccessRep {
     val fields = (1 to size).map(i => s"f${i} = ${i}").mkString(",")
     val access = (1 to repetitions).map(_ => s"  r.f${size}").mkString("\n")
     source = s"""
-      |import com.github.tarao.record4s.%
-      |object A {
-      |  val r = %(${fields})
-      |${access}
-      |}
-      |""".stripMargin
+                |import com.github.tarao.record4s.%
+                |object A {
+                |  val r = %(${fields})
+                |${access}
+                |}
+                |""".stripMargin
   }
 
   @Benchmark

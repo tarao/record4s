@@ -23,13 +23,15 @@ class CompileUpdateRep {
   def setup(): Unit = {
     compiler = new Compiler
 
-    val update = (1 to repetitions).map(_ => s"  r + (f${size} = r.f${size} + 1)").mkString("\n")
+    val update = (1 to repetitions)
+      .map(_ => s"  r + (f${size} = r.f${size} + 1)")
+      .mkString("\n")
     source = s"""
-      |import benchmark.record4s.CompileUpdateRep.r
-      |object A {
-      |${update}
-      |}
-      |""".stripMargin
+                |import benchmark.record4s.CompileUpdateRep.r
+                |object A {
+                |${update}
+                |}
+                |""".stripMargin
   }
 
   @Benchmark

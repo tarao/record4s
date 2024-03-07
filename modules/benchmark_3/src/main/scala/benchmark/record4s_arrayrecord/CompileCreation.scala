@@ -21,11 +21,11 @@ class CompileCreation {
 
     val fields = (1 to size).map(i => s"f${i} = ${i}").mkString(",")
     source = s"""
-      |import com.github.tarao.record4s.ArrayRecord
-      |object A {
-      |  val r = ArrayRecord(${fields})
-      |}
-      |""".stripMargin
+                |import com.github.tarao.record4s.ArrayRecord
+                |object A {
+                |  val r = ArrayRecord(${fields})
+                |}
+                |""".stripMargin
   }
 
   @Benchmark

@@ -22,14 +22,15 @@ class CompileCreationAndAccessRep {
     compiler = new Compiler
 
     val fields = (1 to size).map(i => s"f${i} = ${i}").mkString(",")
-    val access = (1 to repetitions).map(_ => s"""  r.get('f${size})""").mkString("\n")
+    val access =
+      (1 to repetitions).map(_ => s"""  r.get('f${size})""").mkString("\n")
     source = s"""
-      |import shapeless.record._
-      |object A {
-      |  val r = Record(${fields})
-      |${access}
-      |}
-      |""".stripMargin
+                |import shapeless.record._
+                |object A {
+                |  val r = Record(${fields})
+                |${access}
+                |}
+                |""".stripMargin
   }
 
   @Benchmark
