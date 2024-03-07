@@ -238,7 +238,8 @@ lazy val docs = project
         s"${base}/${version}/"
       }
       val sourceUrl = {
-        val scmUrl = scmInfo.value.get.browseUrl.toString
+        val scmUrl =
+          scmInfo.value.map(_.browseUrl.toString).orElse(homepage.value).get
         val moduleBase = {
           val rootDir = (root.all / baseDirectory).value.toString
           val crossDir = (core.jvm / crossProjectBaseDirectory).value.toString
