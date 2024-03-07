@@ -23,14 +23,16 @@ class CompileUpdateRep {
   def setup(): Unit = {
     compiler = new Compiler
 
-    val update = (1 to repetitions).map(_ => s"  r.updateWith('f${size})(_ + 1)").mkString("\n")
+    val update = (1 to repetitions)
+      .map(_ => s"  r.updateWith('f${size})(_ + 1)")
+      .mkString("\n")
     source = s"""
-      |import benchmark.shapeless.CompileUpdateRep.r
-      |import _root_.shapeless.record._
-      |object A {
-      |${update}
-      |}
-      |""".stripMargin
+                |import benchmark.shapeless.CompileUpdateRep.r
+                |import _root_.shapeless.record._
+                |object A {
+                |${update}
+                |}
+                |""".stripMargin
   }
 
   @Benchmark

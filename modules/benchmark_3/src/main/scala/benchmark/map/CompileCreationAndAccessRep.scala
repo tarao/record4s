@@ -22,13 +22,14 @@ class CompileCreationAndAccessRep {
     compiler = new Compiler
 
     val fields = (1 to size).map(i => s""""f${i}" -> ${i}""").mkString(",")
-    val access = (1 to repetitions).map(_ => s"""  r("f${size}")""").mkString("\n")
+    val access =
+      (1 to repetitions).map(_ => s"""  r("f${size}")""").mkString("\n")
     source = s"""
-      |object A {
-      |  val r = Map(${fields})
-      |${access}
-      |}
-      |""".stripMargin
+                |object A {
+                |  val r = Map(${fields})
+                |${access}
+                |}
+                |""".stripMargin
   }
 
   @Benchmark

@@ -21,7 +21,7 @@ class TimersBench {
     while ({
       cur = System.nanoTime()
       cur == lastValue
-    })()
+    }) ()
     lastValue = cur
     cur
   }

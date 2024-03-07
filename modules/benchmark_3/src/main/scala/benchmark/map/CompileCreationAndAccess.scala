@@ -22,11 +22,11 @@ class CompileCreationAndAccess {
     val fields = (1 to size).map(i => s""""f${i}" -> ${i}""").mkString(",")
     val access = (1 to size).map(i => s"""  r("f${i}")""").mkString("\n")
     source = s"""
-      |object A {
-      |  val r = Map(${fields})
-      |${access}
-      |}
-      |""".stripMargin
+                |object A {
+                |  val r = Map(${fields})
+                |${access}
+                |}
+                |""".stripMargin
   }
 
   @Benchmark

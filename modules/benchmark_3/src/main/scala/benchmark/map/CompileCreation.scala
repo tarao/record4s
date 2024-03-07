@@ -21,10 +21,10 @@ class CompileCreation {
 
     val fields = (1 to size).map(i => s""""f${i}" -> ${i}""").mkString(",")
     source = s"""
-      |object A {
-      |  val r = Map(${fields})
-      |}
-      |""".stripMargin
+                |object A {
+                |  val r = Map(${fields})
+                |}
+                |""".stripMargin
   }
 
   @Benchmark

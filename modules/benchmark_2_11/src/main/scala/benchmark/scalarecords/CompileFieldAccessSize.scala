@@ -10,7 +10,26 @@ import records._
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Thread)
 class CompileFieldAccessSize {
-  @Param(Array("1", "2", "4", "8", "10", "12", "14", "16", "18", "20", "22", "24", "26", "28", "30", "32"))
+  @Param(
+    Array(
+      "1",
+      "2",
+      "4",
+      "8",
+      "10",
+      "12",
+      "14",
+      "16",
+      "18",
+      "20",
+      "22",
+      "24",
+      "26",
+      "28",
+      "30",
+      "32"
+    )
+  )
   var size: Int = 0
 
   var source: String = ""
@@ -22,11 +41,11 @@ class CompileFieldAccessSize {
     compiler = new Compiler
 
     source = s"""
-      |import benchmark.scalarecords.CompileFieldAccessSize._
-      |object A {
-      |  r_${size}.f${size}
-      |}
-      |""".stripMargin
+                |import benchmark.scalarecords.CompileFieldAccessSize._
+                |object A {
+                |  r_${size}.f${size}
+                |}
+                |""".stripMargin
   }
 
   @Benchmark
@@ -72,43 +91,43 @@ object CompileFieldAccessSize {
   )
 
   val r_10 = Rec(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10
   )
 
   val r_12 = Rec(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12
   )
 
   val r_14 = Rec(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,
@@ -117,15 +136,15 @@ object CompileFieldAccessSize {
   )
 
   val r_16 = Rec(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,
@@ -136,15 +155,15 @@ object CompileFieldAccessSize {
   )
 
   val r_18 = Rec(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,
@@ -157,15 +176,15 @@ object CompileFieldAccessSize {
   )
 
   val r_20 = Rec(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,
@@ -180,15 +199,15 @@ object CompileFieldAccessSize {
   )
 
   val r_22 = Rec(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,
@@ -205,15 +224,15 @@ object CompileFieldAccessSize {
   )
 
   val r_24 = Rec(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,
@@ -232,15 +251,15 @@ object CompileFieldAccessSize {
   )
 
   val r_26 = Rec(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,
@@ -261,15 +280,15 @@ object CompileFieldAccessSize {
   )
 
   val r_28 = Rec(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,
@@ -292,15 +311,15 @@ object CompileFieldAccessSize {
   )
 
   val r_30 = Rec(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,
@@ -325,15 +344,15 @@ object CompileFieldAccessSize {
   )
 
   val r_32 = Rec(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,

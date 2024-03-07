@@ -24,12 +24,12 @@ class CompileCreationAndAccessRep {
     val fields = (1 to size).map(i => s"f${i} = ${i}").mkString(",")
     val access = (1 to repetitions).map(_ => s"  r.f${size}").mkString("\n")
     source = s"""
-      |import records._
-      |object A {
-      |  val r = Rec(${fields})
-      |${access}
-      |}
-      |""".stripMargin
+                |import records._
+                |object A {
+                |  val r = Rec(${fields})
+                |${access}
+                |}
+                |""".stripMargin
   }
 
   @Benchmark

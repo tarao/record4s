@@ -22,12 +22,12 @@ class CompileCreationAndAccess {
     val fields = (1 to size).map(i => s"f${i} = ${i}").mkString(",")
     val access = (1 to size).map(i => s"""  r.get('f${i})""").mkString("\n")
     source = s"""
-      |import shapeless.record._
-      |object A {
-      |  val r = Record(${fields})
-      |${access}
-      |}
-      |""".stripMargin
+                |import shapeless.record._
+                |object A {
+                |  val r = Record(${fields})
+                |${access}
+                |}
+                |""".stripMargin
   }
 
   @Benchmark

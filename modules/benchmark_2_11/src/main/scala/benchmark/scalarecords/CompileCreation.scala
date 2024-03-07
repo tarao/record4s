@@ -21,11 +21,11 @@ class CompileCreation {
 
     val fields = (1 to size).map(i => s"f${i} = ${i}").mkString(",")
     source = s"""
-      |import records._
-      |object A {
-      |  val r = Rec(${fields})
-      |}
-      |""".stripMargin
+                |import records._
+                |object A {
+                |  val r = Rec(${fields})
+                |}
+                |""".stripMargin
   }
 
   @Benchmark

@@ -8,7 +8,26 @@ import org.openjdk.jmh.annotations._
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Thread)
 class CompileFieldAccessSize {
-  @Param(Array("1", "2", "4", "8", "10", "12", "14", "16", "18", "20", "22", "24", "26", "28", "30", "32"))
+  @Param(
+    Array(
+      "1",
+      "2",
+      "4",
+      "8",
+      "10",
+      "12",
+      "14",
+      "16",
+      "18",
+      "20",
+      "22",
+      "24",
+      "26",
+      "28",
+      "30",
+      "32",
+    ),
+  )
   var size: Int = 0
 
   var source: String = ""
@@ -20,12 +39,12 @@ class CompileFieldAccessSize {
     compiler = new Compiler
 
     source = s"""
-      |import benchmark.shapeless.CompileFieldAccessSize._
-      |import _root_.shapeless.record._
-      |object A {
-      |  r_${size}.get('f${size})
-      |}
-      |""".stripMargin
+                |import benchmark.shapeless.CompileFieldAccessSize._
+                |import _root_.shapeless.record._
+                |object A {
+                |  r_${size}.get('f${size})
+                |}
+                |""".stripMargin
   }
 
   @Benchmark
@@ -73,43 +92,43 @@ object CompileFieldAccessSize {
   )
 
   val r_10 = Record(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
   )
 
   val r_12 = Record(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,
   )
 
   val r_14 = Record(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,
@@ -118,15 +137,15 @@ object CompileFieldAccessSize {
   )
 
   val r_16 = Record(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,
@@ -137,15 +156,15 @@ object CompileFieldAccessSize {
   )
 
   val r_18 = Record(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,
@@ -158,15 +177,15 @@ object CompileFieldAccessSize {
   )
 
   val r_20 = Record(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,
@@ -181,15 +200,15 @@ object CompileFieldAccessSize {
   )
 
   val r_22 = Record(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,
@@ -206,15 +225,15 @@ object CompileFieldAccessSize {
   )
 
   val r_24 = Record(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,
@@ -233,15 +252,15 @@ object CompileFieldAccessSize {
   )
 
   val r_26 = Record(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,
@@ -262,15 +281,15 @@ object CompileFieldAccessSize {
   )
 
   val r_28 = Record(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,
@@ -293,15 +312,15 @@ object CompileFieldAccessSize {
   )
 
   val r_30 = Record(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,
@@ -326,15 +345,15 @@ object CompileFieldAccessSize {
   )
 
   val r_32 = Record(
-    f1 = 1,
-    f2 = 2,
-    f3 = 3,
-    f4 = 4,
-    f5 = 5,
-    f6 = 6,
-    f7 = 7,
-    f8 = 8,
-    f9 = 9,
+    f1  = 1,
+    f2  = 2,
+    f3  = 3,
+    f4  = 4,
+    f5  = 5,
+    f6  = 6,
+    f7  = 7,
+    f8  = 8,
+    f9  = 9,
     f10 = 10,
     f11 = 11,
     f12 = 12,
