@@ -176,14 +176,18 @@ object Record extends RecordPlatformSpecific {
         case _: ((label, newLabel) *: tail) =>
           val st1 = summonInline[label <:< String]
           val st2 = summonInline[newLabel <:< String]
+
           (
             st2(valueOf[newLabel]),
             record.__lookup(st1(valueOf[label])),
           ) +: toSelectedIterable[tail]
+
         case _: (label *: tail) =>
           val st = summonInline[label <:< String]
           val labelStr = st(valueOf[label])
+
           (labelStr, record.__lookup(labelStr)) +: toSelectedIterable[tail]
+
         case _: EmptyTuple =>
           Seq.empty
       }

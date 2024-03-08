@@ -422,11 +422,15 @@ object ArrayRecord
         case _: ((label, newLabel) *: tail) =>
           val st1 = summonInline[label <:< String]
           val st2 = summonInline[newLabel <:< String]
+
           (st1(valueOf[label]), st2(valueOf[newLabel])) +: selection[tail]
+
         case _: (label *: tail) =>
           val st = summonInline[label <:< String]
           val labelStr = st(valueOf[label])
+
           (labelStr, labelStr) +: selection[tail]
+
         case _: EmptyTuple =>
           Seq.empty
       }
