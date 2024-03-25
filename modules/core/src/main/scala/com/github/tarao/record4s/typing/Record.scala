@@ -35,12 +35,6 @@ object Record {
       ${ Macros.derivedTypingConcatImpl }
   }
 
-  type Append[R1, R2] = Concat[R1, R2]
-
-  object Append {
-    type Aux[R1, R2, Out0 <: %] = Concat[R1, R2] { type Out = Out0 }
-  }
-
   @implicitNotFound("Value '${Label}' is not a member of ${R}")
   final class Lookup[R, Label] private () {
     type Out
@@ -68,16 +62,16 @@ object Record {
       ${ Macros.derivedTypingSelectImpl }
   }
 
-  final class Unselect[R, U] private extends MaybeError {
-    type Out <: %
+  final class Unselect[R <: %, U] private extends MaybeError {
+    type Out >: R <: %
   }
 
   object Unselect {
     private[record4s] val instance = new Unselect[Nothing, Nothing]
 
-    type Aux[R, U, Out0 <: %] = Unselect[R, U] { type Out = Out0 }
+    type Aux[R <: %, U, Out0 <: %] = Unselect[R, U] { type Out = Out0 }
 
-    transparent inline given [R: RecordLike, S <: Tuple]: Unselect[R, S] =
+    transparent inline given [R <: %, S <: Tuple]: Unselect[R, S] =
       ${ Macros.derivedTypingUnselectImpl }
   }
 }

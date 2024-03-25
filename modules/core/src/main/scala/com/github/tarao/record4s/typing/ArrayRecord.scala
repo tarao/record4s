@@ -38,14 +38,6 @@ object ArrayRecord {
       ${ ArrayRecordMacros.derivedTypingConcatImpl }
   }
 
-  type Append[R1, R2] = Concat[R1, R2]
-
-  object Append {
-    type Aux[R1, R2, Out0 <: ProductRecord] = Concat[R1, R2] {
-      type Out = Out0
-    }
-  }
-
   @implicitNotFound("Value '${Label}' is not a member of ${R}")
   final class Lookup[R, Label] private () {
     type Out

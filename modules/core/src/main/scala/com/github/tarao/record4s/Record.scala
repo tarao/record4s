@@ -211,10 +211,9 @@ object Record extends RecordPlatformSpecific {
       * @return
       *   a new record without the unselected fields
       */
-    inline def apply[U <: Tuple, RR <: %](u: Unselector[U])(using
+    inline def apply[U <: Tuple, RR >: R <: %](u: Unselector[U])(using
       Unselect.Aux[R, U, RR],
       RecordLike[RR],
-      R <:< RR,
     ): RR = withPotentialTypingError {
       newMapRecord[RR](summon[RecordLike[RR]].tidiedIterableOf(record))
     }

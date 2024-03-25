@@ -19,12 +19,12 @@ package external
 class UseCaseSpec extends helper.UnitSpec {
   describe("Generic record lookup") {
     import com.github.tarao.record4s.{%, Record}
-    import com.github.tarao.record4s.typing.Record.Lookup
+    import com.github.tarao.record4s.typing.syntax.{:=, in}
 
-    it("can be done by using Lookup") {
-      def getEmail[R <: %](record: R)(using
-        hasEmail: Lookup[R, "email"],
-      ): hasEmail.Out = Record.lookup(record, "email")
+    it("can be done by using typing.syntax") {
+      def getEmail[R <: %, V](record: R)(using
+        V := ("email" in R),
+      ): V = Record.lookup(record, "email")
 
       val r0 = %(name = "tarao", age = 3)
       val r1 = r0 + (email = "tarao@example.com")
@@ -35,26 +35,11 @@ class UseCaseSpec extends helper.UnitSpec {
 
   describe("Generic record extension with ++") {
     import com.github.tarao.record4s.{%, Tag}
-    import com.github.tarao.record4s.typing.Record.Concat
+    import com.github.tarao.record4s.typing.syntax.{++, :=}
 
-    it("can be done by using Concat") {
-      def addEmail[R <: %](record: R, email: String)(using
-        concat: Concat[R, % { val email: String }],
-      ): concat.Out = record ++ %(email = email)
-
-      val r0 = %(name = "tarao", age = 3)
-      val r1 = addEmail(r0, "tarao@example.com")
-      r1 shouldStaticallyBe a[
-        % { val name: String; val age: Int; val email: String },
-      ]
-      r1.name shouldBe "tarao"
-      r1.age shouldBe 3
-      r1.email shouldBe "tarao@example.com"
-    }
-
-    it("can be done by using Concat.Aux") {
+    it("can be done by using typing.syntax") {
       def addEmail[R <: %, RR <: %](record: R, email: String)(using
-        Concat.Aux[R, % { val email: String }, RR],
+        RR := R ++ % { val email: String },
       ): RR = record ++ %(email = email)
 
       val r0 = %(name = "tarao", age = 3)
@@ -69,7 +54,7 @@ class UseCaseSpec extends helper.UnitSpec {
 
     it("can replace existing field") {
       def addEmail[R <: %, T, RR <: %](record: R, email: T)(using
-        Concat.Aux[R, % { val email: T }, RR],
+        RR := R ++ % { val email: T },
       ): RR = record ++ %(email = email)
 
       val r0 = %(name = "tarao", age = 3, email = "tarao@example.com")
@@ -93,13 +78,13 @@ class UseCaseSpec extends helper.UnitSpec {
           def firstName: String = p.name.split(" ").head
 
           def withEmail[RR <: %](email: String)(using
-            Concat.Aux[R & Tag[Person], % { val email: String }, RR],
+            RR := (R & Tag[Person]) ++ % { val email: String },
           ): RR = p ++ %(email = email)
         }
       }
 
       def addEmail[R <: %, RR <: %](record: R, email: String)(using
-        Concat.Aux[R, % { val email: String }, RR],
+        RR := R ++ % { val email: String },
       ): RR = record ++ %(email = email)
 
       val r0 = %(name = "tarao fuguta", age = 3).tag[Person]
@@ -122,7 +107,7 @@ class UseCaseSpec extends helper.UnitSpec {
       r2.email shouldBe "tarao@example.com"
     }
 
-    it("should reject generic record concatenation without using Concat") {
+    it("should reject generic record concatenation without using ++ type") {
       """
       def addEmail[R <: %](record: R, email: String): Any =
         record ++ %(email = email)
@@ -132,44 +117,12 @@ class UseCaseSpec extends helper.UnitSpec {
 
   describe("Generic record extension with +") {
     import com.github.tarao.record4s.{%, Tag}
-    import com.github.tarao.record4s.typing.Record.Append
+    import com.github.tarao.record4s.typing.syntax.{+, ++, :=}
 
-    it("can be done by using Append") {
-      locally {
-        def addEmail[R <: %](record: R, email: String)(using
-          append: Append[R, % { val email: String }],
-        ): append.Out = record + (email = email)
-
-        val r0 = %(name = "tarao", age = 3)
-        val r1 = addEmail(r0, "tarao@example.com")
-        r1 shouldStaticallyBe a[
-          % { val name: String; val age: Int; val email: String },
-        ]
-        r1.name shouldBe "tarao"
-        r1.age shouldBe 3
-        r1.email shouldBe "tarao@example.com"
-      }
-
-      locally {
-        def addEmail[R <: %](record: R, email: String)(using
-          append: Append[R, ("email", String) *: EmptyTuple],
-        ): append.Out = record + (email = email)
-
-        val r0 = %(name = "tarao", age = 3)
-        val r1 = addEmail(r0, "tarao@example.com")
-        r1 shouldStaticallyBe a[
-          % { val name: String; val age: Int; val email: String },
-        ]
-        r1.name shouldBe "tarao"
-        r1.age shouldBe 3
-        r1.email shouldBe "tarao@example.com"
-      }
-    }
-
-    it("can be done by using Append.Aux") {
+    it("can be done by using typing.syntax") {
       locally {
         def addEmail[R <: %, RR <: %](record: R, email: String)(using
-          Append.Aux[R, % { val email: String }, RR],
+          RR := R ++ % { val email: String },
         ): RR = record + (email = email)
 
         val r0 = %(name = "tarao", age = 3)
@@ -184,7 +137,22 @@ class UseCaseSpec extends helper.UnitSpec {
 
       locally {
         def addEmail[R <: %, RR <: %](record: R, email: String)(using
-          Append.Aux[R, ("email", String) *: EmptyTuple, RR],
+          RR := R ++ ("email", String) *: EmptyTuple,
+        ): RR = record + (email = email)
+
+        val r0 = %(name = "tarao", age = 3)
+        val r1 = addEmail(r0, "tarao@example.com")
+        r1 shouldStaticallyBe a[
+          % { val name: String; val age: Int; val email: String },
+        ]
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+        r1.email shouldBe "tarao@example.com"
+      }
+
+      locally {
+        def addEmail[R <: %, RR <: %](record: R, email: String)(using
+          RR := R + ("email", String),
         ): RR = record + (email = email)
 
         val r0 = %(name = "tarao", age = 3)
@@ -200,7 +168,7 @@ class UseCaseSpec extends helper.UnitSpec {
 
     it("can replace existing field") {
       def addEmail[R <: %, T, RR <: %](record: R, email: T)(using
-        Append.Aux[R, % { val email: T }, RR],
+        RR := R ++ % { val email: T },
       ): RR = record + (email = email)
 
       val r0 = %(name = "tarao", age = 3, email = "tarao@example.com")
@@ -224,13 +192,13 @@ class UseCaseSpec extends helper.UnitSpec {
           def firstName: String = p.name.split(" ").head
 
           def withEmail[RR <: %](email: String)(using
-            Append.Aux[R & Tag[Person], % { val email: String }, RR],
+            RR := (R & Tag[Person]) ++ % { val email: String },
           ): RR = p + (email = email)
         }
       }
 
       def addEmail[R <: %, RR <: %](record: R, email: String)(using
-        Append.Aux[R, % { val email: String }, RR],
+        RR := R ++ % { val email: String },
       ): RR = record + (email = email)
 
       val r0 = %(name = "tarao fuguta", age = 3).tag[Person]
@@ -253,7 +221,7 @@ class UseCaseSpec extends helper.UnitSpec {
       r2.email shouldBe "tarao@example.com"
     }
 
-    it("should reject generic record extension without using Append") {
+    it("should reject generic record extension without using ++ type") {
       """
       def addEmail[R <: %](record: R, email: String): Any =
         record + (email = email)
@@ -261,14 +229,59 @@ class UseCaseSpec extends helper.UnitSpec {
     }
   }
 
+  describe("Generic record upcast") {
+    import com.github.tarao.record4s.{%, Tag}
+    import com.github.tarao.record4s.typing.syntax.{-, --, :=}
+
+    it("can be done by using --") {
+      def withoutAge[R <: %, RR >: R <: %](record: R)(using
+        RR := R -- "age" *: EmptyTuple,
+      ): RR = record
+
+      val r0 = %(name = "tarao", age = 3, email = "tarao@example.com")
+      val r1 = withoutAge(r0)
+      r1.name shouldBe "tarao"
+      r1.email shouldBe "tarao@example.com"
+      "r1.age" shouldNot typeCheck
+    }
+
+    it("can be done by using -") {
+      def withoutAge[R <: %, RR >: R <: %](record: R)(using
+        RR := R - "age",
+      ): RR = record
+
+      val r0 = %(name = "tarao", age = 3, email = "tarao@example.com")
+      val r1 = withoutAge(r0)
+      r1.name shouldBe "tarao"
+      r1.email shouldBe "tarao@example.com"
+      "r1.age" shouldNot typeCheck
+    }
+
+    it("preserves a tag") {
+      def withoutAge[R <: %, RR >: R <: %](record: R)(using
+        RR := R -- "age" *: EmptyTuple,
+      ): RR = record
+
+      trait Person
+
+      val r0 =
+        %(name = "tarao", age = 3, email = "tarao@example.com").tag[Person]
+      val r1 = withoutAge(r0)
+      r1.name shouldBe "tarao"
+      r1.email shouldBe "tarao@example.com"
+      "r1.age" shouldNot typeCheck
+      r1 shouldStaticallyBe a[Tag[Person]]
+    }
+  }
+
   describe("Generic array record lookup") {
     import com.github.tarao.record4s.ArrayRecord
-    import com.github.tarao.record4s.typing.ArrayRecord.Lookup
+    import com.github.tarao.record4s.typing.syntax.{:=, in}
 
     it("can be done by using Lookup") {
-      inline def getEmail[R](record: ArrayRecord[R])(using
-        hasEmail: Lookup[R, "email"],
-      ): hasEmail.Out = ArrayRecord.lookup(record, "email")
+      inline def getEmail[R <: Tuple, V, I <: Int](record: ArrayRecord[R])(using
+        (V, I) := ("email" in R),
+      ): V = ArrayRecord.lookup(record, "email")
 
       val r0 = ArrayRecord(name = "tarao", age = 3)
       val r1 = r0 + (email = "tarao@example.com")
@@ -279,30 +292,14 @@ class UseCaseSpec extends helper.UnitSpec {
 
   describe("Generic array record extension with ++") {
     import com.github.tarao.record4s.{ArrayRecord, ProductRecord, Tag}
-    import com.github.tarao.record4s.typing.ArrayRecord.Concat
+    import com.github.tarao.record4s.typing.syntax.{++, :=}
 
-    it("can be done by using Concat") {
-      def addEmail[R](record: ArrayRecord[R], email: String)(using
-        concat: Concat[R, ArrayRecord[("email", String) *: EmptyTuple]],
-      ): concat.Out = record ++ ArrayRecord(email = email)
-
-      val r0 = ArrayRecord(name = "tarao", age = 3)
-      val r1 = addEmail(r0, "tarao@example.com")
-      r1 shouldStaticallyBe an[ArrayRecord[
-        (("name", String), ("age", Int), ("email", String)),
-      ]]
-      r1.name shouldBe "tarao"
-      r1.age shouldBe 3
-      r1.email shouldBe "tarao@example.com"
-    }
-
-    it("can be done by using Concat.Aux") {
-      def addEmail[R, RR <: ProductRecord](
+    it("can be done by using typing.syntax") {
+      def addEmail[R <: Tuple, RR <: ProductRecord](
         record: ArrayRecord[R],
         email: String,
-      )(using
-        Concat.Aux[R, ArrayRecord[("email", String) *: EmptyTuple], RR],
-      ): RR = record ++ ArrayRecord(email = email)
+      )(using RR := R ++ ArrayRecord[("email", String) *: EmptyTuple]): RR =
+        record ++ ArrayRecord(email = email)
 
       val r0 = ArrayRecord(name = "tarao", age = 3)
       val r1 = addEmail(r0, "tarao@example.com")
@@ -316,12 +313,11 @@ class UseCaseSpec extends helper.UnitSpec {
 
     it("can replace existing field") {
       locally {
-        def addEmail[R, T, RR <: ProductRecord](
+        def addEmail[R <: Tuple, T, RR <: ProductRecord](
           record: ArrayRecord[R],
           email: T,
-        )(using
-          Concat.Aux[R, ArrayRecord[("email", T) *: EmptyTuple], RR],
-        ): RR = record ++ ArrayRecord(email = email)
+        )(using RR := R ++ ArrayRecord[("email", T) *: EmptyTuple]): RR =
+          record ++ ArrayRecord(email = email)
 
         val r0 =
           ArrayRecord(name = "tarao", age = 3, email = "tarao@example.com")
@@ -341,8 +337,11 @@ class UseCaseSpec extends helper.UnitSpec {
       }
 
       locally {
-        def rename[R, T, RR <: ProductRecord](record: ArrayRecord[R], value: T)(
-          using Concat.Aux[R, ArrayRecord[("name", T) *: EmptyTuple], RR],
+        def rename[R <: Tuple, T, RR <: ProductRecord](
+          record: ArrayRecord[R],
+          value: T,
+        )(using
+          RR := R ++ ArrayRecord[("name", T) *: EmptyTuple],
         ): RR = record ++ ArrayRecord(name = value)
 
         val r0 =
@@ -371,17 +370,17 @@ class UseCaseSpec extends helper.UnitSpec {
           def firstName: String = p.name.split(" ").head
 
           def withEmail[RR <: ProductRecord](email: String)(using
-            Concat.Aux[
-              (("name", String) *: T) & Tag[Person],
+            RR := ((("name", String) *: T) & Tag[Person]) ++
               ArrayRecord[("email", String) *: EmptyTuple],
-              RR,
-            ],
           ): RR = p ++ ArrayRecord(email = email)
         }
       }
 
-      def addEmail[R, T, RR <: ProductRecord](record: ArrayRecord[R], email: T)(
-        using Concat.Aux[R, ArrayRecord[("email", T) *: EmptyTuple], RR],
+      def addEmail[R <: Tuple, T, RR <: ProductRecord](
+        record: ArrayRecord[R],
+        email: T,
+      )(using
+        RR := R ++ ArrayRecord[("email", T) *: EmptyTuple],
       ): RR = record ++ ArrayRecord(email = email)
 
       val r0 = ArrayRecord(name = "tarao fuguta", age = 3).tag[Person]
@@ -414,48 +413,15 @@ class UseCaseSpec extends helper.UnitSpec {
 
   describe("Generic array record extension with +") {
     import com.github.tarao.record4s.{%, ArrayRecord, ProductRecord, Tag}
-    import com.github.tarao.record4s.typing.ArrayRecord.Append
+    import com.github.tarao.record4s.typing.syntax.{+, ++, :=}
 
-    it("can be done by using Append") {
+    it("can be done by using typing.syntax") {
       locally {
-        def addEmail[R](record: ArrayRecord[R], email: String)(using
-          append: Append[R, ("email", String) *: EmptyTuple],
-        ): append.Out = record + (email = email)
-
-        val r0 = ArrayRecord(name = "tarao", age = 3)
-        val r1 = addEmail(r0, "tarao@example.com")
-        r1 shouldStaticallyBe a[ArrayRecord[
-          (("name", String), ("age", Int), ("email", String)),
-        ]]
-        r1.name shouldBe "tarao"
-        r1.age shouldBe 3
-        r1.email shouldBe "tarao@example.com"
-      }
-
-      locally {
-        def addEmail[R](record: ArrayRecord[R], email: String)(using
-          append: Append[R, % { val email: String }],
-        ): append.Out = record + (email = email)
-
-        val r0 = ArrayRecord(name = "tarao", age = 3)
-        val r1 = addEmail(r0, "tarao@example.com")
-        r1 shouldStaticallyBe a[ArrayRecord[
-          (("name", String), ("age", Int), ("email", String)),
-        ]]
-        r1.name shouldBe "tarao"
-        r1.age shouldBe 3
-        r1.email shouldBe "tarao@example.com"
-      }
-    }
-
-    it("can be done by using Append.Aux") {
-      locally {
-        def addEmail[R, RR <: ProductRecord](
+        def addEmail[R <: Tuple, RR <: ProductRecord](
           record: ArrayRecord[R],
           email: String,
-        )(using
-          Append.Aux[R, ("email", String) *: EmptyTuple, RR],
-        ): RR = record + (email = email)
+        )(using RR := R ++ ("email", String) *: EmptyTuple): RR =
+          record + (email = email)
 
         val r0 = ArrayRecord(name = "tarao", age = 3)
         val r1 = addEmail(r0, "tarao@example.com")
@@ -468,12 +434,28 @@ class UseCaseSpec extends helper.UnitSpec {
       }
 
       locally {
-        def addEmail[R, RR <: ProductRecord](
+        def addEmail[R <: Tuple, RR <: ProductRecord](
           record: ArrayRecord[R],
           email: String,
-        )(using
-          Append.Aux[R, % { val email: String }, RR],
-        ): RR = record + (email = email)
+        )(using RR := R ++ % { val email: String }): RR =
+          record + (email = email)
+
+        val r0 = ArrayRecord(name = "tarao", age = 3)
+        val r1 = addEmail(r0, "tarao@example.com")
+        r1 shouldStaticallyBe a[ArrayRecord[
+          (("name", String), ("age", Int), ("email", String)),
+        ]]
+        r1.name shouldBe "tarao"
+        r1.age shouldBe 3
+        r1.email shouldBe "tarao@example.com"
+      }
+
+      locally {
+        def addEmail[R <: Tuple, RR <: ProductRecord](
+          record: ArrayRecord[R],
+          email: String,
+        )(using RR := R + ("email", String)): RR =
+          record + (email = email)
 
         val r0 = ArrayRecord(name = "tarao", age = 3)
         val r1 = addEmail(r0, "tarao@example.com")
@@ -488,12 +470,11 @@ class UseCaseSpec extends helper.UnitSpec {
 
     it("can replace existing field") {
       locally {
-        def addEmail[R, T, RR <: ProductRecord](
+        def addEmail[R <: Tuple, T, RR <: ProductRecord](
           record: ArrayRecord[R],
           email: T,
-        )(using
-          Append.Aux[R, ("email", T) *: EmptyTuple, RR],
-        ): RR = record + (email = email)
+        )(using RR := R ++ ("email", T) *: EmptyTuple): RR =
+          record + (email = email)
 
         val r0 =
           ArrayRecord(name = "tarao", age = 3, email = "tarao@example.com")
@@ -513,8 +494,11 @@ class UseCaseSpec extends helper.UnitSpec {
       }
 
       locally {
-        def rename[R, T, RR <: ProductRecord](record: ArrayRecord[R], value: T)(
-          using Append.Aux[R, ("name", T) *: EmptyTuple, RR],
+        def rename[R <: Tuple, T, RR <: ProductRecord](
+          record: ArrayRecord[R],
+          value: T,
+        )(using
+          RR := R ++ ("name", T) *: EmptyTuple,
         ): RR = record + (name = value)
 
         val r0 =
@@ -543,17 +527,17 @@ class UseCaseSpec extends helper.UnitSpec {
           def firstName: String = p.name.split(" ").head
 
           def withEmail[RR <: ProductRecord](email: String)(using
-            Append.Aux[
-              (("name", String) *: T) & Tag[Person],
+            RR := ((("name", String) *: T) & Tag[Person]) ++
               ("email", String) *: EmptyTuple,
-              RR,
-            ],
           ): RR = p + (email = email)
         }
       }
 
-      def addEmail[R, T, RR <: ProductRecord](record: ArrayRecord[R], email: T)(
-        using Append.Aux[R, ("email", T) *: EmptyTuple, RR],
+      def addEmail[R <: Tuple, T, RR <: ProductRecord](
+        record: ArrayRecord[R],
+        email: T,
+      )(using
+        RR := R ++ ("email", T) *: EmptyTuple,
       ): RR = record + (email = email)
 
       val r0 = ArrayRecord(name = "tarao fuguta", age = 3).tag[Person]

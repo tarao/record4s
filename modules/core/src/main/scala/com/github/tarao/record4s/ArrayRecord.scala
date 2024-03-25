@@ -454,13 +454,16 @@ object ArrayRecord
       * @return
       *   a new record without the unselected fields
       */
-    inline def apply[U <: Tuple, RR <: %](u: Unselector[U])(using
-      ev: Unselect.Aux[R, U, RR],
+    inline def apply[U <: Tuple, R2 <: %, RR <: %](u: Unselector[U])(using
+      r: typing.Record.Aux[ArrayRecord[R], R2],
+      ev: Unselect.Aux[R2, U, RR],
       rr: RecordLike[RR],
     ): ArrayRecord[Tuple.Zip[rr.ElemLabels, rr.ElemTypes]] =
       withPotentialTypingError {
-        record.shrinkTo[Tuple.Zip[rr.ElemLabels, rr.ElemTypes]]
-      }
+        withPotentialTypingError {
+          record.shrinkTo[Tuple.Zip[rr.ElemLabels, rr.ElemTypes]]
+        }(using ev)
+      }(using r)
 
     /** Convert this record to a `To`.
       *

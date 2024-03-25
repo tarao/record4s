@@ -184,7 +184,7 @@ object Macros {
     }
   }
 
-  def derivedTypingUnselectImpl[R: Type, U <: Tuple: Type](using
+  def derivedTypingUnselectImpl[R <: `%`: Type, U <: Tuple: Type](using
     Quotes,
   ): Expr[Unselect[R, U]] = withTyping {
     import internal.*
