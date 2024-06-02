@@ -18,7 +18,7 @@ ThisBuild / developers := List(
 )
 
 val Scala_3 = "3.3.3"
-val Scala_2_13 = "2.13.13"
+val Scala_2_13 = "2.13.14"
 val Scala_2_11 = "2.11.12"
 
 ThisBuild / scalaVersion       := Scala_3
@@ -330,15 +330,36 @@ githubWorkflowGenerate := {
 
   val site = {
     val job = githubWorkflowGeneratedCI.value.find(_.id == "site").get
-    job.copy(steps = job.steps.map { step =>
-      if (step.name == Some("Publish site")) {
-        step.withCond(step.cond.map { cond =>
-          s"github.event_name == 'workflow_dispatch' || ( ${cond} )"
-        })
-      } else {
-        step
-      }
-    })
+    WorkflowJob(
+      id   = job.id,
+      name = job.name,
+      steps = job.steps.map { step =>
+        if (step.name == Some("Publish site")) {
+          step.withCond(step.cond.map { cond =>
+            s"github.event_name == 'workflow_dispatch' || ( ${cond} )"
+          })
+        } else {
+          step
+        }
+      },
+      sbtStepPreamble   = job.sbtStepPreamble,
+      cond              = job.cond,
+      permissions       = job.permissions,
+      env               = job.env,
+      oses              = job.oses,
+      scalas            = job.scalas,
+      javas             = job.javas,
+      needs             = job.needs,
+      matrixFailFast    = job.matrixFailFast,
+      matrixAdds        = job.matrixAdds,
+      matrixIncs        = job.matrixIncs,
+      matrixExcs        = job.matrixExcs,
+      runsOnExtraLabels = job.runsOnExtraLabels,
+      container         = job.container,
+      environment       = job.environment,
+      concurrency       = job.concurrency,
+      timeoutMinutes    = job.timeoutMinutes,
+    )
   }
   val yml = baseDirectory.value / ".github" / "workflows" / "site.yml"
   val rendered = GenerativePlugin.compileJob(site, sbt)
