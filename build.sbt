@@ -30,7 +30,7 @@ ThisBuild / githubWorkflowJavaVersions := Seq(
 )
 val BenchmarkJavaVersion = JavaSpec.temurin("11")
 
-val circeVersion = "0.14.6"
+val circeVersion = "0.14.7"
 val scalaTestVersion = "3.2.18"
 
 lazy val compileSettings = Def.settings(
