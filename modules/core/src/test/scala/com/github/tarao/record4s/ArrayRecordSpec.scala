@@ -913,6 +913,18 @@ class ArrayRecordSpec extends helper.UnitSpec {
       }
     }
 
+    describe(".hashCode()") {
+      it("should return the same hash code for equal records") {
+        val r1 = ArrayRecord(name = "tarao", age = 3)
+        val r2 = ArrayRecord(name = "tarao", age = 3)
+        val r3 = ArrayRecord(name = "ikura", age = 1)
+
+        (r1.hashCode() == r1.hashCode()) shouldBe true
+        (r1.hashCode() == r2.hashCode()) shouldBe true
+        (r2.hashCode() == r1.hashCode()) shouldBe true
+      }
+    }
+
     describe(".toString()") {
       it("can express empty Record") {
         ArrayRecord.empty.toString() shouldBe "ArrayRecord()"
