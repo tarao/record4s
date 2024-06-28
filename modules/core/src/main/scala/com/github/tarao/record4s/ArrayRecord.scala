@@ -68,6 +68,8 @@ abstract class ProductRecord extends Record with Product {
       case _ =>
         false
     }
+
+  override def hashCode(): Int = __fields.hashCode()
 }
 
 object ProductRecord {

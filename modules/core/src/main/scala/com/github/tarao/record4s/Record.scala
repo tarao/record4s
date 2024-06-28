@@ -387,6 +387,8 @@ abstract class % extends Record with Selectable {
       case _ =>
         false
     }
+
+  override def hashCode(): Int = __iterable.hashCode()
 }
 
 val % = new Record.Extensible(Record.empty)
