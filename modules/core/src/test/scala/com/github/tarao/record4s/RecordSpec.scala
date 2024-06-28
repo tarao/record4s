@@ -807,6 +807,22 @@ class RecordSpec extends helper.UnitSpec {
       }
     }
 
+    describe(".hashCode()") {
+      it("should return the same hash code for equal records") {
+        val r1 = %(name = "tarao", age = 3)
+        val r2 = %(name = "tarao", age = 3)
+        val r3 = %(name = "ikura", age = 1)
+        val r4 = %(name = "tarao", age = 3, email = "tarao@example.com")
+        val r5: % { val name: String; val age: Int } = r4
+
+        (r1.hashCode() == r1.hashCode()) shouldBe true
+        (r1.hashCode() == r2.hashCode()) shouldBe true
+        (r2.hashCode() == r1.hashCode()) shouldBe true
+        (r1.hashCode() == r5.as.hashCode()) shouldBe true
+        (r5.as.hashCode() == r1.hashCode()) shouldBe true
+      }
+    }
+
     describe(".toString()") {
       it("can express empty Record") {
         Record.empty.toString() shouldBe "%()"
