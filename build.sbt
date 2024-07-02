@@ -1,7 +1,7 @@
 import ProjectKeys._
 import Implicits._
 
-ThisBuild / tlBaseVersion := "0.12"
+ThisBuild / tlBaseVersion := "0.13"
 
 ThisBuild / projectName := "record4s"
 ThisBuild / groupId     := "com.github.tarao"
@@ -30,8 +30,8 @@ ThisBuild / githubWorkflowJavaVersions := Seq(
 )
 val BenchmarkJavaVersion = JavaSpec.temurin("11")
 
-val circeVersion = "0.14.8"
-val scalaTestVersion = "3.2.18"
+val circeVersion = "0.14.9"
+val scalaTestVersion = "3.2.19"
 
 lazy val compileSettings = Def.settings(
   // Default options are set by sbt-typelevel-settings
@@ -104,7 +104,7 @@ lazy val upickle = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   .settings(
     description := "uPickle / uJson integration for record4s",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "upickle" % "3.2.0",
+      "com.lihaoyi" %%% "upickle" % "3.3.1",
     ),
   )
 
