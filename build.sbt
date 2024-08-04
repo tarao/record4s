@@ -104,7 +104,7 @@ lazy val upickle = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   .settings(
     description := "uPickle / uJson integration for record4s",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "upickle" % "3.3.1",
+      "com.lihaoyi" %%% "upickle" % "4.0.0",
     ),
   )
 
