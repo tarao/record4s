@@ -17,7 +17,8 @@
 package com.github.tarao.record4s
 package circe
 
-import io.circe.{Decoder, Encoder, HCursor, Json}
+import io.circe
+import io.circe.{HCursor, Json}
 
 import scala.collection.mutable.Builder
 import scala.compiletime.{constValue, erasedValue, summonInline}
@@ -39,7 +40,7 @@ object Codec {
             case _: Json =>
               record(labelStr).asInstanceOf[Json]
             case _ =>
-              val enc = summonInline[Encoder[tpe]]
+              val enc = summonInline[circe.Encoder[tpe]]
               enc(record(labelStr).asInstanceOf[tpe])
           }
         res += (labelStr -> value)
@@ -49,41 +50,47 @@ object Codec {
   private inline def decodeFields[Types, Labels](
     c: HCursor,
     res: Builder[(String, Any), Map[String, Any]] = Map.newBuilder[String, Any],
-  ): Decoder.Result[Builder[(String, Any), Map[String, Any]]] =
+  ): circe.Decoder.Result[Builder[(String, Any), Map[String, Any]]] =
     inline (erasedValue[Types], erasedValue[Labels]) match {
       case _: (EmptyTuple, EmptyTuple) =>
         Right(res)
 
       case _: (tpe *: types, label *: labels) =>
         val labelStr = constValue[label & String]
-        val dec = summonInline[Decoder[tpe]]
+        val dec = summonInline[circe.Decoder[tpe]]
         c.downField(labelStr).as[tpe](using dec).flatMap { value =>
           res += (labelStr -> value)
           decodeFields[types, labels](c, res)
         }
     }
 
-  inline given encoder[R <: %](using r: RecordLike[R]): Encoder[R] = {
+  class Encoder[R <: %](f: R => Json) extends circe.Encoder[R] {
+    final def apply(record: R): Json = f(record)
+  }
+
+  inline given encoder[R <: %](using r: RecordLike[R]): circe.Encoder[R] = {
     type Types = r.ElemTypes
     type Labels = r.ElemLabels
 
-    new Encoder[R] {
-      final def apply(record: R): Json = {
-        val enc = summonInline[Encoder[Map[String, Json]]]
-        enc(encodeFields[Types, Labels](r.iterableOf(record).toMap).result())
-      }
+    Encoder { (record: R) =>
+      val enc = summonInline[circe.Encoder[Map[String, Json]]]
+      enc(encodeFields[Types, Labels](r.iterableOf(record).toMap).result())
     }
   }
 
-  inline given decoder[R <: %](using r: RecordLike[R]): Decoder[R] = {
+  class Decoder[R <: %](f: HCursor => circe.Decoder.Result[R])
+      extends circe.Decoder[R] {
+    final def apply(c: HCursor): circe.Decoder.Result[R] = f(c)
+  }
+
+  inline given decoder[R <: %](using r: RecordLike[R]): circe.Decoder[R] = {
     type Types = r.ElemTypes
     type Labels = r.ElemLabels
 
-    new Decoder[R] {
-      final def apply(c: HCursor): Decoder.Result[R] =
-        decodeFields[Types, Labels](c).map { b =>
-          Record.newMapRecord[R](b.result())
-        }
+    Decoder { (c: HCursor) =>
+      decodeFields[Types, Labels](c).map { b =>
+        Record.newMapRecord[R](b.result())
+      }
     }
   }
 }
