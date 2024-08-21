@@ -101,9 +101,7 @@ object ProductRecord {
     to: Mirror.ProductOf[P],
     ev: from.MirroredElemTypes <:< to.MirroredElemTypes,
   ): Converter[ArrayRecord[R], P] =
-    new Converter {
-      def apply(record: ArrayRecord[R]): P = to.fromProduct(record)
-    }
+    new Converter((record: ArrayRecord[R]) => to.fromProduct(record))
 }
 
 /** Record class with constant-time field access.
