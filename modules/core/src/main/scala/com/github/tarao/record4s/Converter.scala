@@ -18,8 +18,8 @@ package com.github.tarao.record4s
 
 import scala.deriving.Mirror
 
-trait Converter[From, To] {
-  def apply(record: From): To
+class Converter[From, To](f: From => To) {
+  def apply(record: From): To = f(record)
 }
 
 object Converter {
@@ -42,18 +42,13 @@ object Converter {
     s: typing.Record.Select[R, r1.ElemLabels],
     r2: RecordLike[s.Out],
     ev: r2.ElemTypes <:< m.MirroredElemTypes,
-  ): Converter[R, P] =
-    new Converter {
-      def apply(record: R): P = {
-        val s = Selector.of[r1.ElemLabels]
-        m.fromTuple(ev(record(s).values))
-      }
-    }
+  ): Converter[R, P] = new Converter((record: R) => {
+    val s = Selector.of[r1.ElemLabels]
+    m.fromTuple(ev(record(s).values))
+  })
 
   inline given [R <: %, T <: NonEmptyTuple](using
     r: RecordLike[R],
     ev: r.TupledFieldTypes =:= T,
-  ): Converter[R, T] = new Converter {
-    def apply(record: R): T = ev(record.toTuple)
-  }
+  ): Converter[R, T] = new Converter((record: R) => ev(record.toTuple))
 }
