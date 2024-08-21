@@ -170,16 +170,25 @@ trait RecordPlatformSpecific {
     type Types = r.ElemTypes
     type Labels = r.ElemLabels
 
-    new NativeConverter[R] {
-      extension (record: R) {
-        def toNative: js.Any =
-          fieldsToNative[Types, Labels](r.iterableOf(record).toMap)
-      }
-
-      def fromNative(ps: ParseState): R = {
+    RecordPlatformSpecificJs.Converter[R](
+      (record: R) => fieldsToNative[Types, Labels](r.iterableOf(record).toMap),
+      (ps: ParseState) => {
         val iterable = nativeToFields[Types, Labels](asDict(ps), ps).result()
         Record.newMapRecord[R](iterable)
-      }
+      },
+    )
+  }
+}
+
+object RecordPlatformSpecificJs {
+  class Converter[R <: %](
+    jsAnyOf: R => js.Any,
+    fromParseState: ParseState => R,
+  ) extends NativeConverter[R] {
+    extension (record: R) {
+      def toNative: js.Any = jsAnyOf(record)
     }
+
+    def fromNative(ps: ParseState): R = fromParseState(ps)
   }
 }
