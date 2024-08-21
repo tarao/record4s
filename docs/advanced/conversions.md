@@ -72,17 +72,16 @@ Converter
 ---------
 
 Giving a @:api(com.github.tarao.record4s.Converter) instance for a type enables the type
-to be converted from a record.  `Converter` is simply an interface with `apply: From =>
-To`.  `Convert` for `Person` class can be given as the following.
+to be converted from a record.  `Converter` is simply a wrapper of `From => To` function.
+`Converter` for `Person` class can be given as the following.
 
 ```scala mdoc
 import com.github.tarao.record4s.Converter
 
 type PersonRecord = % { val name: String; val age: Int }
 
-given [R <: PersonRecord]: Converter[R, Person] with
-  def apply(record: R): Person =
-    Person(record.name, record.age)
+given [R <: PersonRecord]: Converter[R, Person] =
+  Converter((record: R) => Person(record.name, record.age))
 ```
 
 Then, `to[Person]` on a record converts the record to a `Person`.
