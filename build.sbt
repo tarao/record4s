@@ -38,6 +38,7 @@ lazy val compileSettings = Def.settings(
   tlFatalWarnings := true,
   scalacOptions --= Seq(
     "-Ykind-projector:underscores", // https://github.com/lampepfl/dotty/issues/14952
+    "-Xkind-projector:underscores",
   ),
   Test / scalacOptions --= Seq(
     "-Wunused:locals",
