@@ -599,12 +599,17 @@ private[record4s] object InternalMacros {
 
   transparent inline def internal(using i: InternalMacros): i.type = i
 
-  inline def withInternal[T](using Quotes, InternalMacros)(
+  inline def withInternal[T](using
+    Quotes,
+    InternalMacros,
+  )(
     inline block: InternalMacros ?=> T,
   ): T =
     block(using summon[InternalMacros])
 
-  inline def withTyping[T](using Quotes)(
+  inline def withTyping[T](using
+    Quotes,
+  )(
     inline block: (MacroContext, InternalMacros) ?=> T,
   ): T = {
     given MacroContext = MacroContext.Typing
